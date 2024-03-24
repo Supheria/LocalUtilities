@@ -1,5 +1,5 @@
-﻿using System.Text;
-using LocalUtilities.RegexUtilities;
+﻿using LocalUtilities.RegexUtilities;
+using System.Text;
 
 namespace LocalUtilities.StringUtilities;
 
@@ -70,6 +70,18 @@ public static class StringSimpleTypeConverter
         try
         {
             return str is null ? null : bool.Parse(str);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static float? ToFloat(this string? str)
+    {
+        try
+        {
+            return str is null ? null : float.Parse(str);
         }
         catch
         {

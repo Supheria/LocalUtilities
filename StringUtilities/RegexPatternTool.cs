@@ -1,5 +1,5 @@
-﻿using System.Text;
-using LocalUtilities.RegexUtilities;
+﻿using LocalUtilities.RegexUtilities;
+using System.Text;
 
 namespace LocalUtilities.StringUtilities;
 
