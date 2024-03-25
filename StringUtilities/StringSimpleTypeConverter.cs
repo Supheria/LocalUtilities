@@ -1,4 +1,6 @@
 ﻿using LocalUtilities.RegexUtilities;
+using System.ComponentModel;
+using System.Reflection;
 using System.Text;
 
 namespace LocalUtilities.StringUtilities;
@@ -35,7 +37,12 @@ public static class StringSimpleTypeConverter
     public static string[] ToArray(this string? str) => str is null
         ? Array.Empty<string>()
         : str.Split(ElementSplitter).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="str"></param>
+    /// <returns></returns>
     public static T? ToEnum<T>(this string? str) where T : Enum
     {
         try
@@ -46,6 +53,32 @@ public static class StringSimpleTypeConverter
         {
             return default;
         }
+    }
+
+    public static T? DescriptionToEnum<T>(this string? str) where T : Enum
+    {
+        if (str is null)
+            return default;
+        var map = EnumDescriptionTool.GetEnumDescriptionList<T>();
+        if (!map.TryGetValue(str, out var e))
+            return default;
+        return e.ToEnum<T>();
+    }
+
+    public static string[] ToDescriptionList<T>(this T e) where T : Enum
+    {
+        var map = EnumDescriptionTool.GetEnumDescriptionList<T>();
+        return map.Keys.ToArray();
+    }
+
+    public static string ToDescription<T>(this T e) where T : Enum
+    {
+        string value = e.ToString();
+        var field = typeof(T).GetField(value);
+        var objs = field?.GetCustomAttributes(typeof(DescriptionAttribute), false);
+        if (objs == null || objs.Length == 0) // 无描述返回名称
+            return value;
+        return ((DescriptionAttribute)objs[0]).Description;
     }
 
     /// <summary>
