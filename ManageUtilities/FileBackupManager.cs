@@ -23,7 +23,7 @@ public static partial class FileBackupManager
     /// <summary>
     /// 对象根目录
     /// </summary>
-    private static string DirectoryName<T>(this T obj) where T : IFileBackupManageable
+    private static string DirectoryName<T>(this T obj) where T : IHashStringCheckable
     {
         var dir = Path.Combine(RootDirectoryName, obj.FileManageDirName);
         Directory.CreateDirectory(dir);
@@ -36,8 +36,8 @@ public static partial class FileBackupManager
     /// <typeparam name="T"></typeparam>
     /// <param name="obj"></param>
     /// <returns>root\obj file manage\obj hash\date time</returns>
-    private static string GetBackupFilePath<T>(this T obj) where T : IFileBackupManageable =>
-        Path.Combine(obj.DirectoryName(), obj.GetHashString(), $"BK{DateTime.Now:yyyyMMddHHmmss}");
+    private static string GetBackupFilePath<T>(this T obj) where T : IHashStringCheckable =>
+        Path.Combine(obj.DirectoryName(), obj.ToHashString(), $"BK{DateTime.Now:yyyyMMddHHmmss}");
 
     /// <summary>
     /// 从文件路径获取备份路径
@@ -46,15 +46,15 @@ public static partial class FileBackupManager
     /// <param name="obj"></param>
     /// <param name="path">要获取备份路径的文件路径</param>
     /// <returns></returns>
-    private static string GetBackupFilePath<T>(this T obj, string path) where T : IFileBackupManageable =>
-        Path.Combine(obj.DirectoryName(), obj.GetHashStringFromFilePath(path), $"BK{DateTime.Now:yyyyMMddHHmmss}");
+    private static string GetBackupFilePath<T>(this T obj, string path) where T : IHashStringCheckable =>
+        Path.Combine(obj.DirectoryName(), obj.ToHashString(path), $"BK{DateTime.Now:yyyyMMddHHmmss}");
 
     /// <summary>
     /// 备份指定文件路径的obj（如果存在的话）,如果已存在备份文件则不作替换
     /// </summary>
     /// <param name="obj"></param>
     /// <param name="path">要备份的文件路径</param>
-    public static void Backup<T>(this T obj, string path) where T : IFileBackupManageable
+    public static void Backup<T>(this T obj, string path) where T : IHashStringCheckable
     {
         try
         {
@@ -77,7 +77,7 @@ public static partial class FileBackupManager
     /// <param name="obj"></param>
     /// <param name="path">要查找的文件路径</param>
     /// <returns>文件列表(备份文件路径, 备份名)，列表第一元素是文件路径本身</returns>
-    public static List<(string, string)> GetBackupsList<T>(this T obj, string path) where T : IFileBackupManageable
+    public static List<(string, string)> GetBackupsList<T>(this T obj, string path) where T : IHashStringCheckable
     {
         List<(string, string)> result = new();
         var objManageDir = Path.GetDirectoryName(obj.IsBackupFile(path)
@@ -119,7 +119,7 @@ public static partial class FileBackupManager
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="obj">要删除的备份对象</param>
-    public static void DeleteBackup<T>(this T obj) where T : IFileBackupManageable
+    public static void DeleteBackup<T>(this T obj) where T : IHashStringCheckable
     {
         var objRootDir = Path.GetDirectoryName(obj.GetBackupFilePath());
         if (Directory.Exists(objRootDir))
@@ -147,7 +147,7 @@ public static partial class FileBackupManager
     /// <param name="obj"></param>
     /// <param name="path">要查询的文件路径</param>
     /// <returns></returns>
-    public static bool IsBackupFile<T>(this T obj, string path) where T : IFileBackupManageable
+    public static bool IsBackupFile<T>(this T obj, string path) where T : IHashStringCheckable
     {
         var match = BackupRegex().Match(Path.GetFileName(path));
         return match.Success && obj.DirectoryName() == Path.GetDirectoryName(Path.GetDirectoryName(path));

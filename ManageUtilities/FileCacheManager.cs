@@ -35,7 +35,7 @@ public static class FileCacheManager
     /// <summary>
     /// 删除所有缓存
     /// </summary>
-    public static void ClearCache<T>(T obj) where T : IFileManageable?
+    public static void ClearCache<T>(this T obj) where T : IFileManageable?
     {
         var dir = obj?.DirectoryName();
         if (Directory.Exists(dir))

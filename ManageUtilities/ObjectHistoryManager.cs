@@ -24,16 +24,22 @@ public static class ObjectHistoryManager
     /// </summary>
     public static void EnqueueHistory<T>(this T obj) where T : IHistoryRecordable
     {
-        var data = obj.ToFormattedData();
+        var data = obj.ToHashString();
 
+        // 校验是否与上一个历史记录重复
+        if (data == obj.History[obj.HistoryIndex])
+            return;
+        //
         // 第一个历史记录
+        //
         if (obj.CurrentHistoryLength == 0)
         {
             obj.CurrentHistoryLength++;
             obj.History[obj.HistoryIndex] = data;
         }
-
+        //
         // 新增的历史记录
+        //
         else if (obj.CurrentHistoryLength >= obj.History.Length) // 如果已在历史记录的结尾
         {
             // 将所有历史记录向左移动一位（不删除当前位）
@@ -43,8 +49,9 @@ public static class ObjectHistoryManager
             }
             obj.History[obj.HistoryIndex] = data;
         }
-
+        //
         // 如果在历史记录的中间
+        //
         else if (obj.HistoryIndex < obj.History.Length - 1)
         {
             obj.HistoryIndex++; // 指向下一个地址
@@ -63,7 +70,7 @@ public static class ObjectHistoryManager
             return;
         }
         obj.HistoryIndex--;
-        obj.FromFormattedData(obj.History[obj.HistoryIndex]);
+        obj.FromHashString(obj.History[obj.HistoryIndex]);
     }
 
     /// <summary>
@@ -81,7 +88,7 @@ public static class ObjectHistoryManager
         {
             throw new IndexOutOfRangeException("[2302191735] 历史记录越界");
         }
-        obj.FromFormattedData(obj.History[obj.HistoryIndex]);
+        obj.FromHashString(obj.History[obj.HistoryIndex]);
     }
     /// <summary>
     /// 清空历史记录并将当前的状态添加到历史记录
