@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.ManageUtilities;
+﻿namespace LocalUtilities.Interface;
 
 public interface IFileManageable
 {

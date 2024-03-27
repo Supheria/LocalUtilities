@@ -1,11 +1,11 @@
 ﻿using LocalUtilities.SerializeUtilities;
 using System.Xml.Serialization;
 
-namespace LocalUtilities.ManageUtilities;
+namespace LocalUtilities.FileUtilities;
 
 public static class XmlFileSaverLoader
 {
-    public static void SaveToXml<T>(this T obj, string path, XmlSerialization<T> serialization)
+    public static void SaveToXml<T>(this T obj, string path, XmlSerialization<T> serialization) where T : class
     {
         serialization.Source = obj;
         var file = File.Create(path);
@@ -14,9 +14,9 @@ public static class XmlFileSaverLoader
         file.Close();
     }
 
-    public static string LoadFromXml<T>(this XmlSerialization<T> serialization, string path, out T? obj)
+    public static string LoadFromXml<T>(this XmlSerialization<T> serialization, string path, out T? obj) where T : class
     {
-        obj = default;
+        obj = null;
         if (!File.Exists(path))
             return $"{path} is not existed.";
         var file = File.OpenRead(path);
@@ -36,7 +36,7 @@ public static class XmlFileSaverLoader
         }
     }
 
-    public static T? LoadFromXml<T>(this XmlSerialization<T> serialization, string path)
+    public static T? LoadFromXml<T>(this XmlSerialization<T> serialization, string path) where T : class
     {
         if (!File.Exists(path))
             return serialization.Source;

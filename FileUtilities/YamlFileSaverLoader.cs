@@ -1,6 +1,6 @@
 ﻿using YamlDotNet.Serialization;
 
-namespace LocalUtilities.ManageUtilities;
+namespace LocalUtilities.FileUtilities;
 
 public static class YamlFileSaverLoader
 {
