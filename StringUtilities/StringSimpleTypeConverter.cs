@@ -97,6 +97,18 @@ public static class StringSimpleTypeConverter
         }
     }
 
+    public static uint? ToUint(this string? str)
+    {
+        try
+        {
+            return str is null ? null : uint.Parse(str);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static bool? ToBool(this string? str)
     {
         try
