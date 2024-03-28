@@ -1,6 +1,4 @@
-﻿using LocalUtilities.SerializeUtilities;
-
-namespace LocalUtilities.Interface;
+﻿namespace LocalUtilities.Interface;
 
 public interface IHistoryRecordable : IHashStringCheckable
 {
