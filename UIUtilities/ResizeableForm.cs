@@ -1,4 +1,5 @@
-﻿using LocalUtilities.Interface;
+﻿using LocalUtilities.FileUtilities;
+using LocalUtilities.Interface;
 
 namespace LocalUtilities.UIUtilities;
 
@@ -9,6 +10,12 @@ public abstract class ResizeableForm : Form, IInitializationManageable
     public string IniFileName => _iniFileName;
 
     bool _resizing { get; set; } = false;
+
+    protected FormDataLoadDelegate? OnLoadFormData;
+
+    protected FormDataSaveDelegate? OnSaveFormData;
+
+    protected FormDataXmlSerialization FormDataXmlSerialization { get; set; } = new();
 
 
     public ResizeableForm(string iniFileName)
@@ -36,15 +43,29 @@ public abstract class ResizeableForm : Form, IInitializationManageable
             DrawClient();
     }
 
-    private void ResizeableForm_Load(object? sender, EventArgs e) => LoadInitializationData();
+    private void ResizeableForm_Load(object? sender, EventArgs e)
+    {
+        var formData = FormDataXmlSerialization.LoadFromXml(this.GetInitializationFilePath());
+        if (formData is null)
+            return;
+        OnLoadFormData?.Invoke(formData);
+        Size = formData.Size;
+        Location = formData.Location;
+        WindowState = formData.WindowState;
+        DrawClient();
+    }
 
-    private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e) => SaveInitializationData();
-
-    protected abstract void DrawClient();
-
-    protected abstract void LoadInitializationData();
-
-    protected abstract void SaveInitializationData();
+    private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        var formData = OnSaveFormData?.Invoke();
+        formData ??= new();
+        formData.Size = Size;
+        formData.Location = Location;
+        formData.WindowState = WindowState;
+        formData.SaveToXml(this.GetInitializationFilePath(), FormDataXmlSerialization);
+    }
 
     protected abstract void InitializeComponent();
+
+    protected abstract void DrawClient();
 }

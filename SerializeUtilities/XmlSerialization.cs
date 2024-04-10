@@ -4,13 +4,11 @@ using System.Xml.Serialization;
 
 namespace LocalUtilities.SerializeUtilities;
 
-public abstract class XmlSerialization<T> : IXmlSerializable
+public abstract class XmlSerialization<T>(string localRootName) : IXmlSerializable
 {
+    public string LocalRootName { get; } = localRootName;
+
     public T? Source { get; set; } = default;
-
-    public string LocalRootName { get; }
-
-    protected XmlSerialization(string localRootName) => LocalRootName = localRootName;
 
     public virtual XmlSchema? GetSchema() => null;
 
