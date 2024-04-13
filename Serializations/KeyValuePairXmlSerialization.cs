@@ -7,7 +7,7 @@ public abstract class KeyValuePairXmlSerialization<TKey, TValue>(
     string localName, string keyName, string valueName,
     Func<string?, TKey> readKey, Func<string?, TValue> readValue,
     Func<TKey, string> writeKey, Func<TValue, string> writeValue)
-    : XmlSerialization<KeyValuePair<TKey, TValue>>(new())
+    : XmlSerialization<KeyValuePair<TKey, TValue>>()
 {
     string KeyName => keyName;
 

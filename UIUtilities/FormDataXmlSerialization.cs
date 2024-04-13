@@ -4,7 +4,7 @@ using System.Xml;
 
 namespace LocalUtilities.UIUtilities;
 
-public class FormDataXmlSerialization(string localName) : XmlSerialization<FormData>(new())
+public class FormDataXmlSerialization(string localName) : XmlSerialization<FormData>()
 {
     protected XmlReaderDelegate? OnRead { get; }
 
@@ -34,6 +34,8 @@ public class FormDataXmlSerialization(string localName) : XmlSerialization<FormD
 
     public override void WriteXml(XmlWriter writer)
     {
+        if (Source is null)
+            return;
         OnWrite?.Invoke(writer);
         writer.WriteAttributeString(nameof(Source.Size),
             StringSimpleTypeConverter.ToArrayString(Source.Size.Width, Source.Size.Height));
