@@ -4,9 +4,9 @@ namespace LocalUtilities.FileUtilities;
 
 public static class XmlFileLoader
 {
-    public static T LoadFromXml<T>(this XmlSerialization<T> serialization, out string message, string? path = null)
+    public static T LoadFromXml<T>(this XmlSerialization<T> serialization, out string? message, string? path = null)
     {
-        message = "";
+        message = null;
         path ??= serialization.GetInitializationFilePath();
         if (!File.Exists(path))
             message = $"{path} is not existed.";
