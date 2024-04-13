@@ -1,18 +1,18 @@
 ﻿using LocalUtilities.SerializeUtilities;
 using LocalUtilities.StringUtilities;
 using System.Xml;
-using System.Xml.Serialization;
 
 namespace LocalUtilities.UIUtilities;
 
-[XmlRoot("FormIniData")]
-public class FormDataXmlSerialization(string localRootName = "FormIniData") : XmlSerialization<FormData>(localRootName)
+public class FormDataXmlSerialization(string localName) : XmlSerialization<FormData>(new())
 {
-    protected XmlReaderDelegate? OnRead;
+    protected XmlReaderDelegate? OnRead { get; }
 
-    protected XmlWriterDelegate? OnWrite;
+    protected XmlWriterDelegate? OnWrite { get; }
 
-    public FormDataXmlSerialization() : this("FormIniData")
+    public override string LocalName => localName;
+
+    public FormDataXmlSerialization() : this(nameof(FormData))
     {
 
     }
@@ -34,8 +34,6 @@ public class FormDataXmlSerialization(string localRootName = "FormIniData") : Xm
 
     public override void WriteXml(XmlWriter writer)
     {
-        if (Source is null)
-            return;
         OnWrite?.Invoke(writer);
         writer.WriteAttributeString(nameof(Source.Size),
             StringSimpleTypeConverter.ToArrayString(Source.Size.Width, Source.Size.Height));

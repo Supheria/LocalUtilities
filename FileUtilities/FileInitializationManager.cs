@@ -15,7 +15,7 @@ public static class FileInitializationManager
     /// <typeparam name="T"></typeparam>
     /// <param name="obj"></param>
     /// <returns></returns>
-    public static string GetInitializationFilePath<T>(this T obj) where T : IInitializationManageable
+    public static string GetInitializationFilePath<T>(this T obj) where T : IInitializeable
     {
         var cachePath = Path.Combine(RootDirectoryInfo.FullName, obj.IniFileName);
         return Path.ChangeExtension(cachePath, ".xml"); ;
@@ -24,7 +24,7 @@ public static class FileInitializationManager
     /// <summary>
     /// 删除所有配置
     /// </summary>
-    public static void ClearInitialization<T>(this T obj) where T : IInitializationManageable
+    public static void ClearInitialization<T>(this T obj) where T : IInitializeable
     {
         var path = obj.GetInitializationFilePath();
         if (File.Exists(path))

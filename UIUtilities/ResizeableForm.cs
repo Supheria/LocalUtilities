@@ -3,24 +3,20 @@ using LocalUtilities.Interface;
 
 namespace LocalUtilities.UIUtilities;
 
-public abstract class ResizeableForm : Form, IInitializationManageable
+public abstract class ResizeableForm : Form, IInitializeable
 {
-    string _iniFileName { get; }
-
-    public string IniFileName => _iniFileName;
+    public string IniFileName { get; }
 
     bool _resizing { get; set; } = false;
 
-    protected FormDataLoadDelegate? OnLoadFormData;
+    protected FormDataLoadDelegate? OnLoadFormData { get; }
 
-    protected FormDataSaveDelegate? OnSaveFormData;
-
-    protected FormDataXmlSerialization FormDataXmlSerialization { get; set; } = new();
+    protected FormDataSaveDelegate? OnSaveFormData { get; }
 
 
     public ResizeableForm(string iniFileName)
     {
-        _iniFileName = iniFileName;
+        IniFileName = iniFileName;
         ResizeBegin += ResizeableForm_ResizeBegin;
         ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
@@ -45,7 +41,7 @@ public abstract class ResizeableForm : Form, IInitializationManageable
 
     private void ResizeableForm_Load(object? sender, EventArgs e)
     {
-        var formData = FormDataXmlSerialization.LoadFromXml(this.GetInitializationFilePath());
+        var formData = new FormDataXmlSerialization().LoadFromXml(out _, this.GetInitializationFilePath());
         if (formData is null)
             return;
         OnLoadFormData?.Invoke(formData);
@@ -62,7 +58,7 @@ public abstract class ResizeableForm : Form, IInitializationManageable
         formData.Size = Size;
         formData.Location = Location;
         formData.WindowState = WindowState;
-        formData.SaveToXml(this.GetInitializationFilePath(), FormDataXmlSerialization);
+        new FormDataXmlSerialization() { Source = formData }.SaveToXml(this.GetInitializationFilePath());
     }
 
     protected abstract void InitializeComponent();

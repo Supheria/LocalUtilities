@@ -1,5 +1,4 @@
 ﻿using System.Xml;
-using System.Xml.Serialization;
 
 namespace LocalUtilities.SerializeUtilities;
 
@@ -29,7 +28,6 @@ public static class XmlSerializeTool
 
     public static void Serialize<T>(this XmlSerialization<T> serialization, XmlWriter writer)
     {
-        XmlSerializer serializer = new(serialization.GetType());
-        serializer.Serialize(writer, serialization);
+        serialization.GetXmlSerializer().Serialize(writer, serialization);
     }
 }
