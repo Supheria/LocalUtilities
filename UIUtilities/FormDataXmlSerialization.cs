@@ -4,7 +4,7 @@ using System.Xml;
 
 namespace LocalUtilities.UIUtilities;
 
-public class FormDataXmlSerialization(string localName) : XmlSerialization<FormData>()
+public class FormDataXmlSerialization(string localName) : XmlSerialization<FormData>(new())
 {
     protected XmlReaderDelegate? OnRead { get; }
 

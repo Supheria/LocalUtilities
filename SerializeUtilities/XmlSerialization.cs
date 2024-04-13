@@ -5,9 +5,9 @@ using System.Xml.Serialization;
 
 namespace LocalUtilities.SerializeUtilities;
 
-public abstract class XmlSerialization<T>() : IXmlSerializable, IInitializeable
+public abstract class XmlSerialization<T>(T source) : IXmlSerializable, IInitializeable
 {
-    public T? Source = default;
+    public T Source = source;
 
     public abstract string LocalName { get; }
 

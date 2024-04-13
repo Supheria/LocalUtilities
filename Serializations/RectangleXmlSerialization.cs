@@ -4,7 +4,7 @@ using System.Xml;
 
 namespace LocalUtilities.Serializations;
 
-public class RectangleXmlSerialization(string localName) : XmlSerialization<Rectangle>()
+public class RectangleXmlSerialization(string localName) : XmlSerialization<Rectangle>(new())
 {
     public override string LocalName => localName;
 
