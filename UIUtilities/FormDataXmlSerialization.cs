@@ -4,38 +4,30 @@ using System.Xml;
 
 namespace LocalUtilities.UIUtilities;
 
-public class FormDataXmlSerialization(string localName) : XmlSerialization<FormData>(new())
+public abstract class FormDataXmlSerialization<T>(string localName, T formData) : XmlSerialization<T>(formData) where T : FormData
 {
-    protected XmlReaderDelegate? OnRead { get; }
+    protected XmlReaderDelegate? OnRead { get; set; }
 
-    protected XmlWriterDelegate? OnWrite { get; }
+    protected XmlWriterDelegate? OnWrite { get; set; }
 
     public override string LocalName => localName;
-
-    public FormDataXmlSerialization() : this(nameof(FormData))
-    {
-
-    }
 
     public override void ReadXml(XmlReader reader)
     {
         OnRead?.Invoke(reader);
-        Source ??= new();
         var size = reader.GetAttribute(nameof(Source.Size)).ToArray();
         var location = reader.GetAttribute(nameof(Source.Location)).ToArray();
         Source.Size = size.Length > 1
             ? new(size[0].ToInt() ?? 0, size[1].ToInt() ?? 0)
-            : new();
+            : Source.Size;
         Source.Location = location.Length > 1
             ? new(location[0].ToInt() ?? 0, location[1].ToInt() ?? 0)
-            : new();
+            : Source.Location;
         Source.WindowState = reader.GetAttribute(nameof(Source.WindowState)).ToEnum<FormWindowState>();
     }
 
     public override void WriteXml(XmlWriter writer)
     {
-        if (Source is null)
-            return;
         OnWrite?.Invoke(writer);
         writer.WriteAttributeString(nameof(Source.Size),
             StringSimpleTypeConverter.ToArrayString(Source.Size.Width, Source.Size.Height));

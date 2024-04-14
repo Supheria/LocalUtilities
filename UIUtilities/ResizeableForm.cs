@@ -3,20 +3,23 @@ using LocalUtilities.Interface;
 
 namespace LocalUtilities.UIUtilities;
 
-public abstract class ResizeableForm : Form, IInitializeable
+public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData
 {
-    public string IniFileName { get; }
-
     bool _resizing { get; set; } = false;
 
-    protected FormDataLoadDelegate? OnLoadFormData { get; }
+    protected FormDataLoadDelegate? OnLoadFormData { get; set; }
 
-    protected FormDataSaveDelegate? OnSaveFormData { get; }
+    protected FormDataSaveDelegate? OnSaveFormData { get; set; }
+
+    protected TFormData FormData { get; set; }
+
+    FormDataXmlSerialization<TFormData> FormDataXmlSerialization { get; }
 
 
-    public ResizeableForm(string iniFileName)
+    public ResizeableForm(TFormData formData, FormDataXmlSerialization<TFormData> formDataXmlSerialization)
     {
-        IniFileName = iniFileName;
+        FormData = formData;
+        FormDataXmlSerialization = formDataXmlSerialization;
         ResizeBegin += ResizeableForm_ResizeBegin;
         ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
@@ -41,24 +44,24 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     private void ResizeableForm_Load(object? sender, EventArgs e)
     {
-        var formData = new FormDataXmlSerialization().LoadFromXml(out _, this.GetInitializationFilePath());
-        if (formData is null)
-            return;
-        OnLoadFormData?.Invoke(formData);
-        Size = formData.Size;
-        Location = formData.Location;
-        WindowState = formData.WindowState;
+        FormData = FormDataXmlSerialization.LoadFromXml(out _);
+        OnLoadFormData?.Invoke();
+        MinimumSize = FormData.MinimumSize;
+        Size = FormData.Size;
+        Location = FormData.Location;
+        WindowState = FormData.WindowState;
         DrawClient();
     }
 
     private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
-        var formData = OnSaveFormData?.Invoke();
-        formData ??= new();
-        formData.Size = Size;
-        formData.Location = Location;
-        formData.WindowState = WindowState;
-        new FormDataXmlSerialization() { Source = formData }.SaveToXml(this.GetInitializationFilePath());
+        OnSaveFormData?.Invoke();
+        FormData.MinimumSize = MinimumSize;
+        FormData.Size = Size;
+        FormData.Location = Location;
+        FormData.WindowState = WindowState;
+        FormDataXmlSerialization.Source = FormData;
+        FormDataXmlSerialization.SaveToXml();
     }
 
     protected abstract void InitializeComponent();

@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.Interface;
 
-public abstract class Roster<T> where T : IRosterItem
+public abstract class Roster<T> where T : RosterItem
 {
     Dictionary<string, T> _roster = [];
 

@@ -17,5 +17,5 @@ public interface IHistoryRecordable : IHashStringCheckable
     /// <summary>
     /// 最近一次保存时所在的历史记录指针
     /// </summary>
-    int LatestIndex { get; set; }
+    int LastSavedIndex { get; set; }
 }

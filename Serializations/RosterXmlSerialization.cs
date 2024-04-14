@@ -5,7 +5,7 @@ using System.Xml;
 namespace LocalUtilities.Serializations;
 
 public abstract class RosterXmlSerialization<TRoster, TItem>(TRoster source, XmlSerialization<TItem> itemXmlSerialzition)
-    : XmlSerialization<TRoster>(source) where TRoster : Roster<TItem> where TItem : IRosterItem
+    : XmlSerialization<TRoster>(source) where TRoster : Roster<TItem> where TItem : RosterItem
 {
     XmlSerialization<TItem> ItemXmlSerialization { get; } = itemXmlSerialzition;
 

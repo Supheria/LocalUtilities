@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.Interface;
 
-public interface IRosterItem
+public abstract class RosterItem
 {
-    public string Name { get; }
+    public string Name { get; set; } = "";
 }

@@ -7,19 +7,28 @@ public static class ObjectHistoryManager
     /// <summary>
     /// 较最近一次保存是否已被编辑
     /// </summary>
-    public static bool IsEdit<T>(this T obj) where T : IHistoryRecordable => obj.LatestIndex != obj.HistoryIndex;
+    public static bool IsEditThanLastSavedHistory<T>(this T obj) where T : IHistoryRecordable
+    {
+        return obj.LastSavedIndex != obj.HistoryIndex;
+    }
 
     /// <summary>
     /// 判断是否有下一个历史记录
     /// </summary>
     /// <returns>是否有下一个历史记录</returns>
-    public static bool HasNextHistory<T>(this T obj) where T : IHistoryRecordable => obj.HistoryIndex + 1 < obj.CurrentHistoryLength;
+    public static bool HasNextHistory<T>(this T obj) where T : IHistoryRecordable
+    {
+        return obj.HistoryIndex + 1 < obj.CurrentHistoryLength;
+    }
 
     /// <summary>
     /// 判断是否有上一个历史记录
     /// </summary>
     /// <returns>是否有上一个历史记录</returns>
-    public static bool HasPrevHistory<T>(this T obj) where T : IHistoryRecordable => obj.HistoryIndex > 0;
+    public static bool HasPrevHistory<T>(this T obj) where T : IHistoryRecordable
+    {
+        return obj.HistoryIndex > 0;
+    }
 
     /// <summary>
     /// 将当前的状态添加到历史记录（会使后续的记录失效）
@@ -37,7 +46,7 @@ public static class ObjectHistoryManager
         if (obj.CurrentHistoryLength == 0)
         {
             obj.CurrentHistoryLength++;
-            obj.History[obj.HistoryIndex] = data;
+            obj.History[obj.HistoryIndex++] = data;
         }
         //
         // 新增的历史记录
@@ -56,9 +65,8 @@ public static class ObjectHistoryManager
         //
         else if (obj.HistoryIndex < obj.History.Length - 1)
         {
-            obj.HistoryIndex++; // 指向下一个地址
             obj.CurrentHistoryLength = obj.HistoryIndex + 1; // 扩展长度
-            obj.History[obj.HistoryIndex] = data;
+            obj.History[obj.HistoryIndex++] = data;
         }
     }
 
@@ -101,11 +109,14 @@ public static class ObjectHistoryManager
     {
         obj.CurrentHistoryLength = 0;
         obj.HistoryIndex = 0;
-        obj.LatestIndex = 0;
+        obj.LastSavedIndex = 0;
         obj.EnqueueHistory();
     }
     /// <summary>
     /// 更新最近一次的保存
     /// </summary>
-    public static void UpdateLatest<T>(this T obj) where T : IHistoryRecordable => obj.LatestIndex = obj.HistoryIndex;
+    public static void UpdateLastSavedHistoryIndex<T>(this T obj) where T : IHistoryRecordable
+    {
+        obj.LastSavedIndex = obj.HistoryIndex;
+    }
 }

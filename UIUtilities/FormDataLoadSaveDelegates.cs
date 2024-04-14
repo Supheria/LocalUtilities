@@ -1,5 +1,5 @@
 ﻿namespace LocalUtilities.UIUtilities;
 
-public delegate void FormDataLoadDelegate(FormData formData);
+public delegate void FormDataLoadDelegate();
 
-public delegate FormData FormDataSaveDelegate();
+public delegate void FormDataSaveDelegate();

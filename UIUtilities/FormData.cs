@@ -1,10 +1,12 @@
 ﻿namespace LocalUtilities.UIUtilities;
 
-public class FormData
+public abstract class FormData
 {
-    public Size Size { get; set; } = new();
+    public abstract Size MinimumSize { get; set; }
 
-    public Point Location { get; set; } = new();
+    public virtual Size Size { get; set; }
 
-    public FormWindowState WindowState { get; set; } = FormWindowState.Normal;
+    public virtual Point Location { get; set; }
+
+    public virtual FormWindowState WindowState { get; set; } = FormWindowState.Normal;
 }
