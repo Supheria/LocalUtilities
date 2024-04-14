@@ -4,8 +4,8 @@ using System.Xml;
 
 namespace LocalUtilities.Serializations;
 
-public abstract class RosterXmlSerialization<TRoster, TItem>(TRoster source, XmlSerialization<TItem> itemXmlSerialzition)
-    : XmlSerialization<TRoster>(source) where TRoster : Roster<TItem> where TItem : RosterItem
+public abstract class RosterXmlSerialization<TRoster, TSignature, TItem>(TRoster source, XmlSerialization<TItem> itemXmlSerialzition)
+    : XmlSerialization<TRoster>(source) where TRoster : Roster<TSignature, TItem> where TItem : RosterItem<TSignature> where TSignature : notnull
 {
     XmlSerialization<TItem> ItemXmlSerialization { get; } = itemXmlSerialzition;
 
@@ -13,7 +13,7 @@ public abstract class RosterXmlSerialization<TRoster, TItem>(TRoster source, Xml
     {
         var rosterList = new List<TItem>();
         rosterList.ReadXmlCollection(reader, LocalName, ItemXmlSerialization);
-        Source.SetRoster(rosterList.ToArray());
+        Source.RosterList = rosterList.ToArray();
     }
 
     public override void WriteXml(XmlWriter writer)

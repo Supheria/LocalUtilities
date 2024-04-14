@@ -1,32 +1,34 @@
 ﻿namespace LocalUtilities.Interface;
 
-public abstract class Roster<T> where T : RosterItem
+public abstract class Roster<TSignature, TItem> where TSignature : notnull where TItem : RosterItem<TSignature>
 {
-    Dictionary<string, T> _roster = [];
+    protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
-    public T[] RosterList => _roster.Values.ToArray();
+    public TItem[] RosterList
+    {
+        get => RosterMap.Values.ToArray();
+        set
+        {
+            RosterMap.Clear();
+            foreach (var item in value)
+                RosterMap[item.Signature] = item;
+        }
+    }
 
-    public T? this[string name]
+    public TItem? this[TSignature signature]
     {
         get
         {
-            _ = _roster.TryGetValue(name, out var item);
+            _ = RosterMap.TryGetValue(signature, out var item);
             return item;
         }
         set
         {
-            if (name is "" || value is null)
+            if (signature is "" || value is null)
                 return;
-            _roster[name] = value;
+            RosterMap[signature] = value;
         }
     }
 
-    public void SetRoster(T[] items)
-    {
-        _roster = [];
-        foreach (var item in items)
-            _roster[item.Name] = item;
-    }
-
-    public void Remove(string name) => _roster.Remove(name);
+    public virtual void Remove(TSignature signature) => RosterMap.Remove(signature);
 }

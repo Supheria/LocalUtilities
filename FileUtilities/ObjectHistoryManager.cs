@@ -9,7 +9,7 @@ public static class ObjectHistoryManager
     /// </summary>
     public static bool IsEditThanLastSavedHistory<T>(this T obj) where T : IHistoryRecordable
     {
-        return obj.LastSavedIndex != obj.HistoryIndex;
+        return obj.LastSavedIndex != obj.CurrentHistoryIndex;
     }
 
     /// <summary>
@@ -18,7 +18,7 @@ public static class ObjectHistoryManager
     /// <returns>是否有下一个历史记录</returns>
     public static bool HasNextHistory<T>(this T obj) where T : IHistoryRecordable
     {
-        return obj.HistoryIndex + 1 < obj.CurrentHistoryLength;
+        return obj.CurrentHistoryIndex + 1 < obj.CurrentHistoryLength;
     }
 
     /// <summary>
@@ -27,7 +27,7 @@ public static class ObjectHistoryManager
     /// <returns>是否有上一个历史记录</returns>
     public static bool HasPrevHistory<T>(this T obj) where T : IHistoryRecordable
     {
-        return obj.HistoryIndex > 0;
+        return obj.CurrentHistoryIndex > 0;
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public static class ObjectHistoryManager
         var data = obj.ToHashString();
 
         // 校验是否与上一个历史记录重复
-        if (data == obj.History[obj.HistoryIndex])
+        if (data == obj.HistoryCache[obj.CurrentHistoryIndex])
             return;
         //
         // 第一个历史记录
@@ -46,27 +46,28 @@ public static class ObjectHistoryManager
         if (obj.CurrentHistoryLength == 0)
         {
             obj.CurrentHistoryLength++;
-            obj.History[obj.HistoryIndex++] = data;
+            obj.HistoryCache[obj.CurrentHistoryIndex] = data;
         }
         //
         // 新增的历史记录
         //
-        else if (obj.CurrentHistoryLength >= obj.History.Length) // 如果已在历史记录的结尾
+        else if (obj.CurrentHistoryLength >= obj.HistoryCache.Length) // 如果已在历史记录的结尾
         {
             // 将所有历史记录向左移动一位（不删除当前位）
             for (var i = 0; i < obj.CurrentHistoryLength - 1; i++)
             {
-                obj.History[i] = obj.History[i + 1];
+                obj.HistoryCache[i] = obj.HistoryCache[i + 1];
             }
-            obj.History[obj.HistoryIndex] = data;
+            obj.HistoryCache[obj.CurrentHistoryIndex] = data;
         }
         //
         // 如果在历史记录的中间
         //
-        else if (obj.HistoryIndex < obj.History.Length - 1)
+        else if (obj.CurrentHistoryIndex < obj.HistoryCache.Length - 1)
         {
-            obj.CurrentHistoryLength = obj.HistoryIndex + 1; // 扩展长度
-            obj.History[obj.HistoryIndex++] = data;
+            obj.CurrentHistoryIndex++; // 指向下一个地址
+            obj.CurrentHistoryLength = obj.CurrentHistoryIndex + 1; // 扩展长度
+            obj.HistoryCache[obj.CurrentHistoryIndex] = data;
         }
     }
 
@@ -79,8 +80,8 @@ public static class ObjectHistoryManager
         {
             return;
         }
-        obj.HistoryIndex--;
-        obj.FromHashString(obj.History[obj.HistoryIndex]);
+        obj.CurrentHistoryIndex--;
+        obj.FromHashString(obj.HistoryCache[obj.CurrentHistoryIndex]);
     }
 
     /// <summary>
@@ -93,12 +94,12 @@ public static class ObjectHistoryManager
         {
             return;
         }
-        obj.HistoryIndex++;
-        if (obj.HistoryIndex >= obj.CurrentHistoryLength)
+        obj.CurrentHistoryIndex++;
+        if (obj.CurrentHistoryIndex >= obj.CurrentHistoryLength)
         {
             throw new IndexOutOfRangeException("[2302191735] 历史记录越界");
         }
-        obj.FromHashString(obj.History[obj.HistoryIndex]);
+        obj.FromHashString(obj.HistoryCache[obj.CurrentHistoryIndex]);
     }
     /// <summary>
     /// 清空历史记录并将当前的状态添加到历史记录
@@ -108,7 +109,7 @@ public static class ObjectHistoryManager
     public static void NewHistory<T>(this T obj) where T : IHistoryRecordable
     {
         obj.CurrentHistoryLength = 0;
-        obj.HistoryIndex = 0;
+        obj.CurrentHistoryIndex = 0;
         obj.LastSavedIndex = 0;
         obj.EnqueueHistory();
     }
@@ -117,6 +118,6 @@ public static class ObjectHistoryManager
     /// </summary>
     public static void UpdateLastSavedHistoryIndex<T>(this T obj) where T : IHistoryRecordable
     {
-        obj.LastSavedIndex = obj.HistoryIndex;
+        obj.LastSavedIndex = obj.CurrentHistoryIndex;
     }
 }
