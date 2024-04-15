@@ -1,4 +1,5 @@
-﻿using LocalUtilities.SerializeUtilities;
+﻿using LocalUtilities.DelegateUtilities;
+using LocalUtilities.SerializeUtilities;
 using LocalUtilities.StringUtilities;
 using System.Xml;
 
@@ -6,10 +7,9 @@ namespace LocalUtilities.UIUtilities;
 
 public abstract class FormDataXmlSerialization<T>(string localName, T formData) : XmlSerialization<T>(formData) where T : FormData
 {
-    protected XmlReaderDelegate? OnRead { get; set; }
+    protected event XmlReaderDelegate? OnRead;
 
-    protected XmlWriterDelegate? OnWrite { get; set; }
-
+    protected event XmlWriterDelegate? OnWrite;
     public override string LocalName => localName;
 
     public override void ReadXml(XmlReader reader)
