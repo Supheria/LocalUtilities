@@ -9,21 +9,21 @@ public static class XmlFileLoader
         message = null;
         path ??= serialization.GetInitializationFilePath();
         if (!File.Exists(path))
-            message = $"{path} is not existed.";
+            message = $"\"{path}\" file path is not existed.";
         else
         {
-            var file = File.OpenRead(path);
+            FileStream? file = null;
             try
             {
+                file = File.OpenRead(path);
                 var o = serialization.GetXmlSerializer().Deserialize(file);
                 serialization = o as XmlSerialization<T> ?? serialization;
-                file.Close();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                file.Close();
-                message = e.Message;
+                message = ex.Message;
             }
+            file?.Close();
         }
         return serialization.Source;
     }

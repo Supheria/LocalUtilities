@@ -8,6 +8,9 @@ public static class StringSimpleTypeConverter
 {
     public const char ElementSplitter = ',';
 
+    public static string ToArrayString<T>(this (T item1, T item2) pair) =>
+        ToArrayString(pair.item1?.ToString(), pair.item2?.ToString());
+
     public static string ToArrayString<T1, T2>(T1 item1, T2 item2) =>
         ToArrayString(item1?.ToString(), item2?.ToString());
 

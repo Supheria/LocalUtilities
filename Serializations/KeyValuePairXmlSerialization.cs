@@ -3,25 +3,19 @@ using System.Xml;
 
 namespace LocalUtilities.Serializations;
 
-public abstract class KeyValuePairXmlSerialization<TKey, TValue>(
-    string localName, string keyName, string valueName,
-    Func<string?, TKey> readKey, Func<string?, TValue> readValue,
-    Func<TKey, string> writeKey, Func<TValue, string> writeValue)
-    : XmlSerialization<KeyValuePair<TKey, TValue>>(new())
+public abstract class KeyValuePairXmlSerialization<TKey, TValue>() : XmlSerialization<KeyValuePair<TKey, TValue>>(new())
 {
-    string KeyName => keyName;
+    protected abstract string KeyName { get; }
 
-    string ValueName => valueName;
+    protected abstract string ValueName { get; }
 
-    Func<string?, TKey> ReadKey => readKey;
+    protected abstract Func<string?, TKey> ReadKey { get; }
 
-    Func<string?, TValue> ReadValue => readValue;
+    protected abstract Func<string?, TValue> ReadValue { get; }
 
-    Func<TKey, string> WriteKey => writeKey;
+    protected abstract Func<TKey, string> WriteKey { get; }
 
-    Func<TValue, string> WriteValue => writeValue;
-
-    public override string LocalName => localName;
+    protected abstract Func<TValue, string> WriteValue{ get; }
 
     public override void ReadXml(XmlReader reader)
     {

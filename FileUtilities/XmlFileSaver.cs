@@ -1,13 +1,25 @@
 ﻿using LocalUtilities.SerializeUtilities;
+using System.Windows.Forms;
 
 namespace LocalUtilities.FileUtilities;
 
 public static class XmlFileSaver
 {
-    public static void SaveToXml<T>(this XmlSerialization<T> serialization, string? path = null)
+    public static string? SaveToXml<T>(this XmlSerialization<T> serialization, string? path = null)
     {
-        var file = File.Create(path ?? serialization.GetInitializationFilePath());
-        serialization.GetXmlSerializer().Serialize(file, serialization);
-        file.Close();
+        string? message = null;
+        FileStream? file = null;
+        try
+        {
+
+            file = File.Create(path ?? serialization.GetInitializationFilePath());
+            serialization.GetXmlSerializer().Serialize(file, serialization);
+        }
+        catch(Exception ex)
+        {
+            message = ex.Message;
+        }
+        file?.Close();
+        return message;
     }
 }

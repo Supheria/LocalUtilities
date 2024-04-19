@@ -13,7 +13,7 @@ public abstract class XmlSerialization<T>(T source) : IXmlSerializable, IInitial
 
     public virtual string? RootElementNamespace { get; } = null;
 
-    public string IniFileName => LocalName;
+    public string? IniFileName { get; set; }
 
     public XmlSchema? GetSchema() => null;
 

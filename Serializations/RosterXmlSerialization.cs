@@ -1,23 +1,43 @@
-﻿using LocalUtilities.Interface;
+﻿using LocalUtilities.DelegateUtilities;
+using LocalUtilities.Interface;
 using LocalUtilities.SerializeUtilities;
 using System.Xml;
 
 namespace LocalUtilities.Serializations;
 
-public abstract class RosterXmlSerialization<TRoster, TSignature, TItem>(TRoster source, XmlSerialization<TItem> itemXmlSerialzition)
-    : XmlSerialization<TRoster>(source) where TRoster : Roster<TSignature, TItem> where TItem : RosterItem<TSignature> where TSignature : notnull
+public abstract class RosterXmlSerialization<TRoster, TSignature, TItem> : XmlSerialization<TRoster>
+    where TRoster : Roster<TSignature, TItem> where TItem : RosterItem<TSignature> where TSignature : notnull
 {
-    XmlSerialization<TItem> ItemXmlSerialization { get; } = itemXmlSerialzition;
+    protected event XmlReaderDelegate? OnRead;
+
+    protected event XmlWriterDelegate? OnWrite;
+
+    protected abstract string RosterName { get; }
+
+    XmlSerialization<TItem> ItemXmlSerialization { get; }
+
+    public RosterXmlSerialization(TRoster source, XmlSerialization<TItem> itemXmlSerialzition) : base(source)
+    {
+        ItemXmlSerialization = itemXmlSerialzition;
+    }
 
     public override void ReadXml(XmlReader reader)
     {
-        var rosterList = new List<TItem>();
-        rosterList.ReadXmlCollection(reader, LocalName, ItemXmlSerialization);
-        Source.RosterList = rosterList.ToArray();
+        OnRead?.Invoke(reader);
+        while (reader.Read())
+        {
+            if (reader.Name == LocalName && reader.NodeType is XmlNodeType.EndElement)
+                break;
+            if (reader.NodeType is not XmlNodeType.Element)
+                continue;
+            if (reader.Name == RosterName)
+                Source.RosterList = ItemXmlSerialization.ReadXmlCollection(reader, RosterName);
+        }
     }
 
     public override void WriteXml(XmlWriter writer)
     {
-        Source.RosterList.WriteXmlCollection(writer, ItemXmlSerialization);
+        OnWrite?.Invoke(writer);
+        ItemXmlSerialization.WriteXmlCollection(Source.RosterList, writer, RosterName);
     }
 }

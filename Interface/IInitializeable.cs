@@ -2,5 +2,5 @@
 
 public interface IInitializeable
 {
-    public string IniFileName { get; }
+    public string? IniFileName { get; }
 }

@@ -1,5 +1,7 @@
-﻿using LocalUtilities.FileUtilities;
+﻿using LocalUtilities.DelegateUtilities;
+using LocalUtilities.FileUtilities;
 using LocalUtilities.Interface;
+using LocalUtilities.SerializeUtilities;
 
 namespace LocalUtilities.UIUtilities;
 
@@ -7,9 +9,9 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 {
     bool _resizing { get; set; } = false;
 
-    protected FormDataLoadDelegate? OnLoadFormData { get; set; }
+    protected FormDataLoadSaveDelegate? OnLoadFormData { get; set; }
 
-    protected FormDataSaveDelegate? OnSaveFormData { get; set; }
+    protected FormDataLoadSaveDelegate? OnSaveFormData { get; set; }
 
     protected TFormData FormData { get; set; }
 
