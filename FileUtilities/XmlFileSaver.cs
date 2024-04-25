@@ -1,5 +1,4 @@
 ﻿using LocalUtilities.SerializeUtilities;
-using System.Windows.Forms;
 
 namespace LocalUtilities.FileUtilities;
 
@@ -15,7 +14,7 @@ public static class XmlFileSaver
             file = File.Create(path ?? serialization.GetInitializationFilePath());
             serialization.GetXmlSerializer().Serialize(file, serialization);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             message = ex.Message;
         }

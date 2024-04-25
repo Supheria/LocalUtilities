@@ -1,7 +1,7 @@
-﻿using LocalUtilities.GdiUtilities.Utilities;
-using LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
+﻿using LocalUtilities.GdiUtilities;
+using System.Drawing;
 
-namespace LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
+namespace LocalUtilities.VoronoiDiagram.Model;
 
 /// <summary>
 /// The point/site/seed on the Voronoi plane.
@@ -40,6 +40,7 @@ public class VoronoiSite(double x, double y)
                 var vertices = new Dictionary<(double X, double Y), PointBorderLocation>();
                 foreach (var edge in CellEdges)
                 {
+                    ArgumentNullException.ThrowIfNull(edge.End);
                     vertices[(edge.Start.X, edge.Start.Y)] = edge.Start.BorderLocation;
                     vertices[(edge.End.X, edge.End.Y)] = edge.End.BorderLocation;
                     // Note that .End is guaranteed to be set since we don't expose edges externally that aren't clipped in bounds
@@ -84,6 +85,8 @@ public class VoronoiSite(double x, double y)
             j = i;
         }
         return result;
+
+        //return CellVertices.Select(p => ((int)p.X, (int)p.Y)).ToArray().PolygonContainsPoint(point);
     }
 
     internal void AddEdge(VoronoiEdge newEdge)
@@ -109,6 +112,7 @@ public class VoronoiSite(double x, double y)
 
     private bool DoesLieOnEdge(VoronoiEdge edge)
     {
+        ArgumentNullException.ThrowIfNull(edge.End);
         return PointsAreColinear(
             X, Y,
             edge.Start.X, edge.Start.Y,

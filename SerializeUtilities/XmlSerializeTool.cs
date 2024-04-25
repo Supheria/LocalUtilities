@@ -15,7 +15,7 @@ public static class XmlSerializeTool
         writer.WriteEndElement();
     }
 
-   
+
 
     public static void Serialize<T>(this XmlSerialization<T> serialization, XmlWriter writer)
     {

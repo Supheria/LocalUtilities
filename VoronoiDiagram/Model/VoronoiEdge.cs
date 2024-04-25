@@ -1,7 +1,4 @@
-﻿using LocalUtilities.GdiUtilities.Utilities;
-using LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
-
-namespace LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
+﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
 /// <summary>
 /// The line segment making the Voronoi cells, i.e. the points equidistant to the two nearest Voronoi sites.

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace LocalUtilities.GdiUtilities.VoronoiDiagram.FortuneAlgorithm;
+namespace LocalUtilities.VoronoiDiagram.Model;
 
 public class MinHeap<T> where T : IComparable<T>
 {

@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.GdiUtilities.VoronoiDiagram.FortuneAlgorithm;
+﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
 public class RBTreeNode<T>
 {

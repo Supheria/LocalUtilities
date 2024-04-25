@@ -11,7 +11,8 @@ public static class XmlSerializationTool
         var signature = (serialization.GetType(), serialization.LocalName);
         if (XmlSerializerCache.TryGetValue(signature, out var serializer))
             return serializer;
-        var XmlRoot = new XmlRootAttribute(serialization.LocalName) {
+        var XmlRoot = new XmlRootAttribute(serialization.LocalName)
+        {
             Namespace = serialization.RootElementNamespace
         };
         serializer = new XmlSerializer(serialization.GetType(), XmlRoot);

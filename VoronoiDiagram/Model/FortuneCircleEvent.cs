@@ -1,6 +1,4 @@
-﻿using LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
-
-namespace LocalUtilities.GdiUtilities.VoronoiDiagram.FortuneAlgorithm;
+﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
 internal class FortuneCircleEvent : IFortuneEvent
 {

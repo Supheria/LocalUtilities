@@ -15,7 +15,7 @@ public abstract class KeyValuePairXmlSerialization<TKey, TValue>() : XmlSerializ
 
     protected abstract Func<TKey, string> WriteKey { get; }
 
-    protected abstract Func<TValue, string> WriteValue{ get; }
+    protected abstract Func<TValue, string> WriteValue { get; }
 
     public override void ReadXml(XmlReader reader)
     {

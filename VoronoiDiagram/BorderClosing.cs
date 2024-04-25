@@ -1,6 +1,6 @@
-﻿using LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
+﻿using LocalUtilities.VoronoiDiagram.Model;
 
-namespace LocalUtilities.GdiUtilities.Utilities;
+namespace LocalUtilities.VoronoiDiagram;
 
 internal class BorderClosing
 {

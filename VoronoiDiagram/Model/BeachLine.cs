@@ -1,7 +1,4 @@
-﻿using LocalUtilities.GdiUtilities.Utilities;
-using LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
-
-namespace LocalUtilities.GdiUtilities.VoronoiDiagram.FortuneAlgorithm;
+﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
 internal class BeachSection(VoronoiSite site)
 {
@@ -116,7 +113,7 @@ internal class BeachLine
             rightSection = TheBeachLine.InsertSuccessor(newSection, copy);
 
             //grab the projection of this site onto the parabola
-            double y = ParabolaMath.EvalParabola(leftSection.Data.Site.X, leftSection.Data.Site.Y, directrix, x);
+            double y = MathTool.EvalParabola(leftSection.Data.Site.X, leftSection.Data.Site.Y, directrix, x);
             VoronoiPoint intersection = new VoronoiPoint(x, y);
 
             //create the two half edges corresponding to this intersection
@@ -329,7 +326,7 @@ internal class BeachLine
             return leftNode.Data.Site.X;
         VoronoiSite site = node.Data.Site;
         VoronoiSite leftSite = leftNode.Data.Site;
-        return ParabolaMath.IntersectParabolaX(leftSite.X, leftSite.Y, site.X, site.Y, directrix);
+        return MathTool.IntersectParabolaX(leftSite.X, leftSite.Y, site.X, site.Y, directrix);
     }
 
     private static double RightBreakpoint(RBTreeNode<BeachSection> node, double directrix)
@@ -346,7 +343,7 @@ internal class BeachLine
             return rightNode.Data.Site.X;
         VoronoiSite site = node.Data.Site;
         VoronoiSite rightSite = rightNode.Data.Site;
-        return ParabolaMath.IntersectParabolaX(site.X, site.Y, rightSite.X, rightSite.Y, directrix);
+        return MathTool.IntersectParabolaX(site.X, site.Y, rightSite.X, rightSite.Y, directrix);
     }
 
     private static void CheckCircle(RBTreeNode<BeachSection> section, MinHeap<IFortuneEvent> eventQueue)

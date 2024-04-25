@@ -1,8 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
-using LocalUtilities.GdiUtilities.Utilities;
-using LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
 
-namespace LocalUtilities.GdiUtilities.VoronoiDiagram.Structure;
+namespace LocalUtilities.VoronoiDiagram.Model;
 
 /// <summary>
 /// The vertices/nodes of the Voronoi cells, i.e. the points equidistant to three or more Voronoi sites.
