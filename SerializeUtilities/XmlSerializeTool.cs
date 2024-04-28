@@ -4,7 +4,7 @@ namespace LocalUtilities.SerializeUtilities;
 
 public static class XmlSerializeTool
 {
-    public static void WriteXmlCollection<T>(this XmlSerialization<T> itemSerialization, ICollection<T> collection, XmlWriter writer, string collectionName)
+    public static void WriteXmlCollection<T>(this ICollection<T> collection, XmlWriter writer, XmlSerialization<T> itemSerialization, string collectionName)
     {
         writer.WriteStartElement(collectionName);
         foreach (var item in collection)

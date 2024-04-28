@@ -31,13 +31,13 @@ public abstract class RosterXmlSerialization<TRoster, TSignature, TItem> : XmlSe
             if (reader.NodeType is not XmlNodeType.Element)
                 continue;
             if (reader.Name == RosterName)
-                Source.RosterList = ItemXmlSerialization.ReadXmlCollection(reader, RosterName);
+                Source.RosterList.ReadXmlCollection(reader, ItemXmlSerialization, RosterName);
         }
     }
 
     public override void WriteXml(XmlWriter writer)
     {
         OnWrite?.Invoke(writer);
-        ItemXmlSerialization.WriteXmlCollection(Source.RosterList, writer, RosterName);
+        Source.RosterList.WriteXmlCollection(writer, ItemXmlSerialization, RosterName);
     }
 }

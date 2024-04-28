@@ -4,12 +4,11 @@ namespace LocalUtilities.SerializeUtilities;
 
 public static class XmlDeserializeTool
 {
-    public static T[] ReadXmlCollection<T>(this XmlSerialization<T> itemSerialization, XmlReader reader, string collectionName)
+    public static void ReadXmlCollection<T>(this ICollection<T> collection, XmlReader reader, XmlSerialization<T> itemSerialization,string collectionName)
     {
         // 子节点探针
         if (reader.ReadToDescendant(itemSerialization.LocalName) is false)
-            return [];
-        var collection = new List<T>();
+            return;
         do
         {
             if (reader.Name == collectionName && reader.NodeType is XmlNodeType.EndElement)
@@ -18,18 +17,15 @@ public static class XmlDeserializeTool
                 continue;
             collection.Add(itemSerialization.Deserialize(reader));
         } while (reader.Read());
-        return collection.ToArray();
         //throw new($"读取 {itemSerialization.LocalName} 时未能找到结束标签");
     }
 
-    public static Dictionary<TKey, TValue> ReadXmlCollection<TKey, TValue>(
-        this XmlSerialization<KeyValuePair<TKey, TValue>> itemSerialization, XmlReader reader, string collectionName
-        ) where TKey : notnull
+    public static void ReadXmlCollection<TKey, TValue>(this Dictionary<TKey, TValue> collection, XmlReader reader, XmlSerialization<KeyValuePair<TKey, TValue>> itemSerialization, string collectionName)
+        where TKey : notnull
     {
-        var collection = new Dictionary<TKey, TValue>();
         // 子节点探针
         if (reader.ReadToDescendant(itemSerialization.LocalName) is false)
-            return collection;
+            return;
         do
         {
             if (reader.Name == collectionName && reader.NodeType is XmlNodeType.EndElement)
@@ -40,7 +36,7 @@ public static class XmlDeserializeTool
             if (item.Key is not null)
                 collection[item.Key] = item.Value;
         } while (reader.Read());
-        return collection;
+        return;
         //throw new($"读取 {itemSerialization.LocalName} 时未能找到结束标签");
     }
 
