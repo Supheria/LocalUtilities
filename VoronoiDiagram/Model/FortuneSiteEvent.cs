@@ -2,13 +2,13 @@
 
 internal class FortuneSiteEvent : IFortuneEvent
 {
-    public double X => Site.X;
-    public double Y => Site.Y;
-    internal VoronoiSite Site { get; }
+    public double X => Cell.Site.X;
+    public double Y => Cell.Site.Y;
+    internal VoronoiCell Cell { get; }
 
-    internal FortuneSiteEvent(VoronoiSite site)
+    internal FortuneSiteEvent(VoronoiCell cell)
     {
-        Site = site;
+        Cell = cell;
     }
 
     public int CompareTo(IFortuneEvent? other)

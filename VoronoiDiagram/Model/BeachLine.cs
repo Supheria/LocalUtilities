@@ -1,8 +1,8 @@
 ﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
-internal class BeachSection(VoronoiSite site)
+internal class BeachSection(VoronoiCell cell)
 {
-    internal VoronoiSite Site { get; } = site;
+    internal VoronoiCell Cell { get; } = cell;
 
     internal VoronoiEdge? Edge { get; set; } = null;
 
@@ -16,9 +16,9 @@ internal class BeachLine
 
     internal void AddBeachSection(FortuneSiteEvent siteEvent, MinHeap<IFortuneEvent> eventQueue, HashSet<FortuneCircleEvent> deleted, LinkedList<VoronoiEdge> edges)
     {
-        VoronoiSite site = siteEvent.Site;
-        double x = site.X;
-        double directrix = site.Y;
+        var cell = siteEvent.Cell;
+        double x = cell.Site.X;
+        double directrix = cell.Site.Y;
 
         RBTreeNode<BeachSection>? leftSection = null;
         RBTreeNode<BeachSection>? rightSection = null;
@@ -81,7 +81,7 @@ internal class BeachLine
 
         //our goal is to insert the new node between the
         //left and right sections
-        BeachSection section = new BeachSection(site);
+        var section = new BeachSection(cell);
 
         //left section could be null, in which case this node is the first
         //in the tree
@@ -109,16 +109,17 @@ internal class BeachLine
 
             //we leave the existing arc as the left section in the tree
             //however we need to insert the right section defined by the arc
-            BeachSection copy = new BeachSection(leftSection.Data.Site);
+            var copy = new BeachSection(leftSection.Data.Cell);
             rightSection = TheBeachLine.InsertSuccessor(newSection, copy);
 
             //grab the projection of this site onto the parabola
-            double y = MathTool.EvalParabola(leftSection.Data.Site.X, leftSection.Data.Site.Y, directrix, x);
-            VoronoiPoint intersection = new VoronoiPoint(x, y);
+            var site = leftSection.Data.Cell.Site;
+            double y = MathTool.EvalParabola(site.X, site.Y, directrix, x);
+            var intersection = new VoronoiPoint(x, y);
 
             //create the two half edges corresponding to this intersection
-            VoronoiEdge leftEdge = new VoronoiEdge(intersection, site, leftSection.Data.Site);
-            VoronoiEdge rightEdge = new VoronoiEdge(intersection, leftSection.Data.Site, site);
+            var leftEdge = new VoronoiEdge(intersection, cell, leftSection.Data.Cell);
+            var rightEdge = new VoronoiEdge(intersection, leftSection.Data.Cell, cell);
             leftEdge.LastBeachLineNeighbor = rightEdge;
 
             //put the edge in the list
@@ -129,8 +130,8 @@ internal class BeachLine
             rightSection.Data.Edge = rightEdge;
 
             //store neighbors for delaunay
-            leftSection.Data.Site.Neighbours.Add(newSection.Data.Site);
-            newSection.Data.Site.Neighbours.Add(leftSection.Data.Site);
+            leftSection.Data.Cell.Neighbours.Add(newSection.Data.Cell);
+            newSection.Data.Cell.Neighbours.Add(leftSection.Data.Cell);
 
             //create circle events
             CheckCircle(leftSection, eventQueue);
@@ -142,15 +143,17 @@ internal class BeachLine
         //had the same y value
         else if (leftSection != null && rightSection == null)
         {
-            VoronoiPoint start = new VoronoiPoint((leftSection.Data.Site.X + site.X) / 2, double.MinValue);
-            VoronoiEdge infEdge = new VoronoiEdge(start, leftSection.Data.Site, site);
-            VoronoiEdge newEdge = new VoronoiEdge(start, site, leftSection.Data.Site);
-
-            newEdge.LastBeachLineNeighbor = infEdge;
+            var site = leftSection.Data.Cell.Site;
+            var start = new VoronoiPoint((site.X + cell.Site.X) / 2, double.MinValue);
+            var infEdge = new VoronoiEdge(start, leftSection.Data.Cell, cell);
+            var newEdge = new VoronoiEdge(start, cell, leftSection.Data.Cell)
+            {
+                LastBeachLineNeighbor = infEdge,
+            };
             edges.AddFirst(newEdge);
 
-            leftSection.Data.Site.Neighbours.Add(newSection.Data.Site);
-            newSection.Data.Site.Neighbours.Add(leftSection.Data.Site);
+            leftSection.Data.Cell.Neighbours.Add(newSection.Data.Cell);
+            newSection.Data.Cell.Neighbours.Add(leftSection.Data.Cell);
 
             newSection.Data.Edge = newEdge;
 
@@ -181,15 +184,15 @@ internal class BeachLine
             //sites
 
             //bring a to the origin
-            VoronoiSite leftSite = leftSection.Data.Site;
-            double ax = leftSite.X;
-            double ay = leftSite.Y;
-            double bx = site.X - ax;
-            double by = site.Y - ay;
+            VoronoiCell leftCell = leftSection.Data.Cell;
+            double ax = leftCell.Site.X;
+            double ay = leftCell.Site.Y;
+            double bx = cell.Site.X - ax;
+            double by = cell.Site.Y - ay;
 
-            VoronoiSite rightSite = rightSection.Data.Site;
-            double cx = rightSite.X - ax;
-            double cy = rightSite.Y - ay;
+            VoronoiCell rightCell = rightSection.Data.Cell;
+            double cx = rightCell.Site.X - ax;
+            double cy = rightCell.Site.Y - ay;
             double d = bx * cy - by * cx;
             double magnitudeB = bx * bx + by * by;
             double magnitudeC = cx * cx + cy * cy;
@@ -209,8 +212,8 @@ internal class BeachLine
                 edges.Remove(rightSection.Data.Edge);
 
                 // Disconnect (delaunay) neighbours
-                leftSite.Neighbours.Remove(rightSite);
-                rightSite.Neighbours.Remove(leftSite);
+                leftCell.Neighbours.Remove(rightCell);
+                rightCell.Neighbours.Remove(leftCell);
             }
             else
             {
@@ -218,18 +221,18 @@ internal class BeachLine
             }
 
             //next we create a two new edges
-            newSection.Data.Edge = new VoronoiEdge(vertex, site, leftSection.Data.Site);
-            rightSection.Data.Edge = new VoronoiEdge(vertex, rightSection.Data.Site, site);
+            newSection.Data.Edge = new VoronoiEdge(vertex, cell, leftSection.Data.Cell);
+            rightSection.Data.Edge = new VoronoiEdge(vertex, rightSection.Data.Cell, cell);
 
             edges.AddFirst(newSection.Data.Edge);
             edges.AddFirst(rightSection.Data.Edge);
 
             //add neighbors for delaunay
-            newSection.Data.Site.Neighbours.Add(leftSection.Data.Site);
-            leftSection.Data.Site.Neighbours.Add(newSection.Data.Site);
+            newSection.Data.Cell.Neighbours.Add(leftSection.Data.Cell);
+            leftSection.Data.Cell.Neighbours.Add(newSection.Data.Cell);
 
-            newSection.Data.Site.Neighbours.Add(rightSection.Data.Site);
-            rightSection.Data.Site.Neighbours.Add(newSection.Data.Site);
+            newSection.Data.Cell.Neighbours.Add(rightSection.Data.Cell);
+            rightSection.Data.Cell.Neighbours.Add(newSection.Data.Cell);
 
             CheckCircle(leftSection, eventQueue);
             CheckCircle(rightSection, eventQueue);
@@ -293,13 +296,13 @@ internal class BeachLine
 
 
         //create a new edge with start point at the vertex and assign it to next
-        VoronoiEdge newEdge = new VoronoiEdge(vertex, next.Data.Site, prev.Data.Site);
+        VoronoiEdge newEdge = new VoronoiEdge(vertex, next.Data.Cell, prev.Data.Cell);
         next.Data.Edge = newEdge;
         edges.AddFirst(newEdge);
 
         //add neighbors for delaunay
-        prev.Data.Site.Neighbours.Add(next.Data.Site);
-        next.Data.Site.Neighbours.Add(prev.Data.Site);
+        prev.Data.Cell.Neighbours.Add(next.Data.Cell);
+        next.Data.Cell.Neighbours.Add(prev.Data.Cell);
 
         //remove the sectionfrom the tree
         TheBeachLine.RemoveNode(section);
@@ -314,35 +317,35 @@ internal class BeachLine
 
     private static double LeftBreakpoint(RBTreeNode<BeachSection> node, double directrix)
     {
-        RBTreeNode<BeachSection> leftNode = node.Previous;
+        var leftNode = node.Previous;
         //degenerate parabola
-        if ((node.Data.Site.Y - directrix).ApproxEqual(0))
-            return node.Data.Site.X;
+        var site = node.Data.Cell.Site;
+        if ((site.Y - directrix).ApproxEqual(0))
+            return site.X;
         //node is the first piece of the beach line
         if (leftNode == null)
             return double.NegativeInfinity;
         //left node is degenerate
-        if ((leftNode.Data.Site.Y - directrix).ApproxEqual(0))
-            return leftNode.Data.Site.X;
-        VoronoiSite site = node.Data.Site;
-        VoronoiSite leftSite = leftNode.Data.Site;
+        var leftSite = leftNode.Data.Cell.Site;
+        if ((leftSite.Y - directrix).ApproxEqual(0))
+            return leftSite.X;
         return MathTool.IntersectParabolaX(leftSite.X, leftSite.Y, site.X, site.Y, directrix);
     }
 
     private static double RightBreakpoint(RBTreeNode<BeachSection> node, double directrix)
     {
-        RBTreeNode<BeachSection> rightNode = node.Next;
+        var rightNode = node.Next;
         //degenerate parabola
-        if ((node.Data.Site.Y - directrix).ApproxEqual(0))
-            return node.Data.Site.X;
+        var site = node.Data.Cell.Site;
+        if ((site.Y - directrix).ApproxEqual(0))
+            return site.X;
         //node is the last piece of the beach line
         if (rightNode == null)
             return double.PositiveInfinity;
         //left node is degenerate
-        if ((rightNode.Data.Site.Y - directrix).ApproxEqual(0))
-            return rightNode.Data.Site.X;
-        VoronoiSite site = node.Data.Site;
-        VoronoiSite rightSite = rightNode.Data.Site;
+        var rightSite = rightNode.Data.Cell.Site;
+        if ((rightSite.Y - directrix).ApproxEqual(0))
+            return rightSite.X;
         return MathTool.IntersectParabolaX(site.X, site.Y, rightSite.X, rightSite.Y, directrix);
     }
 
@@ -355,39 +358,37 @@ internal class BeachLine
         if (left == null || right == null)
             return;
 
-        VoronoiSite leftSite = left.Data.Site;
-        VoronoiSite centerSite = section.Data.Site;
-        VoronoiSite rightSite = right.Data.Site;
+        var leftCell = left.Data.Cell;
+        var centerCell = section.Data.Cell;
+        var rightCell = right.Data.Cell;
 
         //if the left arc and right arc are defined by the same
         //focus, the two arcs cannot converge
-        if (leftSite == rightSite)
+        if (leftCell == rightCell)
         {
             // TODO: this is never covered by unit tests; need to figure out what triggers this and add a test, or if this is unreachable?
             return;
         }
-
+        //
         //MATH HACKS: place center at origin and
         //draw vectors a and c to
         //left and right respectively
-        double bx = centerSite.X,
-            by = centerSite.Y,
-            ax = leftSite.X - bx,
-            ay = leftSite.Y - by,
-            cx = rightSite.X - bx,
-            cy = rightSite.Y - by;
-
+        double bx = centerCell.Site.X,
+            by = centerCell.Site.Y,
+            ax = leftCell.Site.X - bx,
+            ay = leftCell.Site.Y - by,
+            cx = rightCell.Site.X - bx,
+            cy = rightCell.Site.Y - by;
+        //
         //The center beach section can only dissapear when
         //the angle between a and c is negative
         double d = ax * cy - ay * cx;
         if (d.ApproxGreaterThanOrEqualTo(0))
             return;
-
         double magnitudeA = ax * ax + ay * ay;
         double magnitudeC = cx * cx + cy * cy;
         double x = (cy * magnitudeA - ay * magnitudeC) / (2 * d);
         double y = (ax * magnitudeC - cx * magnitudeA) / (2 * d);
-
         //add back offset
         double ycenter = y + by;
         //y center is off

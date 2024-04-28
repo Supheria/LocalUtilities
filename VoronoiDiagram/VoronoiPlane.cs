@@ -4,12 +4,12 @@ using LocalUtilities.VoronoiDiagram.Model;
 namespace LocalUtilities.VoronoiDiagram;
 
 /// <summary>
-/// An Euclidean plane where a Voronoi diagram can be constructed from <see cref="VoronoiSite"/>s
+/// An Euclidean plane where a Voronoi diagram can be constructed from <see cref="VoronoiCell"/>s
 /// producing a tesselation of cells with <see cref="VoronoiEdge"/> line segments and <see cref="VoronoiPoint"/> vertices.
 /// </summary>
 public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
 {
-    public List<VoronoiSite> Sites { get; private set; } = [];
+    public List<VoronoiCell> Cells { get; private set; } = [];
 
     public List<VoronoiEdge> Edges { get; private set; } = [];
 
@@ -26,7 +26,7 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
     public void Generate(List<(double X, double Y)> points)
     {
         ArgumentOutOfRangeException.ThrowIfZero(points.Count);
-        Sites = UniquePoints(points).Select(p => new VoronoiSite(p.X, p.Y)).ToList();
+        Cells = UniquePoints(points).Select(p => new VoronoiCell(p.X, p.Y)).ToList();
         Edges.Clear();
         Generate();
     }
@@ -40,9 +40,9 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
         var remain = count;
         do
         {
-            Sites = UniquePoints(pointsGeneration.Generate(MinX, MinY, MaxX, MaxY, remain))
-                .Select(p => new VoronoiSite(p.X, p.Y)).ToList();
-            remain = count - Sites.Count;
+            Cells = UniquePoints(pointsGeneration.Generate(MinX, MinY, MaxX, MaxY, remain))
+                .Select(p => new VoronoiCell(p.X, p.Y)).ToList();
+            remain = count - Cells.Count;
         } while (remain > 0);
         Edges.Clear();
         Generate();
@@ -82,8 +82,8 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
 
     private void Generate()
     {
-        var eventQueue = new MinHeap<IFortuneEvent>(5 * Sites.Count);
-        foreach (var site in Sites)
+        var eventQueue = new MinHeap<IFortuneEvent>(5 * Cells.Count);
+        foreach (var site in Cells)
             eventQueue.Insert(new FortuneSiteEvent(site));
         //init tree
         var beachLine = new BeachLine();
@@ -106,7 +106,7 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
         Edges = edges.ToList();
         Edges = new BorderClipping().Clip(Edges, MinX, MinY, MaxX, MaxY);
         if (GenerateBorder)
-            Edges = new BorderClosing().Close(Edges, MinX, MinY, MaxX, MaxY, Sites);
+            Edges = new BorderClosing().Close(Edges, MinX, MinY, MaxX, MaxY, Cells);
     }
 
     public void RelaxSites(int iterations = 1, float strength = 1.0f)
@@ -118,16 +118,17 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
         for (int i = 0; i < iterations; i++)
         {
             var fullStrength = Math.Abs(strength - 1.0f) < float.Epsilon;
-            foreach (var site in Sites)
+            foreach (var cell in Cells)
             {
-                var centroid = site.GetCentroid();
+                var centroid = cell.GetCentroid();
                 if (fullStrength)
-                    site.Relocate(centroid.X, centroid.Y);
+                    cell.Relocate(centroid.X, centroid.Y);
                 else
                 {
+                    var site = cell.Site;
                     var newX = site.X + (centroid.X - site.X) * strength;
                     var newY = site.Y + (centroid.Y - site.Y) * strength;
-                    site.Relocate(newX, newY);
+                    cell.Relocate(newX, newY);
                 }
             }
             Generate();

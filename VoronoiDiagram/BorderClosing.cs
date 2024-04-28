@@ -4,7 +4,7 @@ namespace LocalUtilities.VoronoiDiagram;
 
 internal class BorderClosing
 {
-    public List<VoronoiEdge> Close(List<VoronoiEdge> edges, double minX, double minY, double maxX, double maxY, List<VoronoiSite> sites)
+    public List<VoronoiEdge> Close(List<VoronoiEdge> edges, double minX, double minY, double maxX, double maxY, List<VoronoiCell> cells)
     {
         // We construct edges in clockwise order on the border:
         // →→→→→→→→↓
@@ -20,54 +20,39 @@ internal class BorderClosing
 
         // As we collect the nodes (basically, edge points on the border).
         // we keep them in a sorted order in the above clockwise manner.
-
-        BorderNodeComparer comparer = new BorderNodeComparer();
-
-        SortedSet<BorderNode> nodes = new SortedSet<BorderNode>(comparer);
-
+        var nodes = new SortedSet<BorderNode>(new BorderNodeComparer());
         bool hadBottomLeft = false;
         bool hadBottomRight = false;
         bool hadTopRight = false;
         bool hadTopLeft = false;
-
         for (int i = 0; i < edges.Count; i++)
         {
             VoronoiEdge edge = edges[i];
-
             if (edge.Start.BorderLocation != PointBorderLocation.NotOnBorder)
             {
                 nodes.Add(new EdgeStartBorderNode(edge, i * 2));
-
                 if (edge.Start.BorderLocation == PointBorderLocation.BottomLeft) hadBottomLeft = true;
                 else if (edge.Start.BorderLocation == PointBorderLocation.BottomRight) hadBottomRight = true;
                 else if (edge.Start.BorderLocation == PointBorderLocation.TopRight) hadTopRight = true;
                 else if (edge.Start.BorderLocation == PointBorderLocation.TopLeft) hadTopLeft = true;
             }
-
             if (edge.End!.BorderLocation != PointBorderLocation.NotOnBorder)
             {
                 nodes.Add(new EdgeEndBorderNode(edge, i * 2 + 1));
-
                 if (edge.End.BorderLocation == PointBorderLocation.BottomLeft) hadBottomLeft = true;
                 else if (edge.End.BorderLocation == PointBorderLocation.BottomRight) hadBottomRight = true;
                 else if (edge.End.BorderLocation == PointBorderLocation.TopRight) hadTopRight = true;
                 else if (edge.End.BorderLocation == PointBorderLocation.TopLeft) hadTopLeft = true;
             }
         }
-
         // If none of the edges hit any of the corners, then we need to add those as generic non-edge nodes 
-
         if (!hadBottomLeft) nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, minY, PointBorderLocation.BottomLeft)));
         if (!hadBottomRight) nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, minY, PointBorderLocation.BottomRight)));
         if (!hadTopRight) nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, maxY, PointBorderLocation.TopRight)));
         if (!hadTopLeft) nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, maxY, PointBorderLocation.TopLeft)));
-
-
         EdgeBorderNode? previousEdgeNode = null;
-
         if (nodes.Min is EdgeBorderNode febn)
             previousEdgeNode = febn;
-
         if (previousEdgeNode == null)
         {
             foreach (BorderNode node in nodes.Reverse())
@@ -79,42 +64,33 @@ internal class BorderClosing
                 }
             }
         }
-
-        VoronoiSite? defaultSite = null;
+        VoronoiCell? defaultCell = null;
         if (previousEdgeNode == null)
         {
             // We have no edges within bounds
-
-            if (sites.Count != 0)
+            if (cells.Count != 0)
             {
                 // But we may have site(s), so it's possible a site is in the bounds
                 // (two sites couldn't be or there would be an edge)
-
-                defaultSite = sites.FirstOrDefault(s =>
-                                                       s.X.ApproxGreaterThanOrEqualTo(minX) &&
-                                                       s.X.ApproxLessThanOrEqualTo(maxX) &&
-                                                       s.Y.ApproxGreaterThanOrEqualTo(minY) &&
-                                                       s.Y.ApproxLessThanOrEqualTo(maxY)
-                );
+                defaultCell = cells.FirstOrDefault(c =>
+                    c.Site.X.ApproxGreaterThanOrEqualTo(minX) &&
+                    c.Site.X.ApproxLessThanOrEqualTo(maxX) &&
+                    c.Site.Y.ApproxGreaterThanOrEqualTo(minY) &&
+                    c.Site.Y.ApproxLessThanOrEqualTo(maxY)
+                    );
             }
         }
-
         // Edge tracking for neighbour recording
         VoronoiEdge firstEdge = null!; // to "loop" last edge back to first
-        VoronoiEdge? previousEdge = null; // to connect each new edge to previous edge
-
+        VoronoiEdge? previousEdge = null; // to connect each new edge to previous edg
         BorderNode? node2 = null; // i.e. last node
-
-        foreach (BorderNode node in nodes)
+        foreach (var node in nodes)
         {
-            BorderNode? node1 = node2;
+            var node1 = node2;
             node2 = node;
-
             if (node1 == null) // i.e. node == nodes.Min
                 continue; // we are looking at first node, we will start from Min and next one
-
-            VoronoiSite? site = previousEdgeNode != null ? previousEdgeNode is EdgeStartBorderNode ? previousEdgeNode.Edge.Right : previousEdgeNode.Edge.Left : defaultSite;
-
+            var site = previousEdgeNode != null ? previousEdgeNode is EdgeStartBorderNode ? previousEdgeNode.Edge.Right : previousEdgeNode.Edge.Left : defaultCell;
             if (node1.Point != node2.Point)
             {
                 var newEdge = new VoronoiEdge(
@@ -122,61 +98,26 @@ internal class BorderClosing
                     node2.Point, // we are building these clockwise, so by definition the left side is out of bounds
                     site
                 );
-
-                // Record edge neighbours
-                if (previousEdge != null)
-                {
-                    // Add the neighbours for the edge
-                    //newEdge.BorderNeighbour1 = previousEdge; // counter-clockwise = previous
-                    //previousEdge.BorderNeighbour2 = newEdge; // clockwise = next
-                }
-                else
-                {
-                    // Record the first created edge for the last edge to "loop" around
+                // Record the first created edge for the last edge to "loop" around
+                if (previousEdge is null)
                     firstEdge = newEdge;
-                }
-
                 edges.Add(newEdge);
-
-                if (site != null)
-                    site.AddEdge(newEdge);
-
+                site?.CellEdges.Add(newEdge);
                 previousEdge = newEdge;
             }
-            else
-            {
-                // Skip this node, it's the same as last one, we don't need an edge between identical coordinates
-                // Just move to the next node.
-            }
-
             // Passing an edge node means that the site changes as we are now on the other side of this edge
             // (this doesn't happen in non-edge corner, which keep the same site)
             if (node is EdgeBorderNode cebn)
                 previousEdgeNode = cebn;
         }
-
-        VoronoiSite? finalSite = previousEdgeNode != null ? previousEdgeNode is EdgeStartBorderNode ? previousEdgeNode.Edge.Right : previousEdgeNode.Edge.Left : defaultSite;
-
-        VoronoiEdge finalEdge = new(
+        var finalSite = previousEdgeNode != null ? previousEdgeNode is EdgeStartBorderNode ? previousEdgeNode.Edge.Right : previousEdgeNode.Edge.Left : defaultCell;
+        var finalEdge = new VoronoiEdge(
             nodes.Max?.Point ?? throw new ArgumentNullException(),
             nodes.Min?.Point ?? throw new ArgumentNullException(), // we are building these clockwise, so by definition the left side is out of bounds
             finalSite
-        )
-        {
-            // Add the neighbours for the final edge
-            //BorderNeighbour1 = previousEdge // counter-clockwise = previous
-        };
-        //previousEdge!.BorderNeighbour2 = finalEdge; // clockwise = next
-
+        );
         edges.Add(finalEdge);
-
-        // And finish the neighbour edges by "looping" back to the first edge
-        //firstEdge.BorderNeighbour1 = finalEdge; // counter-clockwise = previous
-        //finalEdge.BorderNeighbour2 = firstEdge; // clockwise = next
-
-        if (finalSite != null)
-            finalSite.AddEdge(finalEdge);
-
+        finalSite?.CellEdges.Add(finalEdge);
         return edges;
     }
 
@@ -190,7 +131,6 @@ internal class BorderClosing
         public abstract double Angle { get; }
 
         public abstract int FallbackComparisonIndex { get; }
-
 
         public int CompareAngleTo(BorderNode node2, PointBorderLocation pointBorderLocation)
         {
@@ -337,61 +277,39 @@ internal class BorderClosing
     {
         public int Compare(BorderNode? n1, BorderNode? n2)
         {
-            if (n1 is null || n2 is null)
-                throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(n1);
+            ArgumentNullException.ThrowIfNull(n2);
             int locationCompare = n1.BorderLocation.CompareTo(n2.BorderLocation);
-
             if (locationCompare != 0)
                 return locationCompare;
-
-            switch (n1.BorderLocation) // same for n2
+            return n1.BorderLocation switch // same for n2
             {
-                case PointBorderLocation.Left: // going up
-                case PointBorderLocation.BottomLeft:
-                    return NodeCompareTo(n1.Point.Y, n2.Point.Y, n1, n2, n1.BorderLocation);
+                // going up
+                PointBorderLocation.Left or PointBorderLocation.BottomLeft => NodeCompareTo(n1.Point.Y, n2.Point.Y, n1, n2, n1.BorderLocation),
+                // going right
+                PointBorderLocation.Top or PointBorderLocation.TopLeft => NodeCompareTo(n1.Point.X, n2.Point.X, n1, n2, n1.BorderLocation),
+                // going down
+                PointBorderLocation.Right or PointBorderLocation.TopRight => NodeCompareTo(n2.Point.Y, n1.Point.Y, n1, n2, n1.BorderLocation),
+                // going left
+                PointBorderLocation.Bottom or PointBorderLocation.BottomRight => NodeCompareTo(n2.Point.X, n1.Point.X, n1, n2, n1.BorderLocation),
+                PointBorderLocation.NotOnBorder => throw new InvalidOperationException(),
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
 
-                case PointBorderLocation.Top: // going right
-                case PointBorderLocation.TopLeft:
-                    return NodeCompareTo(n1.Point.X, n2.Point.X, n1, n2, n1.BorderLocation);
-
-                case PointBorderLocation.Right: // going down
-                case PointBorderLocation.TopRight:
-                    return NodeCompareTo(n2.Point.Y, n1.Point.Y, n1, n2, n1.BorderLocation);
-
-                case PointBorderLocation.Bottom: // going left
-                case PointBorderLocation.BottomRight:
-                    return NodeCompareTo(n2.Point.X, n1.Point.X, n1, n2, n1.BorderLocation);
-
-                case PointBorderLocation.NotOnBorder:
-                    throw new InvalidOperationException();
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-
-            static int NodeCompareTo(double coord1, double coord2,
-                                     BorderNode node1, BorderNode node2,
-                                     PointBorderLocation pointBorderLocation)
-            {
-                int comparison = coord1.ApproxCompareTo(coord2);
-
-                if (comparison != 0)
-                    return comparison;
-
-                int angleComparison = node1.CompareAngleTo(node2, pointBorderLocation);
-
-                if (angleComparison != 0)
-                    return angleComparison;
-
-                // Extremely unlikely, but just return something that sorts and doesn't equate
-                int fallbackComparison = node1.FallbackComparisonIndex.CompareTo(node2.FallbackComparisonIndex);
-
-                if (fallbackComparison != 0)
-                    return fallbackComparison;
-
-                throw new InvalidOperationException(); // we should never get here if fallback index is proper
-            }
+        private static int NodeCompareTo(double coord1, double coord2, BorderNode node1, BorderNode node2, PointBorderLocation pointBorderLocation)
+        {
+            var comparison = coord1.ApproxCompareTo(coord2);
+            if (comparison != 0)
+                return comparison;
+            var angleComparison = node1.CompareAngleTo(node2, pointBorderLocation);
+            if (angleComparison != 0)
+                return angleComparison;
+            // Extremely unlikely, but just return something that sorts and doesn't equate
+            var fallbackComparison = node1.FallbackComparisonIndex.CompareTo(node2.FallbackComparisonIndex);
+            if (fallbackComparison != 0)
+                return fallbackComparison;
+            throw new InvalidOperationException(); // we should never get here if fallback index is proper
         }
     }
 }

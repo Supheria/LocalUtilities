@@ -2,9 +2,9 @@
 
 /// <summary>
 /// The line segment making the Voronoi cells, i.e. the points equidistant to the two nearest Voronoi sites.
-/// These are the lines in the <see cref="VoronoiSite.CellEdges"/>.
+/// These are the lines in the <see cref="VoronoiCell.CellEdges"/>.
 /// This has <see cref="VoronoiPoint"/> end points, i.e. <see cref="Start"/> and <see cref="End"/>.
-/// This has the two <see cref="VoronoiSite"/>s they separate, i.e. <see cref="Right"/> and <see cref="Left"/>.
+/// This has the two <see cref="VoronoiCell"/>s they separate, i.e. <see cref="Right"/> and <see cref="Left"/>.
 /// This connects in a <see cref="Neighbours"/> node graph to other <see cref="VoronoiEdge"/>s, i.e. shares end points with them.
 /// </summary>
 public class VoronoiEdge
@@ -23,13 +23,13 @@ public class VoronoiEdge
     /// One of the two sites that this edge separates, the other being <see cref="Left"/>.
     /// Can be null if this is a border edge and there are no sites within the bounds.
     /// </summary>
-    public VoronoiSite? Right { get; } = null;
+    public VoronoiCell? Right { get; } = null;
 
     /// <summary>
     /// One of the two sites that this edge separates, the other being <see cref="Right"/>.
     /// Can be null if this is a border edge.
     ///  </summary>
-    public VoronoiSite? Left { get; } = null;
+    public VoronoiCell? Left { get; } = null;
 
     internal double SlopeRise { get; }
 
@@ -41,7 +41,7 @@ public class VoronoiEdge
 
     internal VoronoiEdge? LastBeachLineNeighbor { get; set; } // I am not entirely sure this is the right name for this, but I just want to make it clear it's not something usable publicly
 
-    internal VoronoiEdge(VoronoiPoint start, VoronoiSite left, VoronoiSite right)
+    internal VoronoiEdge(VoronoiPoint start, VoronoiCell left, VoronoiCell right)
     {
         Start = start;
         Left = left;
@@ -54,8 +54,8 @@ public class VoronoiEdge
 
         //from negative reciprocal of slope of line from left to right
         //ala m = (left.y -right.y / left.x - right.x)
-        SlopeRise = left.X - right.X;
-        SlopeRun = -(left.Y - right.Y);
+        SlopeRise = left.Site.X - right.Site.X;
+        SlopeRun = -(left.Site.Y - right.Site.Y);
         Intercept = null;
 
         if (SlopeRise.ApproxEqual(0) || SlopeRun.ApproxEqual(0)) return;
@@ -63,7 +63,7 @@ public class VoronoiEdge
         Intercept = start.Y - Slope * start.X;
     }
 
-    internal VoronoiEdge(VoronoiPoint start, VoronoiPoint end, VoronoiSite? right)
+    internal VoronoiEdge(VoronoiPoint start, VoronoiPoint end, VoronoiCell? right)
     {
         Start = start;
         End = end;

@@ -14,8 +14,8 @@ internal class BorderClipping
 
             if (valid)
             {
-                edge.Left!.AddEdge(edge);
-                edge.Right!.AddEdge(edge);
+                edge.Left!.CellEdges.Add(edge);
+                edge.Right!.CellEdges.Add(edge);
             }
             else
             {

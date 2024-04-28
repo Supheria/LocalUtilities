@@ -5,7 +5,7 @@ namespace LocalUtilities.VoronoiDiagram.Model;
 /// <summary>
 /// The vertices/nodes of the Voronoi cells, i.e. the points equidistant to three or more Voronoi sites.
 /// These are the end points of a <see cref="VoronoiEdge"/>.
-/// These are the <see cref="VoronoiSite.CellVertices"/>.
+/// These are the <see cref="VoronoiCell.CellVertices"/>.
 /// Also used for some other derived locations.
 /// </summary>
 public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation = PointBorderLocation.NotOnBorder)
@@ -25,6 +25,11 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
     public double AngleTo(VoronoiPoint other)
     {
         return Math.Atan2(other.Y - Y, other.X - X);
+    }
+
+    public static implicit operator (int X, int Y)(VoronoiPoint point)
+    {
+        return ((int)point.X, (int)point.Y);
     }
 
 #if DEBUG
@@ -85,15 +90,15 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
 /// </remarks>
 public enum PointBorderLocation
 {
-    NotOnBorder = -1,
-    BottomLeft = 0,
-    Left = 1,
-    TopLeft = 2,
-    Top = 3,
-    TopRight = 4,
-    Right = 5,
-    BottomRight = 6,
-    Bottom = 7
+    NotOnBorder,
+    BottomLeft,
+    Left,
+    TopLeft,
+    Top,
+    TopRight,
+    Right,
+    BottomRight,
+    Bottom,
 }
 
 
