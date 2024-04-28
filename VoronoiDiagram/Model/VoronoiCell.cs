@@ -51,7 +51,13 @@ public class VoronoiCell(double x, double y)
             return _cellVertices;
         }
     }
-    private List<VoronoiPoint>? _cellVertices = null;
+    List<VoronoiPoint>? _cellVertices = null;
+
+    public VoronoiPoint Centroid
+    {
+        get => _centroid ??= GetCentroid(); 
+    }
+    VoronoiPoint? _centroid = null;
 
     public VoronoiCell() : this(0, 0)
     {
@@ -147,7 +153,7 @@ public class VoronoiCell(double x, double y)
     /// This is assuming a non-self-intersecting closed polygon of our cell.
     /// If we don't have a closed cell (i.e. unclosed "polygon"), then this will produce approximate results that aren't mathematically sound, but work for most purposes. 
     /// </summary>
-    public VoronoiPoint GetCentroid()
+    private VoronoiPoint GetCentroid()
     {
         // Basically, https://stackoverflow.com/a/34732659
         // https://en.wikipedia.org/wiki/Centroid#Of_a_polygon

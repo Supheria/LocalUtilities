@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.GdiUtilities;
 
-public class RandomGaussianPointsGeneration : RandomPointsGeneration
+public class RandomPointsGenerationGaussian : RandomPointsGeneration
 {
     protected override double GetNextRandomValue(Random random, double min, double max)
     {

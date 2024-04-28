@@ -120,7 +120,7 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
             var fullStrength = Math.Abs(strength - 1.0f) < float.Epsilon;
             foreach (var cell in Cells)
             {
-                var centroid = cell.GetCentroid();
+                var centroid = cell.Centroid;
                 if (fullStrength)
                     cell.Relocate(centroid.X, centroid.Y);
                 else
