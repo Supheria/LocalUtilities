@@ -1,9 +1,4 @@
-﻿using LocalUtilities.GdiUtilities;
-using Microsoft.VisualBasic.Logging;
-using System.Drawing;
-using System.Reflection;
-
-namespace LocalUtilities.VoronoiDiagram.Model;
+﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
 /// <summary>
 /// The point/site/seed on the Voronoi plane.
@@ -37,7 +32,7 @@ public class VoronoiCell(double x, double y)
             if (_cellVertices == null)
             {
                 _cellVertices = [];
-                var vertices = new Dictionary<(double X, double Y), PointBorderLocation>();
+                var vertices = new Dictionary<(double X, double Y), Direction>();
                 foreach (var edge in CellEdges)
                 {
                     ArgumentNullException.ThrowIfNull(edge.End);
@@ -55,7 +50,7 @@ public class VoronoiCell(double x, double y)
 
     public VoronoiPoint Centroid
     {
-        get => _centroid ??= GetCentroid(); 
+        get => _centroid ??= GetCentroid();
     }
     VoronoiPoint? _centroid = null;
 

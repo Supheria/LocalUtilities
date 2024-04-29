@@ -8,7 +8,7 @@ namespace LocalUtilities.VoronoiDiagram.Model;
 /// These are the <see cref="VoronoiCell.CellVertices"/>.
 /// Also used for some other derived locations.
 /// </summary>
-public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation = PointBorderLocation.NotOnBorder)
+public class VoronoiPoint(double x, double y, Direction borderLocation = Direction.None)
 {
     public double X { get; } = x;
 
@@ -20,7 +20,7 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
     /// <remarks>
     /// Using this would be preferrable to comparing against the X/Y values due to possible precision issues.
     /// </remarks>
-    public PointBorderLocation BorderLocation { get; internal set; } = borderLocation;
+    public Direction BorderLocation { get; internal set; } = borderLocation;
 
     public double AngleTo(VoronoiPoint other)
     {
@@ -55,52 +55,32 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
             + BorderLocationToString(BorderLocation);
     }
 
-    private static string BorderLocationToString(PointBorderLocation location)
+    private static string BorderLocationToString(Direction location)
     {
         switch (location)
         {
-            case PointBorderLocation.NotOnBorder:
-                return "";
-            case PointBorderLocation.BottomLeft:
-                return "BL";
-            case PointBorderLocation.Left:
+            case Direction.LeftTop:
+                return "LT";
+            case Direction.Left:
                 return "L";
-            case PointBorderLocation.TopLeft:
-                return "TL";
-            case PointBorderLocation.Top:
-                return "T";
-            case PointBorderLocation.TopRight:
-                return "TR";
-            case PointBorderLocation.Right:
-                return "R";
-            case PointBorderLocation.BottomRight:
-                return "BR";
-            case PointBorderLocation.Bottom:
+            case Direction.LeftBottom:
+                return "LB";
+            case Direction.Bottom:
                 return "B";
+            case Direction.BottomRight:
+                return "BR";
+            case Direction.Right:
+                return "R";
+            case Direction.TopRight:
+                return "TR";
+            case Direction.Top:
+                return "T";
             default:
-                return "?";
+                return "";
         }
     }
 #endif
 }
-
-
-/// <remarks>
-/// Note that these are ordered clock-wise starting at bottom-left
-/// </remarks>
-public enum PointBorderLocation
-{
-    NotOnBorder,
-    BottomLeft,
-    Left,
-    TopLeft,
-    Top,
-    TopRight,
-    Right,
-    BottomRight,
-    Bottom,
-}
-
 
 internal static class VPointExtensions
 {
