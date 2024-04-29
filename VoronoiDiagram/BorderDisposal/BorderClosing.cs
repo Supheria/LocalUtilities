@@ -48,7 +48,7 @@ internal class BorderClosing
         // If none of the edges hit any of the corners, then we need to add those as generic non-edge nodes 
         if (!hadLeftTop)
             nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, minY, Direction.LeftTop)));
-        if (!hadTopRight) 
+        if (!hadTopRight)
             nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, minY, Direction.TopRight)));
         if (!hadBottomRight)
             nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, maxY, Direction.BottomRight)));

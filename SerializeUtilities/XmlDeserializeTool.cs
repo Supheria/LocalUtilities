@@ -4,7 +4,7 @@ namespace LocalUtilities.SerializeUtilities;
 
 public static class XmlDeserializeTool
 {
-    public static void ReadXmlCollection<T>(this ICollection<T> collection, XmlReader reader, XmlSerialization<T> itemSerialization,string collectionName)
+    public static void ReadXmlCollection<T>(this ICollection<T> collection, XmlReader reader, XmlSerialization<T> itemSerialization, string collectionName)
     {
         // 子节点探针
         if (reader.ReadToDescendant(itemSerialization.LocalName) is false)
