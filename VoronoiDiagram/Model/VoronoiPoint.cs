@@ -59,31 +59,28 @@ public class VoronoiPoint(double x, double y, Direction borderLocation = Directi
     {
         switch (location)
         {
-            case Direction.None:
-                return "";
-            case Direction.LeftBottom:
-                return "BL";
+            case Direction.LeftTop:
+                return "LT";
             case Direction.Left:
                 return "L";
-            case Direction.LeftTop:
-                return "TL";
-            case Direction.Top:
-                return "T";
-            case Direction.TopRight:
-                return "TR";
-            case Direction.Right:
-                return "R";
-            case Direction.BottomRight:
-                return "BR";
+            case Direction.LeftBottom:
+                return "LB";
             case Direction.Bottom:
                 return "B";
+            case Direction.BottomRight:
+                return "BR";
+            case Direction.Right:
+                return "R";
+            case Direction.TopRight:
+                return "TR";
+            case Direction.Top:
+                return "T";
             default:
-                return "?";
+                return "";
         }
     }
 #endif
 }
-
 
 /// <remarks>
 /// Note that these are ordered clock-wise starting at bottom-left
@@ -100,7 +97,6 @@ public enum Direction
     LeftBottom,
     BottomRight,
 }
-
 
 internal static class VPointExtensions
 {

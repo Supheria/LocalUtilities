@@ -198,7 +198,7 @@ internal class BorderClipping
                 VoronoiPoint endPoint =
                     edge.SlopeRun.ApproxGreaterThan(0) ?
                         new VoronoiPoint(maxX, start.Y, Direction.Right) :
-                        new VoronoiPoint(minX, start.Y, start.Y.ApproxEqual(minY) ? Direction.LeftBottom : start.Y.ApproxEqual(maxY) ? Direction.LeftTop : Direction.Left);
+                        new VoronoiPoint(minX, start.Y, start.Y.ApproxEqual(minY) ? Direction.LeftTop : start.Y.ApproxEqual(maxY) ? Direction.LeftBottom : Direction.Left);
 
                 // If we are a 0-length edge after clipping, then we are a "connector" between more than 2 equidistant sites 
                 if (endPoint.ApproxEqual(edge.Start))
@@ -250,8 +250,8 @@ internal class BorderClipping
             {
                 VoronoiPoint endPoint =
                     edge.SlopeRise.ApproxGreaterThan(0) ?
-                        new VoronoiPoint(start.X, maxY, start.X.ApproxEqual(minX) ? Direction.LeftTop : start.X.ApproxEqual(maxX) ? Direction.TopRight : Direction.Top) :
-                        new VoronoiPoint(start.X, minY, Direction.Bottom);
+                        new VoronoiPoint(start.X, maxY, start.X.ApproxEqual(minX) ? Direction.LeftBottom : start.X.ApproxEqual(maxX) ? Direction.BottomRight : Direction.Bottom) :
+                        new VoronoiPoint(start.X, minY, Direction.Top);
 
                 // If we are a 0-length edge after clipping, then we are a "connector" between more than 2 equidistant sites 
                 if (endPoint.ApproxEqual(edge.Start))
@@ -274,13 +274,13 @@ internal class BorderClipping
             {
                 if (edge.SlopeRise.ApproxGreaterThan(0))
                 {
-                    edge.Start = new VoronoiPoint(start.X, minY, Direction.Bottom);
-                    edge.End = new VoronoiPoint(start.X, maxY, Direction.Top);
+                    edge.Start = new VoronoiPoint(start.X, minY, Direction.Top);
+                    edge.End = new VoronoiPoint(start.X, maxY, Direction.Bottom);
                 }
                 else
                 {
-                    edge.Start = new VoronoiPoint(start.X, maxY, Direction.Top);
-                    edge.End = new VoronoiPoint(start.X, minY, Direction.Bottom);
+                    edge.Start = new VoronoiPoint(start.X, maxY, Direction.Bottom);
+                    edge.End = new VoronoiPoint(start.X, minY, Direction.Top);
                 }
             }
             return true;
@@ -289,16 +289,16 @@ internal class BorderClipping
         //works for outside
 
         double topXValue = CalcX(edge.Slope!.Value, maxY, edge.Intercept!.Value);
-        VoronoiPoint topX = new VoronoiPoint(topXValue, maxY, topXValue.ApproxEqual(minX) ? Direction.LeftTop : topXValue.ApproxEqual(maxX) ? Direction.TopRight : Direction.Top);
+        VoronoiPoint topX = new VoronoiPoint(topXValue, maxY, topXValue.ApproxEqual(minX) ? Direction.LeftBottom : topXValue.ApproxEqual(maxX) ? Direction.BottomRight : Direction.Bottom);
 
         double rightYValue = CalcY(edge.Slope.Value, maxX, edge.Intercept.Value);
-        VoronoiPoint rightY = new VoronoiPoint(maxX, rightYValue, rightYValue.ApproxEqual(minY) ? Direction.BottomRight : rightYValue.ApproxEqual(maxY) ? Direction.TopRight : Direction.Right);
+        VoronoiPoint rightY = new VoronoiPoint(maxX, rightYValue, rightYValue.ApproxEqual(minY) ? Direction.TopRight : rightYValue.ApproxEqual(maxY) ? Direction.BottomRight : Direction.Right);
 
         double bottomXValue = CalcX(edge.Slope.Value, minY, edge.Intercept.Value);
-        VoronoiPoint bottomX = new VoronoiPoint(bottomXValue, minY, bottomXValue.ApproxEqual(minX) ? Direction.LeftBottom : bottomXValue.ApproxEqual(maxX) ? Direction.BottomRight : Direction.Bottom);
+        VoronoiPoint bottomX = new VoronoiPoint(bottomXValue, minY, bottomXValue.ApproxEqual(minX) ? Direction.LeftTop : bottomXValue.ApproxEqual(maxX) ? Direction.TopRight : Direction.Top);
 
         double leftYValue = CalcY(edge.Slope.Value, minX, edge.Intercept.Value);
-        VoronoiPoint leftY = new VoronoiPoint(minX, leftYValue, leftYValue.ApproxEqual(minY) ? Direction.LeftBottom : leftYValue.ApproxEqual(maxY) ? Direction.LeftTop : Direction.Left);
+        VoronoiPoint leftY = new VoronoiPoint(minX, leftYValue, leftYValue.ApproxEqual(minY) ? Direction.LeftTop : leftYValue.ApproxEqual(maxY) ? Direction.LeftBottom : Direction.Left);
 
         // Note: these points may be duplicates if the ray goes through a border corner,
         // so we have to check for repeats when building the candidate list below.
@@ -430,15 +430,15 @@ internal class BorderClipping
 
     private static Direction GetBorderLocationForCoordinate(double x, double y, double minX, double minY, double maxX, double maxY)
     {
-        if (x.ApproxEqual(minX) && y.ApproxEqual(minY)) return Direction.LeftBottom;
-        if (x.ApproxEqual(minX) && y.ApproxEqual(maxY)) return Direction.LeftTop;
-        if (x.ApproxEqual(maxX) && y.ApproxEqual(minY)) return Direction.BottomRight;
-        if (x.ApproxEqual(maxX) && y.ApproxEqual(maxY)) return Direction.TopRight;
+        if (x.ApproxEqual(minX) && y.ApproxEqual(minY)) return Direction.LeftTop;
+        if (x.ApproxEqual(minX) && y.ApproxEqual(maxY)) return Direction.LeftBottom;
+        if (x.ApproxEqual(maxX) && y.ApproxEqual(minY)) return Direction.TopRight;
+        if (x.ApproxEqual(maxX) && y.ApproxEqual(maxY)) return Direction.BottomRight;
 
         if (x.ApproxEqual(minX)) return Direction.Left;
-        if (y.ApproxEqual(minY)) return Direction.Bottom;
+        if (y.ApproxEqual(minY)) return Direction.Top;
         if (x.ApproxEqual(maxX)) return Direction.Right;
-        if (y.ApproxEqual(maxY)) return Direction.Top;
+        if (y.ApproxEqual(maxY)) return Direction.Bottom;
 
         return Direction.None;
     }

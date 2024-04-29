@@ -21,39 +21,39 @@ internal class BorderClosing
         // As we collect the nodes (basically, edge points on the border).
         // we keep them in a sorted order in the above clockwise manner.
         var nodes = new SortedSet<BorderNode>(new BorderNodeComparer());
-        bool hadBottomLeft = false;
-        bool hadBottomRight = false;
+        bool hadLeftTop = false;
         bool hadTopRight = false;
-        bool hadTopLeft = false;
+        bool hadBottomRight = false;
+        bool hadLeftBottom = false;
         for (int i = 0; i < edges.Count; i++)
         {
             var edge = edges[i];
             if (edge.Start.BorderLocation != Direction.None)
             {
                 nodes.Add(new EdgeStartBorderNode(edge, i * 2));
-                if (edge.Start.BorderLocation == Direction.LeftBottom) hadBottomLeft = true;
-                else if (edge.Start.BorderLocation == Direction.BottomRight) hadBottomRight = true;
+                if (edge.Start.BorderLocation == Direction.LeftTop) hadLeftTop = true;
                 else if (edge.Start.BorderLocation == Direction.TopRight) hadTopRight = true;
-                else if (edge.Start.BorderLocation == Direction.LeftTop) hadTopLeft = true;
+                else if (edge.Start.BorderLocation == Direction.BottomRight) hadBottomRight = true;
+                else if (edge.Start.BorderLocation == Direction.LeftBottom) hadLeftBottom = true;
             }
             if (edge.End!.BorderLocation != Direction.None)
             {
                 nodes.Add(new EdgeEndBorderNode(edge, i * 2 + 1));
-                if (edge.End.BorderLocation == Direction.LeftBottom) hadBottomLeft = true;
-                else if (edge.End.BorderLocation == Direction.BottomRight) hadBottomRight = true;
+                if (edge.End.BorderLocation == Direction.LeftTop) hadLeftTop = true;
                 else if (edge.End.BorderLocation == Direction.TopRight) hadTopRight = true;
-                else if (edge.End.BorderLocation == Direction.LeftTop) hadTopLeft = true;
+                else if (edge.End.BorderLocation == Direction.BottomRight) hadBottomRight = true;
+                else if (edge.End.BorderLocation == Direction.LeftBottom) hadLeftBottom = true;
             }
         }
         // If none of the edges hit any of the corners, then we need to add those as generic non-edge nodes 
-        if (!hadBottomLeft)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, minY, Direction.LeftBottom)));
-        if (!hadBottomRight) 
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, minY, Direction.BottomRight)));
-        if (!hadTopRight)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, maxY, Direction.TopRight)));
-        if (!hadTopLeft)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, maxY, Direction.LeftTop)));
+        if (!hadLeftTop)
+            nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, minY, Direction.LeftTop)));
+        if (!hadTopRight) 
+            nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, minY, Direction.TopRight)));
+        if (!hadBottomRight)
+            nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, maxY, Direction.BottomRight)));
+        if (!hadLeftBottom)
+            nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, maxY, Direction.LeftBottom)));
         EdgeBorderNode? previousEdgeNode = null;
         if (nodes.Min is EdgeBorderNode febn)
             previousEdgeNode = febn;
@@ -164,7 +164,7 @@ internal class BorderClosing
                     // Smaller angle comes first
                     break;
 
-                case Direction.Top:
+                case Direction.Bottom:
                     // Angles are 0..-π or π
                     // We can swap π to -π
                     // Smaller angle comes first
@@ -180,7 +180,7 @@ internal class BorderClosing
                     if (angle2.ApproxLessThan(0)) angle2 += 2 * Math.PI;
                     break;
 
-                case Direction.Bottom:
+                case Direction.Top:
                     // Angles are 0..π or -π
                     // We can swap -π to π 
                     // Smaller angle comes first
@@ -188,10 +188,10 @@ internal class BorderClosing
                     if (angle2.ApproxLessThan(0)) angle2 += 2 * Math.PI;
                     break;
 
-                case Direction.TopRight:
                 case Direction.BottomRight:
-                case Direction.LeftTop:
+                case Direction.TopRight:
                 case Direction.LeftBottom:
+                case Direction.LeftTop:
                 case Direction.None:
                     break;
                 default:
@@ -289,15 +289,14 @@ internal class BorderClosing
             return n1.BorderLocation switch // same for n2
             {
                 // going up
-                Direction.Left or Direction.LeftBottom => NodeCompareTo(n1.Point.Y, n2.Point.Y, n1, n2, n1.BorderLocation),
+                Direction.Left or Direction.LeftTop => NodeCompareTo(n1.Point.Y, n2.Point.Y, n1, n2, n1.BorderLocation),
                 // going right
-                Direction.Top or Direction.LeftTop => NodeCompareTo(n1.Point.X, n2.Point.X, n1, n2, n1.BorderLocation),
+                Direction.Bottom or Direction.LeftBottom => NodeCompareTo(n1.Point.X, n2.Point.X, n1, n2, n1.BorderLocation),
                 // going down
-                Direction.Right or Direction.TopRight => NodeCompareTo(n2.Point.Y, n1.Point.Y, n1, n2, n1.BorderLocation),
+                Direction.Right or Direction.BottomRight => NodeCompareTo(n2.Point.Y, n1.Point.Y, n1, n2, n1.BorderLocation),
                 // going left
-                Direction.Bottom or Direction.BottomRight => NodeCompareTo(n2.Point.X, n1.Point.X, n1, n2, n1.BorderLocation),
-                Direction.None => throw new InvalidOperationException(),
-                _ => throw new ArgumentOutOfRangeException(),
+                Direction.Top or Direction.TopRight => NodeCompareTo(n2.Point.X, n1.Point.X, n1, n2, n1.BorderLocation),
+                _ => throw new InvalidOperationException(),
             };
         }
 
@@ -320,14 +319,14 @@ internal class BorderClosing
         {
             return direction switch
             {
-                Direction.LeftBottom => 0,
+                Direction.LeftTop => 0,
                 Direction.Left => 1,
-                Direction.LeftTop => 2,
-                Direction.Top => 3,
-                Direction.TopRight => 4,
+                Direction.LeftBottom => 2,
+                Direction.Bottom => 3,
+                Direction.BottomRight => 4,
                 Direction.Right => 5,
-                Direction.BottomRight => 6,
-                Direction.Bottom => 7,
+                Direction.TopRight => 6,
+                Direction.Top => 7,
                 _ => throw new InvalidOperationException(),
             };
         }
