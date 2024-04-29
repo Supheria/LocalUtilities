@@ -82,22 +82,6 @@ public class VoronoiPoint(double x, double y, Direction borderLocation = Directi
 #endif
 }
 
-/// <remarks>
-/// Note that these are ordered clock-wise starting at bottom-left
-/// </remarks>
-public enum Direction
-{
-    None,
-    Left,
-    Top,
-    Right,
-    Bottom,
-    LeftTop,
-    TopRight,
-    LeftBottom,
-    BottomRight,
-}
-
 internal static class VPointExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

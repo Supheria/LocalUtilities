@@ -104,9 +104,9 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
             }
         }
         Edges = edges.ToList();
-        Edges = new BorderClipping().Clip(Edges, MinX, MinY, MaxX, MaxY);
+        Edges = BorderClipping.Clip(Edges, MinX, MinY, MaxX, MaxY);
         if (GenerateBorder)
-            Edges = new BorderClosing().Close(Edges, MinX, MinY, MaxX, MaxY, Cells);
+            Edges = BorderClosing.Close(Edges, MinX, MinY, MaxX, MaxY, Cells);
     }
 
     public void RelaxSites(int iterations = 1, float strength = 1.0f)
