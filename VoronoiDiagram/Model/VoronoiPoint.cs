@@ -8,7 +8,7 @@ namespace LocalUtilities.VoronoiDiagram.Model;
 /// These are the <see cref="VoronoiCell.CellVertices"/>.
 /// Also used for some other derived locations.
 /// </summary>
-public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation = PointBorderLocation.NotOnBorder)
+public class VoronoiPoint(double x, double y, Direction borderLocation = Direction.None)
 {
     public double X { get; } = x;
 
@@ -20,7 +20,7 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
     /// <remarks>
     /// Using this would be preferrable to comparing against the X/Y values due to possible precision issues.
     /// </remarks>
-    public PointBorderLocation BorderLocation { get; internal set; } = borderLocation;
+    public Direction BorderLocation { get; internal set; } = borderLocation;
 
     public double AngleTo(VoronoiPoint other)
     {
@@ -55,27 +55,27 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
             + BorderLocationToString(BorderLocation);
     }
 
-    private static string BorderLocationToString(PointBorderLocation location)
+    private static string BorderLocationToString(Direction location)
     {
         switch (location)
         {
-            case PointBorderLocation.NotOnBorder:
+            case Direction.None:
                 return "";
-            case PointBorderLocation.BottomLeft:
+            case Direction.LeftBottom:
                 return "BL";
-            case PointBorderLocation.Left:
+            case Direction.Left:
                 return "L";
-            case PointBorderLocation.TopLeft:
+            case Direction.LeftTop:
                 return "TL";
-            case PointBorderLocation.Top:
+            case Direction.Top:
                 return "T";
-            case PointBorderLocation.TopRight:
+            case Direction.TopRight:
                 return "TR";
-            case PointBorderLocation.Right:
+            case Direction.Right:
                 return "R";
-            case PointBorderLocation.BottomRight:
+            case Direction.BottomRight:
                 return "BR";
-            case PointBorderLocation.Bottom:
+            case Direction.Bottom:
                 return "B";
             default:
                 return "?";
@@ -88,17 +88,17 @@ public class VoronoiPoint(double x, double y, PointBorderLocation borderLocation
 /// <remarks>
 /// Note that these are ordered clock-wise starting at bottom-left
 /// </remarks>
-public enum PointBorderLocation
+public enum Direction
 {
-    NotOnBorder,
-    BottomLeft,
+    None,
     Left,
-    TopLeft,
     Top,
-    TopRight,
     Right,
-    BottomRight,
     Bottom,
+    LeftTop,
+    TopRight,
+    LeftBottom,
+    BottomRight,
 }
 
 

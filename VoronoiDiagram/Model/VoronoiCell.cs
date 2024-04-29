@@ -37,7 +37,7 @@ public class VoronoiCell(double x, double y)
             if (_cellVertices == null)
             {
                 _cellVertices = [];
-                var vertices = new Dictionary<(double X, double Y), PointBorderLocation>();
+                var vertices = new Dictionary<(double X, double Y), Direction>();
                 foreach (var edge in CellEdges)
                 {
                     ArgumentNullException.ThrowIfNull(edge.End);
