@@ -1,21 +1,23 @@
-﻿namespace LocalUtilities.VoronoiDiagram.Model;
+﻿using LocalUtilities.GdiUtilities;
+
+namespace LocalUtilities.VoronoiDiagram.Model;
 
 /// <summary>
 /// The point/site/seed on the Voronoi plane.
-/// This has a <see cref="CellEdges"/> of <see cref="VoronoiEdge"/>s.
-/// This has <see cref="CellVertices"/> of <see cref="VoronoiPoint"/>s that are the edge end points, i.e. the cell's vertices.
+/// This has a <see cref="Edges"/> of <see cref="VoronoiEdge"/>s.
+/// This has <see cref="Vertices"/> of <see cref="VoronoiVertice"/>s that are the edge end points, i.e. the cell's vertices.
 /// This also has <see cref="Neighbours"/>, i.e. <see cref="VoronoiCell"/>s across the <see cref="VoronoiEdge"/>s.
 /// </summary>
-public class VoronoiCell(double x, double y)
+public class VoronoiCell(Coordinate coordinate)
 {
-    public VoronoiPoint Site { get; private set; } = new(x, y);
+    public Coordinate Site { get; private set; } = coordinate;
 
     /// <summary>
     /// The edges that make up this cell.
-    /// The vertices of these edges are the <see cref="CellVertices"/>.
+    /// The vertices of these edges are the <see cref="Vertices"/>.
     /// These are also known as Thiessen polygons.
     /// </summary>
-    internal List<VoronoiEdge> CellEdges { get; } = [];
+    internal List<VoronoiEdge> Edges { get; } = [];
 
     /// <summary>
     /// The sites across the edges.
@@ -23,64 +25,58 @@ public class VoronoiCell(double x, double y)
     public List<VoronoiCell> Neighbours { get; } = [];
 
     /// <summary>
-    /// The vertices of the <see cref="CellEdges"/>.
+    /// The vertices of the <see cref="Edges"/>.
     /// </summary>
-    public List<VoronoiPoint> CellVertices
+    public List<VoronoiVertice> Vertices
     {
         get
         {
-            if (_cellVertices == null)
+            if (_vertices == null)
             {
-                _cellVertices = [];
+                _vertices = [];
                 var vertices = new Dictionary<(double X, double Y), Direction>();
-                foreach (var edge in CellEdges)
+                foreach (var edge in Edges)
                 {
                     ArgumentNullException.ThrowIfNull(edge.End);
                     vertices[(edge.Start.X, edge.Start.Y)] = edge.Start.BorderLocation;
                     vertices[(edge.End.X, edge.End.Y)] = edge.End.BorderLocation;
                     // Note that .End is guaranteed to be set since we don't expose edges externally that aren't clipped in bounds
                 }
-                _cellVertices = vertices.Select(p => new VoronoiPoint(p.Key.X, p.Key.Y, p.Value)).ToList();
-                _cellVertices.Sort(SortCellVerticesClockwisely);
+                _vertices = vertices.Select(p => new VoronoiVertice(p.Key.X, p.Key.Y, p.Value)).ToList();
+                _vertices.Sort(SortVerticesClockwisely);
             }
-            return _cellVertices;
+            return _vertices;
         }
     }
-    List<VoronoiPoint>? _cellVertices = null;
+    List<VoronoiVertice>? _vertices = null;
 
-    public VoronoiPoint Centroid
+    public Coordinate Centroid
     {
         get => _centroid ??= GetCentroid();
     }
-    VoronoiPoint? _centroid = null;
+    Coordinate? _centroid = null;
 
-    public VoronoiCell() : this(0, 0)
+    public (int Column, int Row) Location => (Site.Column, Site.Row);
+
+    public VoronoiCell() : this(new())
     {
 
     }
 
-    internal void Relocate(double newX, double newY)
-    {
-        Site = new(newX, newY);
-        CellEdges.Clear();
-        Neighbours.Clear();
-        _cellVertices = null;
-    }
-
-    public bool Contains(double x, double y)
+    public bool ContainPoint(double x, double y)
     {
         // helper method to determine if a point is inside the cell
         // based on meowNET's answer from: https://stackoverflow.com/questions/4243042/c-sharp-point-in-polygon
         bool result = false;
-        int j = CellVertices.Count - 1;
-        for (int i = 0; i < CellVertices.Count; i++)
+        int j = Vertices.Count - 1;
+        for (int i = 0; i < Vertices.Count; i++)
         {
-            if (CellVertices[i].Y < y && CellVertices[j].Y >= y ||
-                CellVertices[j].Y < y && CellVertices[i].Y >= y)
+            if (Vertices[i].Y < y && Vertices[j].Y >= y ||
+                Vertices[j].Y < y && Vertices[i].Y >= y)
             {
-                if (CellVertices[i].X + (y - CellVertices[i].Y) /
-                    (CellVertices[j].Y - CellVertices[i].Y) *
-                    (CellVertices[j].X - CellVertices[i].X) < x)
+                if (Vertices[i].X + (y - Vertices[i].Y) /
+                    (Vertices[j].Y - Vertices[i].Y) *
+                    (Vertices[j].X - Vertices[i].X) < x)
                     result = !result;
             }
             j = i;
@@ -88,27 +84,56 @@ public class VoronoiCell(double x, double y)
         return result;
     }
 
+    public bool ContainVertice(VoronoiVertice vertice)
+    {
+        foreach(var v in Vertices)
+        {
+            if (v.X.ApproxEqual(vertice.X) && v.Y.ApproxEqual(vertice.Y))
+                return true;
+        }
+        return false;
+    }
+
+    public VoronoiVertice VerticeNeighbor(VoronoiVertice vertice, bool clockWise)
+    {
+        var index = 0;
+        while (index < Vertices.Count)
+        {
+            var v = Vertices[index];
+            if (v.X.ApproxEqual(vertice.X) && v.Y.ApproxEqual(vertice.Y))
+            {
+                if (clockWise)
+                    index = (index + 1) % Vertices.Count;
+                else
+                    index = (index + Vertices.Count - 1) % Vertices.Count;
+                return Vertices[index];
+            }
+            index++;
+        }
+        throw new ArgumentException();
+    }
+
     /// <summary>
     /// If the site lies on any of the edges (or corners), then the starting order is not defined.
     /// </summary>
-    private int SortCellVerticesClockwisely(VoronoiPoint point1, VoronoiPoint point2)
+    private int SortVerticesClockwisely(VoronoiVertice point1, VoronoiVertice point2)
     {
         // When the point lies on top of us, we don't know what to use as an angle because that depends on which way the other edges "close".
         // So we "shift" the center a little towards the (approximate*) centroid of the polygon, which would "restore" the angle.
         // (* We don't want to waste time computing the actual true centroid though.)
         if (point1.ApproxEqual(Site.X, Site.Y) || point2.ApproxEqual(Site.X, Site.Y))
-            return SortCellVerticesClockwisely(point1, point2, GetCenterShiftedX(), GetCenterShiftedY());
-        return SortCellVerticesClockwisely(point1, point2, Site.X, Site.Y);
+            return SortVerticesClockwisely(point1, point2, GetCenterShiftedX(), GetCenterShiftedY());
+        return SortVerticesClockwisely(point1, point2, Site.X, Site.Y);
     }
 
-    private static int SortCellVerticesClockwisely(VoronoiPoint point1, VoronoiPoint point2, double x, double y)
+    private static int SortVerticesClockwisely(VoronoiVertice point1, VoronoiVertice point2, double x, double y)
     {
         // originally, based on: https://social.msdn.microsoft.com/Forums/en-US/c4c0ce02-bbd0-46e7-aaa0-df85a3408c61/sorting-list-of-xy-coordinates-clockwise-sort-works-if-list-is-unsorted-but-fails-if-list-is?forum=csharplanguage
         // comparer to sort the array based on the points relative position to the center
         var atan1 = Atan2(point1.Y - y, point1.X - x);
         var atan2 = Atan2(point2.Y - y, point2.X - x);
-        if (atan1 > atan2) return -1;
-        if (atan1 < atan2) return 1;
+        if (atan1 > atan2) return 1;
+        if (atan1 < atan2) return -1;
         return 0;
     }
 
@@ -132,13 +157,13 @@ public class VoronoiCell(double x, double y)
 
     private double GetCenterShiftedX()
     {
-        var target = CellEdges.Sum(c => c.Start.X + c.End?.X) / CellEdges.Count / 2;
+        var target = Edges.Sum(c => c.Start.X + c.End?.X) / Edges.Count / 2;
         return Site.X + (target - Site.X) * shiftAmount ?? throw new ArgumentNullException();
     }
 
     private double GetCenterShiftedY()
     {
-        var target = CellEdges.Sum(c => c.Start.Y + c.End?.Y) / CellEdges.Count / 2;
+        var target = Edges.Sum(c => c.Start.Y + c.End?.Y) / Edges.Count / 2;
         return Site.Y + (target - Site.Y) * shiftAmount ?? throw new ArgumentNullException();
     }
 
@@ -148,7 +173,7 @@ public class VoronoiCell(double x, double y)
     /// This is assuming a non-self-intersecting closed polygon of our cell.
     /// If we don't have a closed cell (i.e. unclosed "polygon"), then this will produce approximate results that aren't mathematically sound, but work for most purposes. 
     /// </summary>
-    private VoronoiPoint GetCentroid()
+    private Coordinate GetCentroid()
     {
         // Basically, https://stackoverflow.com/a/34732659
         // https://en.wikipedia.org/wiki/Centroid#Of_a_polygon
@@ -161,13 +186,13 @@ public class VoronoiCell(double x, double y)
         double centroidX = 0; // just for compiler to be happy, we won't use these default values
         double centroidY = 0;
         double area = 0;
-        for (int i = 0; i < CellVertices.Count; i++)
+        for (int i = 0; i < Vertices.Count; i++)
         {
-            int i2 = i == CellVertices.Count - 1 ? 0 : i + 1;
-            double xi = CellVertices[i].X;
-            double yi = CellVertices[i].Y;
-            double xi2 = CellVertices[i2].X;
-            double yi2 = CellVertices[i2].Y;
+            int i2 = i == Vertices.Count - 1 ? 0 : i + 1;
+            double xi = Vertices[i].X;
+            double yi = Vertices[i].Y;
+            double xi2 = Vertices[i2].X;
+            double yi2 = Vertices[i2].Y;
             double mult = (xi * yi2 - xi2 * yi) / 3;
             // Second multiplier is the same for both x and y, so "extract"
             // Also since C = 1/(6A)... and A = (1/2)..., we can just apply the /3 divisor here to not lose precision on large numbers 
@@ -192,19 +217,19 @@ public class VoronoiCell(double x, double y)
             return Site;
         centroidX /= area;
         centroidY /= area;
-        return new(centroidX, centroidY);
+        return new(centroidX, centroidY, Site.Column, Site.Row);
     }
 
     public Rectangle GetBounds()
     {
-        if (CellVertices.Count is 0)
+        if (Vertices.Count is 0)
             return new(0, 0, 0, 0);
         double left, right, top, bottom;
-        left = right = CellVertices[0].X;
-        top = bottom = CellVertices[0].Y;
-        for (int i = 1; i < CellVertices.Count; i++)
+        left = right = Vertices[0].X;
+        top = bottom = Vertices[0].Y;
+        for (int i = 1; i < Vertices.Count; i++)
         {
-            var point = CellVertices[i];
+            var point = Vertices[i];
             left = Math.Min(left, point.X);
             right = Math.Max(right, point.X);
             top = Math.Min(top, point.Y);
@@ -215,19 +240,19 @@ public class VoronoiCell(double x, double y)
 
     public double GetArea()
     {
-        var count = CellVertices.Count;
+        var count = Vertices.Count;
         if (count < 3)
             return 0.0;
-        double s = CellVertices[0].Y * (CellVertices[count - 1].X - CellVertices[1].X);
+        double s = Vertices[0].Y * (Vertices[count - 1].X - Vertices[1].X);
         for (int i = 1; i < count; ++i)
-            s += CellVertices[i].Y * (CellVertices[i - 1].X - CellVertices[(i + 1) % count].X);
+            s += Vertices[i].Y * (Vertices[i - 1].X - Vertices[(i + 1) % count].X);
         return Math.Abs(s / 2.0);
     }
 
 #if DEBUG
     public override string ToString()
     {
-        return "(" + Site.X.ToString("F3") + "," + Site.Y.ToString("F3") + ")";
+        return $"{Centroid.X:F3}, {Centroid.Y:F3} ({Centroid.Column},{Centroid.Row})";
     }
 #endif
 }

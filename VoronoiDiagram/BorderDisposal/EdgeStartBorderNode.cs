@@ -7,7 +7,7 @@ internal class EdgeStartBorderNode(VoronoiEdge edge, int fallbackComparisonIndex
 {
     public override Direction BorderLocation => Edge.Start.BorderLocation;
 
-    public override VoronoiPoint Point => Edge.Start;
+    public override VoronoiVertice Point => Edge.Start;
 
     public override double Angle => Point.AngleTo(Edge.End); // away from border
 

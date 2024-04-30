@@ -47,13 +47,13 @@ internal class BorderClosing
         }
         // If none of the edges hit any of the corners, then we need to add those as generic non-edge nodes 
         if (!hadLeftTop)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, minY, Direction.LeftTop)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertice(minX, minY, Direction.LeftTop)));
         if (!hadTopRight)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, minY, Direction.TopRight)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertice(maxX, minY, Direction.TopRight)));
         if (!hadBottomRight)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(maxX, maxY, Direction.BottomRight)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertice(maxX, maxY, Direction.BottomRight)));
         if (!hadLeftBottom)
-            nodes.Add(new CornerBorderNode(new VoronoiPoint(minX, maxY, Direction.LeftBottom)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertice(minX, maxY, Direction.LeftBottom)));
         EdgeBorderNode? previousEdgeNode = null;
         if (nodes.Min is EdgeBorderNode febn)
             previousEdgeNode = febn;
@@ -106,7 +106,7 @@ internal class BorderClosing
                 if (previousEdge is null)
                     firstEdge = newEdge;
                 edges.Add(newEdge);
-                site?.CellEdges.Add(newEdge);
+                site?.Edges.Add(newEdge);
                 previousEdge = newEdge;
             }
             // Passing an edge node means that the site changes as we are now on the other side of this edge
@@ -121,7 +121,7 @@ internal class BorderClosing
             finalSite
         );
         edges.Add(finalEdge);
-        finalSite?.CellEdges.Add(finalEdge);
+        finalSite?.Edges.Add(finalEdge);
         return edges;
     }
 }

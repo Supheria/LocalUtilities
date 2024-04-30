@@ -6,7 +6,7 @@ internal abstract class BorderNode
 {
     public abstract Direction BorderLocation { get; }
 
-    public abstract VoronoiPoint Point { get; }
+    public abstract VoronoiVertice Point { get; }
 
     public abstract double Angle { get; }
 

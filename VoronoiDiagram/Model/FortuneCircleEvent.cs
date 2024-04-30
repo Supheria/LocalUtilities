@@ -2,11 +2,11 @@
 
 internal class FortuneCircleEvent : IFortuneEvent
 {
-    internal VoronoiPoint Lowest { get; }
+    internal VoronoiVertice Lowest { get; }
     internal double YCenter { get; }
     internal RBTreeNode<BeachSection> ToDelete { get; }
 
-    internal FortuneCircleEvent(VoronoiPoint lowest, double yCenter, RBTreeNode<BeachSection> toDelete)
+    internal FortuneCircleEvent(VoronoiVertice lowest, double yCenter, RBTreeNode<BeachSection> toDelete)
     {
         Lowest = lowest;
         YCenter = yCenter;

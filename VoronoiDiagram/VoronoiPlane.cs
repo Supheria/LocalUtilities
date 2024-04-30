@@ -5,52 +5,45 @@ namespace LocalUtilities.VoronoiDiagram;
 
 /// <summary>
 /// An Euclidean plane where a Voronoi diagram can be constructed from <see cref="VoronoiCell"/>s
-/// producing a tesselation of cells with <see cref="VoronoiEdge"/> line segments and <see cref="VoronoiPoint"/> vertices.
+/// producing a tesselation of cells with <see cref="VoronoiEdge"/> line segments and <see cref="VoronoiVertice"/> vertices.
 /// </summary>
-public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
+public class VoronoiPlane()
 {
-    public List<VoronoiCell> Cells { get; private set; } = [];
+    static List<VoronoiCell> Cells { get; set; } = [];
 
-    public List<VoronoiEdge> Edges { get; private set; } = [];
+    static List<VoronoiEdge> Edges { get; set; } = [];
 
-    public double MinX { get; } = minX != maxX ? Math.Min(minX, maxX) : throw new ArgumentException();
+    static int Width { get; set; }
 
-    public double MinY { get; } = minY != maxY ? Math.Min(minY, maxY) : throw new ArgumentException();
-
-    public double MaxX { get; } = minX != maxX ? Math.Max(minX, maxX) : throw new ArgumentException();
-
-    public double MaxY { get; } = minY != maxY ? Math.Max(minY, maxY) : throw new ArgumentException();
-
-    bool GenerateBorder { get; set; } = true;
-
-    public void Generate(List<(double X, double Y)> points)
-    {
-        ArgumentOutOfRangeException.ThrowIfZero(points.Count);
-        Cells = UniquePoints(points).Select(p => new VoronoiCell(p.X, p.Y)).ToList();
-        Edges.Clear();
-        Generate();
-    }
+    static int Height { get; set; }
 
     /// <summary>
     /// The generated sites are guaranteed not to lie on the border of the plane (although they may be very close).
     /// </summary>
-    public void Generate(int count, IPointsGeneration pointsGeneration)
+    public static List<VoronoiCell> Generate(int width, int height, int widthSegmentNumber, int heightSegmentNumber, IPointsGeneration pointsGeneration)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
-        var remain = count;
-        do
+        Width = width;
+        Height = height;
+        var coordinates = new List<Coordinate>();
+        var widthSegment = width / widthSegmentNumber;
+        var heightSegment = height / heightSegmentNumber;
+        for (int i = 0; i < widthSegmentNumber; i++)
         {
-            Cells = UniquePoints(pointsGeneration.Generate(MinX, MinY, MaxX, MaxY, remain))
-                .Select(p => new VoronoiCell(p.X, p.Y)).ToList();
-            remain = count - Cells.Count;
-        } while (remain > 0);
+            for (int j = 0; j < heightSegmentNumber; j++)
+            {
+                var (X, Y) = pointsGeneration.Generate(widthSegment * i, heightSegment * j, widthSegment * (i + 1), heightSegment * (j + 1), 1).First();
+                coordinates.Add(new(X, Y, i, j));
+            }
+        }
+        Cells = UniquePoints(coordinates).Select(c => new VoronoiCell(c)).ToList();
         Edges.Clear();
         Generate();
+        return Cells;
     }
 
-    private static List<(double X, double Y)> UniquePoints(List<(double X, double Y)> points)
+    private static List<Coordinate> UniquePoints(List<Coordinate> coordinates)
     {
-        points.Sort((p1, p2) =>
+        coordinates.Sort((p1, p2) =>
         {
             if (p1.X.ApproxEqual(p2.X))
             {
@@ -64,23 +57,23 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
                 return -1;
             return 1;
         });
-        var unique = new List<(double X, double Y)>();
-        var last = points.First();
+        var unique = new List<Coordinate>();
+        var last = coordinates.First();
         unique.Add(last);
-        for (var index = 1; index < points.Count; index++)
+        for (var index = 1; index < coordinates.Count; index++)
         {
-            var point = points[index];
-            if (!last.X.ApproxEqual(point.X) ||
-                !last.Y.ApproxEqual(point.Y))
+            var coordiante = coordinates[index];
+            if (!last.X.ApproxEqual(coordiante.X) ||
+                !last.Y.ApproxEqual(coordiante.Y))
             {
-                unique.Add(point);
-                last = point;
+                unique.Add(coordiante);
+                last = coordiante;
             }
         }
         return unique;
     }
 
-    private void Generate()
+    private static void Generate()
     {
         var eventQueue = new MinHeap<IFortuneEvent>(5 * Cells.Count);
         foreach (var site in Cells)
@@ -93,8 +86,8 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
         while (eventQueue.Count != 0)
         {
             IFortuneEvent fEvent = eventQueue.Pop();
-            if (fEvent is FortuneSiteEvent)
-                beachLine.AddBeachSection((FortuneSiteEvent)fEvent, eventQueue, deleted, edges);
+            if (fEvent is FortuneSiteEvent fsEvent)
+                beachLine.AddBeachSection(fsEvent, eventQueue, deleted, edges);
             else
             {
                 if (deleted.Contains((FortuneCircleEvent)fEvent))
@@ -104,34 +97,7 @@ public class VoronoiPlane(double minX, double minY, double maxX, double maxY)
             }
         }
         Edges = edges.ToList();
-        Edges = BorderClipping.Clip(Edges, MinX, MinY, MaxX, MaxY);
-        if (GenerateBorder)
-            Edges = BorderClosing.Close(Edges, MinX, MinY, MaxX, MaxY, Cells);
-    }
-
-    public void RelaxSites(int iterations = 1, float strength = 1.0f)
-    {
-        VoronoiException.ThrowIfCountZero(Edges);
-        ArgumentOutOfRangeException.ThrowIfLessThan(iterations, 1);
-        if (strength <= 0f || strength > 1f)
-            throw new ArgumentOutOfRangeException(nameof(strength));
-        for (int i = 0; i < iterations; i++)
-        {
-            var fullStrength = Math.Abs(strength - 1.0f) < float.Epsilon;
-            foreach (var cell in Cells)
-            {
-                var centroid = cell.Centroid;
-                if (fullStrength)
-                    cell.Relocate(centroid.X, centroid.Y);
-                else
-                {
-                    var site = cell.Site;
-                    var newX = site.X + (centroid.X - site.X) * strength;
-                    var newY = site.Y + (centroid.Y - site.Y) * strength;
-                    cell.Relocate(newX, newY);
-                }
-            }
-            Generate();
-        }
+        Edges = BorderClipping.Clip(Edges, 0, 0, Width, Height);
+        Edges = BorderClosing.Close(Edges, 0, 0, Width, Height, Cells);
     }
 }

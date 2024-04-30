@@ -5,10 +5,10 @@ namespace LocalUtilities.VoronoiDiagram.Model;
 /// <summary>
 /// The vertices/nodes of the Voronoi cells, i.e. the points equidistant to three or more Voronoi sites.
 /// These are the end points of a <see cref="VoronoiEdge"/>.
-/// These are the <see cref="VoronoiCell.CellVertices"/>.
+/// These are the <see cref="VoronoiCell.Vertices"/>.
 /// Also used for some other derived locations.
 /// </summary>
-public class VoronoiPoint(double x, double y, Direction borderLocation = Direction.None)
+public class VoronoiVertice(double x, double y, Direction borderLocation = Direction.None)
 {
     public double X { get; } = x;
 
@@ -22,14 +22,19 @@ public class VoronoiPoint(double x, double y, Direction borderLocation = Directi
     /// </remarks>
     public Direction BorderLocation { get; internal set; } = borderLocation;
 
-    public double AngleTo(VoronoiPoint other)
+    public double AngleTo(VoronoiVertice other)
     {
         return Math.Atan2(other.Y - Y, other.X - X);
     }
 
-    public static implicit operator (int X, int Y)(VoronoiPoint point)
+    public static implicit operator (int X, int Y)(VoronoiVertice point)
     {
         return ((int)point.X, (int)point.Y);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine((int)X, (int)Y);
     }
 
 #if DEBUG
@@ -85,7 +90,7 @@ public class VoronoiPoint(double x, double y, Direction borderLocation = Directi
 internal static class VPointExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ApproxEqual(this VoronoiPoint value1, VoronoiPoint value2)
+    internal static bool ApproxEqual(this VoronoiVertice value1, VoronoiVertice value2)
     {
         return
             value1.X.ApproxEqual(value2.X) &&
@@ -93,7 +98,7 @@ internal static class VPointExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ApproxEqual(this VoronoiPoint value1, double x, double y)
+    internal static bool ApproxEqual(this VoronoiVertice value1, double x, double y)
     {
         return
             value1.X.ApproxEqual(x) &&
