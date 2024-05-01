@@ -5,7 +5,7 @@ namespace LocalUtilities.VoronoiDiagram;
 
 /// <summary>
 /// An Euclidean plane where a Voronoi diagram can be constructed from <see cref="VoronoiCell"/>s
-/// producing a tesselation of cells with <see cref="VoronoiEdge"/> line segments and <see cref="VoronoiVertice"/> vertices.
+/// producing a tesselation of cells with <see cref="VoronoiEdge"/> line segments and <see cref="VoronoiVertex"/> vertices.
 /// </summary>
 public class VoronoiPlane()
 {
@@ -24,7 +24,7 @@ public class VoronoiPlane()
     {
         Width = width;
         Height = height;
-        var coordinates = new List<Coordinate>();
+        var coordinates = new List<(double X, double Y, int Column, int Row)>();
         var widthSegment = width / widthSegmentNumber;
         var heightSegment = height / heightSegmentNumber;
         for (int i = 0; i < widthSegmentNumber; i++)
@@ -35,13 +35,13 @@ public class VoronoiPlane()
                 coordinates.Add(new(X, Y, i, j));
             }
         }
-        Cells = UniquePoints(coordinates).Select(c => new VoronoiCell(c)).ToList();
+        Cells = UniquePoints(coordinates).Select(c => new VoronoiCell(c.X, c.Y, c.Column, c.Row)).ToList();
         Edges.Clear();
         Generate();
         return Cells;
     }
 
-    private static List<Coordinate> UniquePoints(List<Coordinate> coordinates)
+    private static List<(double X, double Y, int Column, int Row)> UniquePoints(List<(double X, double Y, int Column, int Row)> coordinates)
     {
         coordinates.Sort((p1, p2) =>
         {
@@ -57,7 +57,7 @@ public class VoronoiPlane()
                 return -1;
             return 1;
         });
-        var unique = new List<Coordinate>();
+        var unique = new List<(double X, double Y, int Column, int Row)>();
         var last = coordinates.First();
         unique.Add(last);
         for (var index = 1; index < coordinates.Count; index++)

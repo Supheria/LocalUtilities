@@ -1,16 +1,16 @@
-﻿using LocalUtilities.GdiUtilities;
-
-namespace LocalUtilities.VoronoiDiagram.Model;
+﻿namespace LocalUtilities.VoronoiDiagram.Model;
 
 /// <summary>
 /// The point/site/seed on the Voronoi plane.
 /// This has a <see cref="Edges"/> of <see cref="VoronoiEdge"/>s.
-/// This has <see cref="Vertices"/> of <see cref="VoronoiVertice"/>s that are the edge end points, i.e. the cell's vertices.
+/// This has <see cref="Vertices"/> of <see cref="VoronoiVertex"/>s that are the edge end points, i.e. the cell's vertices.
 /// This also has <see cref="Neighbours"/>, i.e. <see cref="VoronoiCell"/>s across the <see cref="VoronoiEdge"/>s.
 /// </summary>
-public class VoronoiCell(Coordinate coordinate)
+public class VoronoiCell(double x, double y, int column, int row)
 {
-    public Coordinate Site { get; private set; } = coordinate;
+    public Coordinate Site { get; private set; } = new(x, y);
+
+    public (int Column, int Row) Location { get; private set; } = (column, row);
 
     /// <summary>
     /// The edges that make up this cell.
@@ -27,7 +27,7 @@ public class VoronoiCell(Coordinate coordinate)
     /// <summary>
     /// The vertices of the <see cref="Edges"/>.
     /// </summary>
-    public List<VoronoiVertice> Vertices
+    public List<VoronoiVertex> Vertices
     {
         get
         {
@@ -38,17 +38,17 @@ public class VoronoiCell(Coordinate coordinate)
                 foreach (var edge in Edges)
                 {
                     ArgumentNullException.ThrowIfNull(edge.End);
-                    vertices[(edge.Start.X, edge.Start.Y)] = edge.Start.BorderLocation;
-                    vertices[(edge.End.X, edge.End.Y)] = edge.End.BorderLocation;
+                    vertices[(edge.Start.X, edge.Start.Y)] = edge.Start.DirectionOnBorder;
+                    vertices[(edge.End.X, edge.End.Y)] = edge.End.DirectionOnBorder;
                     // Note that .End is guaranteed to be set since we don't expose edges externally that aren't clipped in bounds
                 }
-                _vertices = vertices.Select(p => new VoronoiVertice(p.Key.X, p.Key.Y, p.Value)).ToList();
+                _vertices = vertices.Select(p => new VoronoiVertex(p.Key.X, p.Key.Y, p.Value)).ToList();
                 _vertices.Sort(SortVerticesClockwisely);
             }
             return _vertices;
         }
     }
-    List<VoronoiVertice>? _vertices = null;
+    List<VoronoiVertex>? _vertices = null;
 
     public Coordinate Centroid
     {
@@ -56,9 +56,7 @@ public class VoronoiCell(Coordinate coordinate)
     }
     Coordinate? _centroid = null;
 
-    public (int Column, int Row) Location => (Site.Column, Site.Row);
-
-    public VoronoiCell() : this(new())
+    public VoronoiCell() : this(0, 0, 0, 0)
     {
 
     }
@@ -84,7 +82,7 @@ public class VoronoiCell(Coordinate coordinate)
         return result;
     }
 
-    public bool ContainVertice(VoronoiVertice vertice)
+    public bool ContainVertice(VoronoiVertex vertice)
     {
         foreach(var v in Vertices)
         {
@@ -94,7 +92,7 @@ public class VoronoiCell(Coordinate coordinate)
         return false;
     }
 
-    public VoronoiVertice VerticeNeighbor(VoronoiVertice vertice, bool clockWise)
+    public VoronoiVertex VerticeNeighbor(VoronoiVertex vertice, bool clockWise)
     {
         var index = 0;
         while (index < Vertices.Count)
@@ -116,7 +114,7 @@ public class VoronoiCell(Coordinate coordinate)
     /// <summary>
     /// If the site lies on any of the edges (or corners), then the starting order is not defined.
     /// </summary>
-    private int SortVerticesClockwisely(VoronoiVertice point1, VoronoiVertice point2)
+    private int SortVerticesClockwisely(VoronoiVertex point1, VoronoiVertex point2)
     {
         // When the point lies on top of us, we don't know what to use as an angle because that depends on which way the other edges "close".
         // So we "shift" the center a little towards the (approximate*) centroid of the polygon, which would "restore" the angle.
@@ -126,7 +124,7 @@ public class VoronoiCell(Coordinate coordinate)
         return SortVerticesClockwisely(point1, point2, Site.X, Site.Y);
     }
 
-    private static int SortVerticesClockwisely(VoronoiVertice point1, VoronoiVertice point2, double x, double y)
+    private static int SortVerticesClockwisely(VoronoiVertex point1, VoronoiVertex point2, double x, double y)
     {
         // originally, based on: https://social.msdn.microsoft.com/Forums/en-US/c4c0ce02-bbd0-46e7-aaa0-df85a3408c61/sorting-list-of-xy-coordinates-clockwise-sort-works-if-list-is-unsorted-but-fails-if-list-is?forum=csharplanguage
         // comparer to sort the array based on the points relative position to the center
@@ -217,7 +215,7 @@ public class VoronoiCell(Coordinate coordinate)
             return Site;
         centroidX /= area;
         centroidY /= area;
-        return new(centroidX, centroidY, Site.Column, Site.Row);
+        return new(centroidX, centroidY);
     }
 
     public Rectangle GetBounds()
@@ -252,7 +250,7 @@ public class VoronoiCell(Coordinate coordinate)
 #if DEBUG
     public override string ToString()
     {
-        return $"{Centroid.X:F3}, {Centroid.Y:F3} ({Centroid.Column},{Centroid.Row})";
+        return $"{Centroid.X:F3}, {Centroid.Y:F3} ({Location.Column},{Location.Row})";
     }
 #endif
 }

@@ -115,7 +115,7 @@ internal class BeachLine
             //grab the projection of this site onto the parabola
             var site = leftSection.Data.Cell.Site;
             double y = MathTool.EvalParabola(site.X, site.Y, directrix, x);
-            var intersection = new VoronoiVertice(x, y);
+            var intersection = new VoronoiVertex(x, y);
 
             //create the two half edges corresponding to this intersection
             var leftEdge = new VoronoiEdge(intersection, cell, leftSection.Data.Cell);
@@ -144,7 +144,7 @@ internal class BeachLine
         else if (leftSection != null && rightSection == null)
         {
             var site = leftSection.Data.Cell.Site;
-            var start = new VoronoiVertice((site.X + cell.Site.X) / 2, double.MinValue);
+            var start = new VoronoiVertex((site.X + cell.Site.X) / 2, double.MinValue);
             var infEdge = new VoronoiEdge(start, leftSection.Data.Cell, cell);
             var newEdge = new VoronoiEdge(start, cell, leftSection.Data.Cell)
             {
@@ -196,7 +196,7 @@ internal class BeachLine
             double d = bx * cy - by * cx;
             double magnitudeB = bx * bx + by * by;
             double magnitudeC = cx * cx + cy * cy;
-            VoronoiVertice vertex = new VoronoiVertice(
+            VoronoiVertex vertex = new VoronoiVertex(
                 (cy * magnitudeB - by * magnitudeC) / (2 * d) + ax,
                 (bx * magnitudeC - cx * magnitudeB) / (2 * d) + ay);
 
@@ -244,7 +244,7 @@ internal class BeachLine
         RBTreeNode<BeachSection> section = circle.ToDelete;
         double x = circle.X;
         double y = circle.YCenter;
-        VoronoiVertice vertex = new VoronoiVertice(x, y);
+        VoronoiVertex vertex = new VoronoiVertex(x, y);
 
         //multiple edges could end here
         List<RBTreeNode<BeachSection>> toBeRemoved = new List<RBTreeNode<BeachSection>>();
@@ -393,7 +393,7 @@ internal class BeachLine
         double ycenter = y + by;
         //y center is off
         FortuneCircleEvent circleEvent = new FortuneCircleEvent(
-            new VoronoiVertice(x + bx, ycenter + Math.Sqrt(x * x + y * y)),
+            new VoronoiVertex(x + bx, ycenter + Math.Sqrt(x * x + y * y)),
             ycenter, section
         );
         section.Data.CircleEvent = circleEvent;

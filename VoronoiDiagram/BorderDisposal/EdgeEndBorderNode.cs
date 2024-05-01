@@ -5,9 +5,9 @@ namespace LocalUtilities.VoronoiDiagram;
 internal class EdgeEndBorderNode(VoronoiEdge edge, int fallbackComparisonIndex) :
         EdgeBorderNode(edge, fallbackComparisonIndex)
 {
-    public override Direction BorderLocation => Edge.End.BorderLocation;
+    public override Direction BorderLocation => Edge.End.DirectionOnBorder;
 
-    public override VoronoiVertice Point => Edge.End;
+    public override VoronoiVertex Point => Edge.End;
 
     public override double Angle => Point.AngleTo(Edge.Start); // away from border
 

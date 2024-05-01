@@ -28,32 +28,32 @@ internal class BorderClosing
         for (int i = 0; i < edges.Count; i++)
         {
             var edge = edges[i];
-            if (edge.Start.BorderLocation != Direction.None)
+            if (edge.Start.DirectionOnBorder != Direction.None)
             {
                 nodes.Add(new EdgeStartBorderNode(edge, i * 2));
-                if (edge.Start.BorderLocation == Direction.LeftTop) hadLeftTop = true;
-                else if (edge.Start.BorderLocation == Direction.TopRight) hadTopRight = true;
-                else if (edge.Start.BorderLocation == Direction.BottomRight) hadBottomRight = true;
-                else if (edge.Start.BorderLocation == Direction.LeftBottom) hadLeftBottom = true;
+                if (edge.Start.DirectionOnBorder == Direction.LeftTop) hadLeftTop = true;
+                else if (edge.Start.DirectionOnBorder == Direction.TopRight) hadTopRight = true;
+                else if (edge.Start.DirectionOnBorder == Direction.BottomRight) hadBottomRight = true;
+                else if (edge.Start.DirectionOnBorder == Direction.LeftBottom) hadLeftBottom = true;
             }
-            if (edge.End!.BorderLocation != Direction.None)
+            if (edge.End!.DirectionOnBorder != Direction.None)
             {
                 nodes.Add(new EdgeEndBorderNode(edge, i * 2 + 1));
-                if (edge.End.BorderLocation == Direction.LeftTop) hadLeftTop = true;
-                else if (edge.End.BorderLocation == Direction.TopRight) hadTopRight = true;
-                else if (edge.End.BorderLocation == Direction.BottomRight) hadBottomRight = true;
-                else if (edge.End.BorderLocation == Direction.LeftBottom) hadLeftBottom = true;
+                if (edge.End.DirectionOnBorder == Direction.LeftTop) hadLeftTop = true;
+                else if (edge.End.DirectionOnBorder == Direction.TopRight) hadTopRight = true;
+                else if (edge.End.DirectionOnBorder == Direction.BottomRight) hadBottomRight = true;
+                else if (edge.End.DirectionOnBorder == Direction.LeftBottom) hadLeftBottom = true;
             }
         }
         // If none of the edges hit any of the corners, then we need to add those as generic non-edge nodes 
         if (!hadLeftTop)
-            nodes.Add(new CornerBorderNode(new VoronoiVertice(minX, minY, Direction.LeftTop)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertex(minX, minY, Direction.LeftTop)));
         if (!hadTopRight)
-            nodes.Add(new CornerBorderNode(new VoronoiVertice(maxX, minY, Direction.TopRight)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertex(maxX, minY, Direction.TopRight)));
         if (!hadBottomRight)
-            nodes.Add(new CornerBorderNode(new VoronoiVertice(maxX, maxY, Direction.BottomRight)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertex(maxX, maxY, Direction.BottomRight)));
         if (!hadLeftBottom)
-            nodes.Add(new CornerBorderNode(new VoronoiVertice(minX, maxY, Direction.LeftBottom)));
+            nodes.Add(new CornerBorderNode(new VoronoiVertex(minX, maxY, Direction.LeftBottom)));
         EdgeBorderNode? previousEdgeNode = null;
         if (nodes.Min is EdgeBorderNode febn)
             previousEdgeNode = febn;

@@ -2,11 +2,11 @@
 
 namespace LocalUtilities.VoronoiDiagram;
 
-internal class CornerBorderNode(VoronoiVertice point) : BorderNode
+internal class CornerBorderNode(VoronoiVertex point) : BorderNode
 {
-    public override Direction BorderLocation { get; } = point.BorderLocation;
+    public override Direction BorderLocation { get; } = point.DirectionOnBorder;
 
-    public override VoronoiVertice Point { get; } = point;
+    public override VoronoiVertex Point { get; } = point;
 
     public override double Angle => throw new InvalidOperationException();
 

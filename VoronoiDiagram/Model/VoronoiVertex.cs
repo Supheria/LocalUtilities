@@ -8,7 +8,7 @@ namespace LocalUtilities.VoronoiDiagram.Model;
 /// These are the <see cref="VoronoiCell.Vertices"/>.
 /// Also used for some other derived locations.
 /// </summary>
-public class VoronoiVertice(double x, double y, Direction borderLocation = Direction.None)
+public class VoronoiVertex(double x, double y, Direction borderLocation = Direction.None)
 {
     public double X { get; } = x;
 
@@ -20,21 +20,21 @@ public class VoronoiVertice(double x, double y, Direction borderLocation = Direc
     /// <remarks>
     /// Using this would be preferrable to comparing against the X/Y values due to possible precision issues.
     /// </remarks>
-    public Direction BorderLocation { get; internal set; } = borderLocation;
+    public Direction DirectionOnBorder { get; internal set; } = borderLocation;
 
-    public double AngleTo(VoronoiVertice other)
+    public double AngleTo(VoronoiVertex other)
     {
         return Math.Atan2(other.Y - Y, other.X - X);
     }
 
-    public static implicit operator (int X, int Y)(VoronoiVertice point)
+    public static implicit operator (int X, int Y)(VoronoiVertex point)
     {
         return ((int)point.X, (int)point.Y);
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine((int)X, (int)Y);
+        return HashCode.Combine(X, Y);
     }
 
 #if DEBUG
@@ -46,7 +46,7 @@ public class VoronoiVertice(double x, double y, Direction borderLocation = Direc
             + ","
             + (Y == double.MinValue ? "-∞" : Y == double.MaxValue ? "+∞" : Y.ToString("F3"))
             + ")"
-            + BorderLocationToString(BorderLocation);
+            + BorderLocationToString(DirectionOnBorder);
     }
 
     public string ToString(string format)
@@ -57,7 +57,7 @@ public class VoronoiVertice(double x, double y, Direction borderLocation = Direc
             + ","
             + (Y == double.MinValue ? "-∞" : Y == double.MaxValue ? "+∞" : Y.ToString(format))
             + ")"
-            + BorderLocationToString(BorderLocation);
+            + BorderLocationToString(DirectionOnBorder);
     }
 
     private static string BorderLocationToString(Direction location)
@@ -90,7 +90,7 @@ public class VoronoiVertice(double x, double y, Direction borderLocation = Direc
 internal static class VPointExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ApproxEqual(this VoronoiVertice value1, VoronoiVertice value2)
+    internal static bool ApproxEqual(this VoronoiVertex value1, VoronoiVertex value2)
     {
         return
             value1.X.ApproxEqual(value2.X) &&
@@ -98,7 +98,7 @@ internal static class VPointExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ApproxEqual(this VoronoiVertice value1, double x, double y)
+    internal static bool ApproxEqual(this VoronoiVertex value1, double x, double y)
     {
         return
             value1.X.ApproxEqual(x) &&
