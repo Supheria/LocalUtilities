@@ -47,7 +47,7 @@ public class Dijkstra
         }
     }
 
-    public static List<Edge> GetRoute(Coordinate startVertex, Coordinate endVertex)
+    public static List<Edge> GetPath(Coordinate startVertex, Coordinate endVertex)
     {
         if (Vertexes.FirstOrDefault(c => c == startVertex) is null ||
             Vertexes.FirstOrDefault(c => c == endVertex) is null)

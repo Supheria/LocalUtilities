@@ -203,10 +203,10 @@ internal class BeachLine
 
             // If the edge ends up being 0 length (i.e. start and end are the same point),
             // then this is a location with 4+ equidistant sites.
-            if (rightSection.Data.Edge.Start.ApproxEqual(vertex)) // i.e. what we would set as .End
+            if (rightSection.Data.Edge.Starter.ApproxEqual(vertex)) // i.e. what we would set as .End
             {
                 // Reuse vertex (or we will have 2 ongoing points at the same location)
-                vertex = rightSection.Data.Edge.Start;
+                vertex = rightSection.Data.Edge.Starter;
 
                 // Discard the edge
                 edges.Remove(rightSection.Data.Edge);
@@ -217,7 +217,7 @@ internal class BeachLine
             }
             else
             {
-                rightSection.Data.Edge.End = vertex;
+                rightSection.Data.Edge.Ender = vertex;
             }
 
             //next we create a two new edges
@@ -268,15 +268,15 @@ internal class BeachLine
             next = next.Next;
         }
 
-        section.Data.Edge.End = vertex;
-        section.Next.Data.Edge.End = vertex;
+        section.Data.Edge.Ender = vertex;
+        section.Next.Data.Edge.Ender = vertex;
         section.Data.CircleEvent = null;
 
         //odds are this double writes a few edges but this is clean...
         foreach (RBTreeNode<BeachSection> remove in toBeRemoved)
         {
-            remove.Data.Edge.End = vertex;
-            remove.Next.Data.Edge.End = vertex;
+            remove.Data.Edge.Ender = vertex;
+            remove.Next.Data.Edge.Ender = vertex;
             deleted.Add(remove.Data.CircleEvent);
             remove.Data.CircleEvent = null;
         }

@@ -3,21 +3,21 @@
 /// <summary>
 /// The line segment making the Voronoi cells, i.e. the points equidistant to the two nearest Voronoi sites.
 /// These are the lines in the <see cref="VoronoiCell.Edges"/>.
-/// This has <see cref="VoronoiVertex"/> end points, i.e. <see cref="Start"/> and <see cref="End"/>.
+/// This has <see cref="VoronoiVertex"/> end points, i.e. <see cref="Starter"/> and <see cref="Ender"/>.
 /// This has the two <see cref="VoronoiCell"/>s they separate, i.e. <see cref="Right"/> and <see cref="Left"/>.
 /// This connects in a <see cref="Neighbours"/> node graph to other <see cref="VoronoiEdge"/>s, i.e. shares end points with them.
 /// </summary>
 public class VoronoiEdge
 {
     /// <summary>
-    /// One of the two points making up this line segment, the other being <see cref="End"/>.
+    /// One of the two points making up this line segment, the other being <see cref="Ender"/>.
     /// </summary>
-    public VoronoiVertex Start { get; internal set; }
+    public VoronoiVertex Starter { get; internal set; }
 
     /// <summary>
-    /// One of the two points making up this line segment, the other being <see cref="Start"/>.
+    /// One of the two points making up this line segment, the other being <see cref="Starter"/>.
     /// </summary>
-    public VoronoiVertex? End { get; internal set; } = null;
+    public VoronoiVertex? Ender { get; internal set; } = null;
 
     /// <summary>
     /// One of the two sites that this edge separates, the other being <see cref="Left"/>.
@@ -43,7 +43,7 @@ public class VoronoiEdge
 
     internal VoronoiEdge(VoronoiVertex start, VoronoiCell left, VoronoiCell right)
     {
-        Start = start;
+        Starter = start;
         Left = left;
         Right = right;
 
@@ -65,29 +65,29 @@ public class VoronoiEdge
 
     internal VoronoiEdge(VoronoiVertex start, VoronoiVertex end, VoronoiCell? right)
     {
-        Start = start;
-        End = end;
+        Starter = start;
+        Ender = end;
         Right = right;
 
         // Don't bother with slope stuff if we are given explicit coords
     }
     /// <summary>
-    /// The mid-point between <see cref="Start"/> and <see cref="End"/> points.
+    /// The mid-point between <see cref="Starter"/> and <see cref="Ender"/> points.
     /// </summary>
     public VoronoiVertex GetMid()
     {
-        return new((Start.X + End!.X) / 2, (Start.Y + End.Y) / 2);
+        return new((Starter.X + Ender!.X) / 2, (Starter.Y + Ender.Y) / 2);
     }
 
     /// <summary>
-    /// The length of this line segment, i.e. the distance between <see cref="Start"/> and <see cref="End"/> points.
+    /// The length of this line segment, i.e. the distance between <see cref="Starter"/> and <see cref="Ender"/> points.
     /// </summary>
     public double GetLength()
     {
-        if (End is null)
+        if (Ender is null)
             return 0;
-        var xd = End.X - Start.X;
-        var yd = End.Y - Start.Y;
+        var xd = Ender.X - Starter.X;
+        var yd = Ender.Y - Starter.Y;
         return Math.Sqrt(xd * xd + yd * yd);
     }
 
@@ -95,12 +95,12 @@ public class VoronoiEdge
 #if DEBUG
     public override string ToString()
     {
-        return (Start?.ToString() ?? "NONE") + "->" + (End?.ToString() ?? "NONE");
+        return (Starter?.ToString() ?? "NONE") + "->" + (Ender?.ToString() ?? "NONE");
     }
 
     public string ToString(string format)
     {
-        return (Start?.ToString(format) ?? "NONE") + "->" + (End?.ToString(format) ?? "NONE");
+        return (Starter?.ToString(format) ?? "NONE") + "->" + (Ender?.ToString(format) ?? "NONE");
     }
 #endif
 }

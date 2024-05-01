@@ -28,21 +28,21 @@ internal class BorderClosing
         for (int i = 0; i < edges.Count; i++)
         {
             var edge = edges[i];
-            if (edge.Start.DirectionOnBorder != Direction.None)
+            if (edge.Starter.DirectionOnBorder != Direction.None)
             {
                 nodes.Add(new EdgeStartBorderNode(edge, i * 2));
-                if (edge.Start.DirectionOnBorder == Direction.LeftTop) hadLeftTop = true;
-                else if (edge.Start.DirectionOnBorder == Direction.TopRight) hadTopRight = true;
-                else if (edge.Start.DirectionOnBorder == Direction.BottomRight) hadBottomRight = true;
-                else if (edge.Start.DirectionOnBorder == Direction.LeftBottom) hadLeftBottom = true;
+                if (edge.Starter.DirectionOnBorder == Direction.LeftTop) hadLeftTop = true;
+                else if (edge.Starter.DirectionOnBorder == Direction.TopRight) hadTopRight = true;
+                else if (edge.Starter.DirectionOnBorder == Direction.BottomRight) hadBottomRight = true;
+                else if (edge.Starter.DirectionOnBorder == Direction.LeftBottom) hadLeftBottom = true;
             }
-            if (edge.End!.DirectionOnBorder != Direction.None)
+            if (edge.Ender!.DirectionOnBorder != Direction.None)
             {
                 nodes.Add(new EdgeEndBorderNode(edge, i * 2 + 1));
-                if (edge.End.DirectionOnBorder == Direction.LeftTop) hadLeftTop = true;
-                else if (edge.End.DirectionOnBorder == Direction.TopRight) hadTopRight = true;
-                else if (edge.End.DirectionOnBorder == Direction.BottomRight) hadBottomRight = true;
-                else if (edge.End.DirectionOnBorder == Direction.LeftBottom) hadLeftBottom = true;
+                if (edge.Ender.DirectionOnBorder == Direction.LeftTop) hadLeftTop = true;
+                else if (edge.Ender.DirectionOnBorder == Direction.TopRight) hadTopRight = true;
+                else if (edge.Ender.DirectionOnBorder == Direction.BottomRight) hadBottomRight = true;
+                else if (edge.Ender.DirectionOnBorder == Direction.LeftBottom) hadLeftBottom = true;
             }
         }
         // If none of the edges hit any of the corners, then we need to add those as generic non-edge nodes 
@@ -95,11 +95,11 @@ internal class BorderClosing
             if (node1 == null) // i.e. node == nodes.Min
                 continue; // we are looking at first node, we will start from Min and next one
             var site = previousEdgeNode != null ? previousEdgeNode is EdgeStartBorderNode ? previousEdgeNode.Edge.Right : previousEdgeNode.Edge.Left : defaultCell;
-            if (node1.Point != node2.Point)
+            if (node1.Vertex != node2.Vertex)
             {
                 var newEdge = new VoronoiEdge(
-                    node1.Point,
-                    node2.Point, // we are building these clockwise, so by definition the left side is out of bounds
+                    node1.Vertex,
+                    node2.Vertex, // we are building these clockwise, so by definition the left side is out of bounds
                     site
                 );
                 // Record the first created edge for the last edge to "loop" around
@@ -116,8 +116,8 @@ internal class BorderClosing
         }
         var finalSite = previousEdgeNode != null ? previousEdgeNode is EdgeStartBorderNode ? previousEdgeNode.Edge.Right : previousEdgeNode.Edge.Left : defaultCell;
         var finalEdge = new VoronoiEdge(
-            nodes.Max?.Point ?? throw new ArgumentNullException(),
-            nodes.Min?.Point ?? throw new ArgumentNullException(), // we are building these clockwise, so by definition the left side is out of bounds
+            nodes.Max?.Vertex ?? throw new ArgumentNullException(),
+            nodes.Min?.Vertex ?? throw new ArgumentNullException(), // we are building these clockwise, so by definition the left side is out of bounds
             finalSite
         );
         edges.Add(finalEdge);

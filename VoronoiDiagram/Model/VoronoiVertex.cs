@@ -5,14 +5,16 @@ namespace LocalUtilities.VoronoiDiagram.Model;
 /// <summary>
 /// The vertices/nodes of the Voronoi cells, i.e. the points equidistant to three or more Voronoi sites.
 /// These are the end points of a <see cref="VoronoiEdge"/>.
-/// These are the <see cref="VoronoiCell.Vertices"/>.
+/// These are the <see cref="VoronoiCell.Vertexes"/>.
 /// Also used for some other derived locations.
 /// </summary>
 public class VoronoiVertex(double x, double y, Direction borderLocation = Direction.None)
 {
-    public double X { get; } = x;
+    public Coordinate Coordinate { get; } = new(x, y);
 
-    public double Y { get; } = y;
+    public double X => Coordinate.X;
+
+    public double Y => Coordinate.Y;
 
     /// <summary>
     /// Specifies if this point is on the border of the bounds and where.
@@ -30,11 +32,6 @@ public class VoronoiVertex(double x, double y, Direction borderLocation = Direct
     public static implicit operator (int X, int Y)(VoronoiVertex point)
     {
         return ((int)point.X, (int)point.Y);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y);
     }
 
 #if DEBUG

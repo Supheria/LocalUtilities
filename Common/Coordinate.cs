@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LocalUtilities.VoronoiDiagram;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,21 @@ public class Coordinate(double x, double y)
 
     }
 
+    public static implicit operator PointF(Coordinate coordinate)
+    {
+        return new((float)coordinate.X, (float)coordinate.Y);
+    }
+
+    public static bool operator ==(Coordinate c1, Coordinate c2)
+    {
+        return c1.Equals(c2);
+    }
+
+    public static bool operator !=(Coordinate c1, Coordinate c2)
+    {
+        return !(c1 == c2);
+    }
+
     public override int GetHashCode()
     {
         return HashCode.Combine(X, Y);
@@ -27,7 +43,7 @@ public class Coordinate(double x, double y)
         if (obj is null)
             return false;
         if (obj is Coordinate c)
-            return X == c.X && Y == c.Y;
+            return X.ApproxEqual(c.X) && Y.ApproxEqual(c.Y);
         return false;
     }
 }

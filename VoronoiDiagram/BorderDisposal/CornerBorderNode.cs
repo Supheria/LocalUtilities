@@ -6,7 +6,7 @@ internal class CornerBorderNode(VoronoiVertex point) : BorderNode
 {
     public override Direction BorderLocation { get; } = point.DirectionOnBorder;
 
-    public override VoronoiVertex Point { get; } = point;
+    public override VoronoiVertex Vertex { get; } = point;
 
     public override double Angle => throw new InvalidOperationException();
 

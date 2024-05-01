@@ -12,13 +12,13 @@ internal class BorderNodeComparer : IComparer<BorderNode>
         return n1.BorderLocation switch // same for n2
         {
             // going up
-            Direction.Left or Direction.LeftTop => NodeCompareTo(n1.Point.Y, n2.Point.Y, n1, n2, n1.BorderLocation),
+            Direction.Left or Direction.LeftTop => NodeCompareTo(n1.Vertex.Y, n2.Vertex.Y, n1, n2, n1.BorderLocation),
             // going right
-            Direction.Bottom or Direction.LeftBottom => NodeCompareTo(n1.Point.X, n2.Point.X, n1, n2, n1.BorderLocation),
+            Direction.Bottom or Direction.LeftBottom => NodeCompareTo(n1.Vertex.X, n2.Vertex.X, n1, n2, n1.BorderLocation),
             // going down
-            Direction.Right or Direction.BottomRight => NodeCompareTo(n2.Point.Y, n1.Point.Y, n1, n2, n1.BorderLocation),
+            Direction.Right or Direction.BottomRight => NodeCompareTo(n2.Vertex.Y, n1.Vertex.Y, n1, n2, n1.BorderLocation),
             // going left
-            Direction.Top or Direction.TopRight => NodeCompareTo(n2.Point.X, n1.Point.X, n1, n2, n1.BorderLocation),
+            Direction.Top or Direction.TopRight => NodeCompareTo(n2.Vertex.X, n1.Vertex.X, n1, n2, n1.BorderLocation),
             _ => throw new InvalidOperationException(),
         };
     }

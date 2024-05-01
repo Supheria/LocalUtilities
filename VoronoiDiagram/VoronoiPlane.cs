@@ -24,7 +24,7 @@ public class VoronoiPlane()
     {
         Width = width;
         Height = height;
-        var coordinates = new List<(double X, double Y, int Column, int Row)>();
+        var coordinates = new List<Coordinate>();
         var widthSegment = width / widthSegmentNumber;
         var heightSegment = height / heightSegmentNumber;
         for (int i = 0; i < widthSegmentNumber; i++)
@@ -32,16 +32,16 @@ public class VoronoiPlane()
             for (int j = 0; j < heightSegmentNumber; j++)
             {
                 var (X, Y) = pointsGeneration.Generate(widthSegment * i, heightSegment * j, widthSegment * (i + 1), heightSegment * (j + 1), 1).First();
-                coordinates.Add(new(X, Y, i, j));
+                coordinates.Add(new(X, Y));
             }
         }
-        Cells = UniquePoints(coordinates).Select(c => new VoronoiCell(c.X, c.Y, c.Column, c.Row)).ToList();
+        Cells = UniquePoints(coordinates).Select(c => new VoronoiCell(c)).ToList();
         Edges.Clear();
         Generate();
         return Cells;
     }
 
-    private static List<(double X, double Y, int Column, int Row)> UniquePoints(List<(double X, double Y, int Column, int Row)> coordinates)
+    private static List<Coordinate> UniquePoints(List<Coordinate> coordinates)
     {
         coordinates.Sort((p1, p2) =>
         {
@@ -57,7 +57,7 @@ public class VoronoiPlane()
                 return -1;
             return 1;
         });
-        var unique = new List<(double X, double Y, int Column, int Row)>();
+        var unique = new List<Coordinate>();
         var last = coordinates.First();
         unique.Add(last);
         for (var index = 1; index < coordinates.Count; index++)

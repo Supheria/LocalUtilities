@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace LocalUtilities.VoronoiDiagram;
+namespace LocalUtilities;
 
 public static class MathTool
 {

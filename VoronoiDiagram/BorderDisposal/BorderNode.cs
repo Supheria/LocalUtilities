@@ -6,7 +6,7 @@ internal abstract class BorderNode
 {
     public abstract Direction BorderLocation { get; }
 
-    public abstract VoronoiVertex Point { get; }
+    public abstract VoronoiVertex Vertex { get; }
 
     public abstract double Angle { get; }
 
@@ -76,12 +76,12 @@ internal abstract class BorderNode
 #if DEBUG
     public override string ToString()
     {
-        return Point + " @ " + BorderLocation;
+        return Vertex + " @ " + BorderLocation;
     }
 
     public string ToString(string format)
     {
-        return Point.ToString(format) + " @ " + BorderLocation;
+        return Vertex.ToString(format) + " @ " + BorderLocation;
     }
 #endif
 }
