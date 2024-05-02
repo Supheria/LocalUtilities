@@ -277,11 +277,11 @@ public class VoronoiCell(Coordinate coordinate)
     {
         var count = Vertexes.Count;
         if (count < 3)
-            return 0.0;
+            return 0d;
         double s = Vertexes[0].Y * (Vertexes[count - 1].X - Vertexes[1].X);
         for (int i = 1; i < count; ++i)
             s += Vertexes[i].Y * (Vertexes[i - 1].X - Vertexes[(i + 1) % count].X);
-        return Math.Abs(s / 2.0);
+        return Math.Abs(s / 2d);
     }
 
 #if DEBUG

@@ -2,7 +2,7 @@
 
 namespace LocalUtilities.VoronoiDiagram;
 
-internal class BorderClosing
+internal static class BorderClosing
 {
     public static List<VoronoiEdge> Close(List<VoronoiEdge> edges, double minX, double minY, double maxX, double maxY, List<VoronoiCell> cells)
     {

@@ -2,7 +2,7 @@
 
 namespace LocalUtilities.VoronoiDiagram;
 
-internal class BorderClipping
+internal static class BorderClipping
 {
     public static List<VoronoiEdge> Clip(List<VoronoiEdge> edges, double minX, double minY, double maxX, double maxY)
     {

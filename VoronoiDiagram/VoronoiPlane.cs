@@ -7,26 +7,24 @@ namespace LocalUtilities.VoronoiDiagram;
 /// An Euclidean plane where a Voronoi diagram can be constructed from <see cref="VoronoiCell"/>s
 /// producing a tesselation of cells with <see cref="VoronoiEdge"/> line segments and <see cref="VoronoiVertex"/> vertices.
 /// </summary>
-public class VoronoiPlane()
+public class VoronoiPlane(int width, int height)
 {
-    static List<VoronoiCell> Cells { get; set; } = [];
+    List<VoronoiCell> Cells { get; set; } = [];
 
-    static List<VoronoiEdge> Edges { get; set; } = [];
+    List<VoronoiEdge> Edges { get; set; } = [];
 
-    static int Width { get; set; }
+    int Width { get; set; } = width;
 
-    static int Height { get; set; }
+    int Height { get; set; } = height;
 
     /// <summary>
     /// The generated sites are guaranteed not to lie on the border of the plane (although they may be very close).
     /// </summary>
-    public static List<VoronoiCell> Generate(int width, int height, int widthSegmentNumber, int heightSegmentNumber, IPointsGeneration pointsGeneration)
+    public List<VoronoiCell> Generate(int widthSegmentNumber, int heightSegmentNumber, IPointsGeneration pointsGeneration)
     {
-        Width = width;
-        Height = height;
         var coordinates = new List<Coordinate>();
-        var widthSegment = width / widthSegmentNumber;
-        var heightSegment = height / heightSegmentNumber;
+        var widthSegment = Width / widthSegmentNumber;
+        var heightSegment = Height / heightSegmentNumber;
         for (int i = 0; i < widthSegmentNumber; i++)
         {
             for (int j = 0; j < heightSegmentNumber; j++)
@@ -73,7 +71,7 @@ public class VoronoiPlane()
         return unique;
     }
 
-    private static void Generate()
+    private void Generate()
     {
         var eventQueue = new MinHeap<IFortuneEvent>(5 * Cells.Count);
         foreach (var site in Cells)
