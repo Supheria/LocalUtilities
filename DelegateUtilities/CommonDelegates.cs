@@ -6,4 +6,4 @@ public delegate void XmlReaderDelegate(XmlReader reader);
 
 public delegate void XmlWriterDelegate(XmlWriter writer);
 
-public delegate void FormDataLoadSaveDelegate();
+public delegate void FormOnRunninigDelegate();

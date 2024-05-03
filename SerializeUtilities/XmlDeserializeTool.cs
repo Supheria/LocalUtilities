@@ -17,7 +17,6 @@ public static class XmlDeserializeTool
                 continue;
             collection.Add(itemSerialization.Deserialize(reader));
         } while (reader.Read());
-        //throw new($"读取 {itemSerialization.LocalName} 时未能找到结束标签");
     }
 
     public static void ReadXmlCollection<TKey, TValue>(this Dictionary<TKey, TValue> collection, XmlReader reader, XmlSerialization<KeyValuePair<TKey, TValue>> itemSerialization, string collectionName)
@@ -36,8 +35,6 @@ public static class XmlDeserializeTool
             if (item.Key is not null)
                 collection[item.Key] = item.Value;
         } while (reader.Read());
-        return;
-        //throw new($"读取 {itemSerialization.LocalName} 时未能找到结束标签");
     }
 
     public static T Deserialize<T>(this XmlSerialization<T> serialization, XmlReader reader)

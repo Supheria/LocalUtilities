@@ -7,14 +7,25 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 {
     bool _resizing { get; set; } = false;
 
-    protected FormDataLoadSaveDelegate? OnLoadFormData { get; set; }
+    protected FormOnRunninigDelegate? OnLoadFormData { get; set; }
 
-    protected FormDataLoadSaveDelegate? OnSaveFormData { get; set; }
+    protected FormOnRunninigDelegate? OnSaveFormData { get; set; }
+
+    protected FormOnRunninigDelegate? OnDrawingClient { get; set; }
 
     protected TFormData FormData { get; set; }
 
+    protected new int Padding { get; set; }
+
     FormDataXmlSerialization<TFormData> FormDataXmlSerialization { get; }
 
+    protected new int Left => ClientRectangle.Left;
+
+    protected new int Top => ClientRectangle.Top;
+
+    protected new int Width => ClientRectangle.Width;
+
+    protected new int Height => ClientRectangle.Height;
 
     public ResizeableForm(TFormData formData, FormDataXmlSerialization<TFormData> formDataXmlSerialization)
     {
@@ -28,7 +39,10 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         InitializeComponent();
     }
 
-    private void ResizeableForm_ResizeBegin(object? sender, EventArgs e) => _resizing = true;
+    private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
+    {
+        _resizing = true;
+    }
 
     private void ResizeableForm_ResizeEnd(object? sender, EventArgs e)
     {
@@ -50,6 +64,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         Size = FormData.Size;
         Location = FormData.Location;
         WindowState = FormData.WindowState;
+        Padding = FormData.Padding;
         DrawClient();
     }
 
@@ -60,11 +75,19 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         FormData.Size = Size;
         FormData.Location = Location;
         FormData.WindowState = WindowState;
+        FormData.Padding = Padding;
         FormDataXmlSerialization.Source = FormData;
         FormDataXmlSerialization.SaveToXml();
     }
 
     protected abstract void InitializeComponent();
 
-    protected abstract void DrawClient();
+    private void DrawClient()
+    {
+        if (WindowState is FormWindowState.Minimized)
+            return;
+        SuspendLayout();
+        OnDrawingClient?.Invoke();
+        ResumeLayout();
+    }
 }
