@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.GdiUtilities;
+﻿namespace LocalUtilities.GraphUtilities;
 
 public class RandomPointsGenerationUniform : RandomPointsGeneration
 {
