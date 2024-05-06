@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LocalUtilities.UIUtilities;
+﻿namespace LocalUtilities.UIUtilities;
 
 public class FontData(string familyName, float scaleFactorToHeight, FontStyle style, GraphicsUnit unit)
 {
@@ -16,7 +10,7 @@ public class FontData(string familyName, float scaleFactorToHeight, FontStyle st
 
     public GraphicsUnit Unit { get; set; } = unit;
 
-    public FontData() : this("黑体", 0.03f, FontStyle.Regular, GraphicsUnit.Pixel) 
+    public FontData() : this("黑体", 0.03f, FontStyle.Regular, GraphicsUnit.Pixel)
     {
 
     }

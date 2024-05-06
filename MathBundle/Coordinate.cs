@@ -16,12 +16,21 @@ public class Coordinate(double x, double y)
         return new((float)coordinate.X, (float)coordinate.Y);
     }
 
-    public static bool operator ==(Coordinate c1, Coordinate c2)
+    public static bool operator ==(Coordinate? c1, object? c2)
     {
-        return c1.Equals(c2);
+        if (c1 is null)
+        {
+            if (c2 is null)
+                return true;
+            else
+                return false;
+        }
+        if (c2 is not Coordinate other)
+            return false;
+        return c1.X.ApproxEqual(other.X) && c1.Y.ApproxEqual(other.Y);
     }
 
-    public static bool operator !=(Coordinate c1, Coordinate c2)
+    public static bool operator !=(Coordinate? c1, object? c2)
     {
         return !(c1 == c2);
     }
@@ -33,8 +42,6 @@ public class Coordinate(double x, double y)
 
     public override bool Equals(object? obj)
     {
-        if (obj is not Coordinate other)
-            return false;
-        return X.ApproxEqual(other.X) && Y.ApproxEqual(other.Y);
+        return this == obj;
     }
 }

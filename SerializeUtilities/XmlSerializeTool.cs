@@ -6,7 +6,7 @@ public static class XmlSerializeTool
 {
     public static void WriteXmlCollection<T>(this ICollection<T> collection, XmlWriter writer, XmlSerialization<T> itemSerialization, string collectionName)
     {
-        writer.WriteStartElement(collectionName); 
+        writer.WriteStartElement(collectionName);
         WriteXmlCollection(collection, writer, itemSerialization);
         writer.WriteEndElement();
     }

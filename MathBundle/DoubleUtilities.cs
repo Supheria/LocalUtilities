@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace LocalUtilities.MathBundle;
+﻿namespace LocalUtilities.MathBundle;
 
 public static class DoubleUtilities
 {
