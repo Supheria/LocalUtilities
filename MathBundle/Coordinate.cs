@@ -1,5 +1,11 @@
 ﻿namespace LocalUtilities.MathBundle;
 
+public enum CoordinateType
+{
+    X,
+    Y,
+}
+
 public class Coordinate(double x, double y)
 {
     public double X { get; } = x;
@@ -9,6 +15,26 @@ public class Coordinate(double x, double y)
     public Coordinate() : this(0, 0)
     {
 
+    }
+
+    public double Parse(CoordinateType type)
+    {
+        return type switch
+        {
+            CoordinateType.X => X,
+            CoordinateType.Y => Y,
+            _ => throw new InvalidOperationException()
+        };
+    }
+
+    public static double Parse(Coordinate coordinate, CoordinateType type)
+    {
+        return type switch
+        {
+            CoordinateType.X => coordinate.X,
+            CoordinateType.Y => coordinate.Y,
+            _ => throw new InvalidOperationException()
+        };
     }
 
     public static implicit operator PointF(Coordinate coordinate)
@@ -27,7 +53,7 @@ public class Coordinate(double x, double y)
         }
         if (c2 is not Coordinate other)
             return false;
-        return c1.X.ApproxEqual(other.X) && c1.Y.ApproxEqual(other.Y);
+        return c1.X.ApproxEqualTo(other.X) && c1.Y.ApproxEqualTo(other.Y);
     }
 
     public static bool operator !=(Coordinate? c1, object? c2)
