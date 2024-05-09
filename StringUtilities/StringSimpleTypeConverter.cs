@@ -36,6 +36,16 @@ public static class StringSimpleTypeConverter
         return null;
     }
 
+    public static string ToArrayString(this Size size)
+    {
+        return ToArrayString(size.Width, size.Height);
+    }
+
+    public static string ToArrayString(this Point point)
+    {
+        return ToArrayString(point.X, point.Y);
+    }
+
     public static Size ToSize(this string str, Size @default)
     {
         var pair = str.ToPair((s) => s.ToInt(@default.Width), (s) => s.ToInt(@default.Height));

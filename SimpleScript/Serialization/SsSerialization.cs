@@ -3,7 +3,7 @@ using LocalUtilities.SimpleScript.Data;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
-public delegate void SsSerializeDelegate(SsSerializer writer);
+public delegate void SsSerializeDelegate(SsSerializer serializer);
 
 public delegate void SsDeserializeDelegate(Token token);
 
@@ -21,14 +21,14 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
 
     protected SsDeserializeDelegate? OnDeserialize { get; set; } = null;
 
-    public void Serializ(SsSerializer serializer)
+    public void DoSerialize(SsSerializer serializer)
     {
         serializer.WriteNameStart(LocalName);
         OnSerialize?.Invoke(serializer);
         serializer.WriteNameEnd();
     }
 
-    public void Deserialize(Token token)
+    public void DoDeserialize(Token token)
     {
         if (token is not Scope scope)
             return;

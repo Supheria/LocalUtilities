@@ -16,8 +16,9 @@ public static class SsDeserializeTool
             try
             {
                 var exceptions = new Exceptions();
-                var token = new Tokenizer(exceptions, path).Tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
-                serialization.Deserialize(token ?? throw new ArgumentException());
+                var tokens = new Tokenizer(exceptions, path).Tokens;
+                var token = tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
+                serialization.DoDeserialize(token ?? throw new ArgumentException());
                 message = exceptions.Log.ToString();
             }
             catch (Exception ex)
@@ -30,7 +31,7 @@ public static class SsDeserializeTool
 
     public static T Deserialize<T>(this SsSerialization<T> serialization, Token token)
     {
-        serialization.Deserialize(token);
+        serialization.DoDeserialize(token);
         return serialization.Source;
     }
 }

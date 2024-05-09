@@ -9,9 +9,9 @@ public class SsSerializer
 
     int Level { get; set; } = 0;
 
-    public byte[] GetBuffer()
+    public override string ToString()
     {
-        return StringBuilder.ToString().Select(c => (byte)c).ToArray();
+        return StringBuilder.ToString();
     }
 
     public void WriteNameStart(string name)
