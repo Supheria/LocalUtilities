@@ -15,6 +15,8 @@ public abstract class XmlSerialization<T>(T source) : IXmlSerializable, IInitial
 
     public string? IniFileName { get; set; }
 
+    public string IniFileExtension => "xml";
+
     public XmlSchema? GetSchema() => null;
 
     public abstract void ReadXml(XmlReader reader);

@@ -25,15 +25,27 @@ public static class StringSimpleTypeConverter
     public static string ToArrayString<T>(this IEnumerable<T?> array) =>
         new StringBuilder().AppendJoin(ElementSplitter, array.Select(x => x?.ToString() ?? "")).ToString();
 
-    public static (T1, T2) ToPair<T1, T2>(this string? pair, T1 defaultValue1, T2 defaultValue2,
-        Func<string, T1> toItem1, Func<string, T2> toItem2)
+    public static (T1, T2)? ToPair<T1, T2>(this string str, Func<string, T1> toItem1, Func<string, T2> toItem2)
     {
-        if (pair is null)
-            return (defaultValue1, defaultValue2);
-        return RegexMatchTool.GetMatchIgnoreAllBlacks(pair, @$"\((.*)\){ElementSplitter}\((.*)\)",
-            out var match)
-            ? (toItem1(match.Groups[1].Value), toItem2(match.Groups[2].Value))
-            : (defaultValue1, defaultValue2);
+        if (RegexMatchTool.GetMatchIgnoreAllBlacks(str, @$"(.*){ElementSplitter}(.*)", out var match))
+        {
+            var item1 = toItem1(match.Groups[1].Value);
+            var item2 = toItem2(match.Groups[2].Value);
+            return (item1, item2);
+        }
+        return null;
+    }
+
+    public static Size ToSize(this string str, Size @default)
+    {
+        var pair = str.ToPair((s) => s.ToInt(@default.Width), (s) => s.ToInt(@default.Height));
+        return pair is null ? @default : new(pair.Value.Item1, pair.Value.Item2);
+    }
+
+    public static Point ToPoint(this string str, Point @default)
+    {
+        var pair = str.ToPair((s) => s.ToInt(@default.X), (s) => s.ToInt(@default.Y));
+        return pair is null ? @default : new(pair.Value.Item1, pair.Value.Item2);
     }
 
     public static string[] ToArray(this string? str) => str is null
@@ -88,51 +100,51 @@ public static class StringSimpleTypeConverter
     /// </summary>
     /// <param name="str"></param>
     /// <returns>int.Parse fail will return null</returns>
-    public static int? ToInt(this string? str)
+    public static int ToInt(this string? str, int @defaut)
     {
         try
         {
-            return str is null ? null : int.Parse(str);
+            return str is null ? @defaut : int.Parse(str);
         }
         catch
         {
-            return null;
+            return @defaut;
         }
     }
 
-    public static uint? ToUint(this string? str)
+    public static bool ToBool(this string? str, bool @defaut)
     {
         try
         {
-            return str is null ? null : uint.Parse(str);
+            return str is null ? @defaut : bool.Parse(str);
         }
         catch
         {
-            return null;
+            return @defaut;
         }
     }
 
-    public static bool? ToBool(this string? str)
+    public static float ToFloat(this string? str, float @defaut)
     {
         try
         {
-            return str is null ? null : bool.Parse(str);
+            return str is null ? @defaut : float.Parse(str);
         }
         catch
         {
-            return null;
+            return @defaut;
         }
     }
 
-    public static float? ToFloat(this string? str)
+    public static double ToDouble(this string? str, double @defaut)
     {
         try
         {
-            return str is null ? null : float.Parse(str);
+            return str is null ? @defaut : double.Parse(str);
         }
         catch
         {
-            return null;
+            return @defaut;
         }
     }
 }

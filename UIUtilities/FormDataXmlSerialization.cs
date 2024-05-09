@@ -25,20 +25,20 @@ public abstract class FormDataXmlSerialization<T>(string localName, T formData) 
             {
                 var size = reader.ReadElementContentAsString().ToArray();
                 Source.Size = size.Length > 1
-                    ? new(size[0].ToInt() ?? 0, size[1].ToInt() ?? 0)
+                    ? new(size[0].ToInt(0), size[1].ToInt(0))
                     : Source.Size;
             }
             if (reader.Name is nameof(Source.Location))
             {
                 var location = reader.ReadElementContentAsString().ToArray();
                 Source.Location = location.Length > 1
-                    ? new(location[0].ToInt() ?? 0, location[1].ToInt() ?? 0)
+                    ? new(location[0].ToInt(0), location[1].ToInt(0))
                     : Source.Location;
             }
             if (reader.Name is nameof(Source.WindowState))
                 Source.WindowState = reader.ReadElementContentAsString().ToEnum<FormWindowState>();
             if (reader.Name is nameof(Source.Padding))
-                Source.Padding = reader.ReadElementContentAsString().ToInt() ?? Source.Padding;
+                Source.Padding = reader.ReadElementContentAsString().ToInt(Source.Padding);
             if (reader.Name is nameof(Source.LabelFontData))
                 Source.LabelFontData = new FontDataXmlSerialization(nameof(Source.LabelFontData)).Deserialize(reader);
             if (reader.Name is nameof(Source.ContentFontData))

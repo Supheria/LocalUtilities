@@ -23,6 +23,8 @@ public partial class RegexMatchTool
     [GeneratedRegex(@"\s")]
     private static partial Regex Blank();
 
-    public static bool GetMatchIgnoreAllBlacks(string input, string pattern, [NotNullWhen(true)] out Match? match) =>
-        GetMatch(Blank().Replace(input, ""), pattern, out match);
+    public static bool GetMatchIgnoreAllBlacks(string input, string pattern, [NotNullWhen(true)] out Match? match)
+    {
+        return GetMatch(Blank().Replace(input, ""), pattern, out match);
+    }
 }

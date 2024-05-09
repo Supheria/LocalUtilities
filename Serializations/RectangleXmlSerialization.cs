@@ -15,10 +15,10 @@ public class RectangleXmlSerialization(string localName) : XmlSerialization<Rect
 
     public override void ReadXml(XmlReader reader)
     {
-        Source.X = reader.GetAttribute(nameof(Source.Left)).ToInt() ?? Source.Left;
-        Source.Y = reader.GetAttribute(nameof(Source.Top)).ToInt() ?? Source.Top;
-        Source.Width = reader.GetAttribute(nameof(Source.Width)).ToInt() ?? Source.Width;
-        Source.Height = reader.GetAttribute(nameof(Source.Height)).ToInt() ?? Source.Height;
+        Source.X = reader.GetAttribute(nameof(Source.Left)).ToInt(Source.Left);
+        Source.Y = reader.GetAttribute(nameof(Source.Top)).ToInt(Source.Top);
+        Source.Width = reader.GetAttribute(nameof(Source.Width)).ToInt(Source.Width);
+        Source.Height = reader.GetAttribute(nameof(Source.Height)).ToInt(Source.Height);
     }
 
     public override void WriteXml(XmlWriter writer)

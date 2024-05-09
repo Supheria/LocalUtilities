@@ -17,7 +17,7 @@ public class FontDataXmlSerialization(string localName) : XmlSerialization<FontD
     public override void ReadXml(XmlReader reader)
     {
         Source.FamilyName = reader.GetAttribute(nameof(Source.FamilyName)) ?? Source.FamilyName;
-        Source.ScaleFactorToHeight = reader.GetAttribute(nameof(Source.ScaleFactorToHeight)).ToFloat() ?? Source.ScaleFactorToHeight;
+        Source.ScaleFactorToHeight = reader.GetAttribute(nameof(Source.ScaleFactorToHeight)).ToFloat(Source.ScaleFactorToHeight);
         Source.Style = reader.GetAttribute(nameof(Source.Style)).ToEnum<FontStyle>();
         Source.Unit = reader.GetAttribute(nameof(Source.Unit)).ToEnum<GraphicsUnit>();
     }

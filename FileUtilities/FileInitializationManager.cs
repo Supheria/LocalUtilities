@@ -17,10 +17,9 @@ public static class FileInitializationManager
     /// <returns></returns>
     public static string GetInitializationFilePath<T>(this T obj) where T : IInitializeable
     {
-        if (obj.IniFileName is null)
-            return "";
-        var cachePath = Path.Combine(RootDirectoryInfo.FullName, obj.IniFileName);
-        return Path.ChangeExtension(cachePath, ".xml"); ;
+        var fileName = obj.IniFileName ?? obj.LocalName;
+        var cachePath = Path.Combine(RootDirectoryInfo.FullName, fileName);
+        return Path.ChangeExtension(cachePath, obj.IniFileExtension);
     }
 
     /// <summary>
