@@ -24,59 +24,28 @@ internal class Tokenizer
         Note
     }
 
-    Exceptions Exceptions { get; }
-
     States State { get; set; } = States.None;
 
     byte[] Buffer { get; set; } = [];
 
-    int BufferPosition { get; set; }
+    int BufferPosition { get; set; } = 0;
 
     int Line { get; set; } = 1;
 
-    int Column { get; set; }
+    int Column { get; set; } = 1;
 
-    ParseTree Tree { get; set; }
+    ParseTree Tree { get; set; } = new();
 
     Element Composed { get; set; } = new();
 
     StringBuilder Composing { get; } = new();
 
-    internal List<Token> Tokens { get; } = new();
+    internal List<Token> Tokens { get; } = [];
 
-    internal Tokenizer(Exceptions exceptions, string filePath)
-    {
-        Exceptions = exceptions;
-        Tree = new(Exceptions);
-        Parse(filePath);
-    }
-
-    private void Parse(string filePath)
-    {
-        ReadBuffer(filePath);
-        Tree = new(Exceptions);
-        while (BufferPosition < Buffer?.Length)
-        {
-            if (!Compose((char)Buffer[BufferPosition]))
-                continue;
-            var tree = Tree.Parse(Composed);
-            if (tree is null)
-            {
-                CacheList();
-                Tree = new(Exceptions);
-            }
-            else { Tree = tree; }
-        }
-        EndCheck();
-    }
-
-    private void ReadBuffer(string filePath)
+    internal Tokenizer(string filePath)
     {
         if (!File.Exists(filePath))
-        {
-            Exceptions.Exception($"could not open file: {filePath}");
-            return;
-        }
+            throw new SsParseExceptions($"could not open file: {filePath}");
         using var file = File.OpenRead(filePath);
         if (file.ReadByte() == 0xEF && file.ReadByte() == 0xBB && file.ReadByte() == 0xBF)
         {
@@ -89,6 +58,34 @@ internal class Tokenizer
             Buffer = new byte[file.Length];
             _ = file.Read(Buffer, 0, Buffer.Length);
         }
+    }
+
+    internal Element? ParseNextToken()
+    {
+        if (Buffer is null)
+            return null;
+        while (!Compose((char)Buffer[BufferPosition]))
+        {
+            if (BufferPosition == Buffer.Length)
+                return null;
+        }
+        return Composed;
+        while (BufferPosition < Buffer?.Length)
+        {
+            if (!Compose((char)Buffer[BufferPosition]))
+                continue;
+            var tree = Tree.Parse(Composed);
+            if (tree is null)
+            {
+                CacheList();
+                Tree = new();
+            }
+            else
+                Tree = tree;
+        }
+        if (Tree.From is not null)
+            throw new SsParseExceptions($"interruption at line({Line}), column({Column})");
+        CacheList();
     }
 
     private bool Compose(char ch)
@@ -165,11 +162,6 @@ internal class Tokenizer
                         Composed = new(GetU8Char().ToString(), Line, Column);
                         return true;
                     case { } when Blank.Contains(ch):
-                        if (ch is '\n')
-                        {
-                            Line++;
-                            Column = 0;
-                        }
                         GetU8Char();
                         break;
                     default:
@@ -180,13 +172,6 @@ internal class Tokenizer
                 }
                 return false;
         }
-    }
-    private void CacheList()
-    {
-        var token = Tree.OnceGet();
-        if (token is NullToken)
-            return;
-        Tokens.Add(token);
     }
 
     /// <summary>
@@ -219,22 +204,22 @@ internal class Tokenizer
         var str = new List<byte>();
         for (int i = 0; i < length; i++)
             str.Add(Buffer[BufferPosition++]);
+        if (str[0] is (byte)'\n')
+        {
+            Line++;
+            Column = 1;
+        }
+        else if(str[0] is (byte)'\t')
+            Column += 4;
+        else
+            Column += length;
         return Encoding.UTF8.GetString(str.ToArray());
     }
 
-    private void EndCheck()
+    private void CacheList()
     {
-        if (Tree.From is not null)
-        {
-            Exceptions.Exception($"interruption at line({Line}), column({Column})");
-            Tree.Done();
-            Tree = Tree.From;
-            while (Tree.From is not null)
-            {
-                Tree.Done();
-                Tree = Tree.From;
-            }
-        }
-        CacheList();
+        var token = Tree.OnceGet();
+        if (token is not NullToken)
+            Tokens.Add(token);
     }
 }

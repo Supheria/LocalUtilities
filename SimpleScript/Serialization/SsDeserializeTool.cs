@@ -6,25 +6,25 @@ namespace LocalUtilities.SimpleScript.Serialization;
 
 public static class SsDeserializeTool
 {
-    public static T LoadFromFile<T>(this SsSerialization<T> serialization, out string message)
+    public static T LoadFromFile<T>(this SsSerialization<T> serialization, out string? message)
     {
         var path = serialization.GetInitializationFilePath();
         if (!File.Exists(path))
-            message = $"\"{path}\" file path is not existed.";
-        else
         {
-            try
-            {
-                var exceptions = new Exceptions();
-                var tokens = new Tokenizer(exceptions, path).Tokens;
-                var token = tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
-                serialization.DoDeserialize(token ?? throw new ArgumentException());
-                message = exceptions.Log.ToString();
-            }
-            catch (Exception ex)
-            {
-                message = ex.Message;
-            }
+            message = $"\"{path}\" file path is not existed.";
+            return serialization.Source;
+        }
+        try
+        {
+            var tokenizer = new Tokenizer(path);
+            tokenizer.ParseToNextStep();
+            var token = tokenizer.Tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
+            serialization.DoDeserialize(token ?? throw new ArgumentException());
+            message = null;
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
         }
         return serialization.Source;
     }

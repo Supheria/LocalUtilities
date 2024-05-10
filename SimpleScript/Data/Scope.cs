@@ -1,4 +1,5 @@
-﻿using LocalUtilities.StringUtilities;
+﻿using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.StringUtilities;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
@@ -7,15 +8,12 @@ public class Scope(Token? from, string name, int level) : Token(from, name, leve
 {
     public List<Token> Property { get; } = [];
 
-    public void Append(Token property, StringBuilder errorLog)
+    public void Append(Token property)
     {
         if (property is NullToken)
             return;
         if (property.Level != Level + 1)
-        {
-            errorLog.AppendLine("level mismatched of Appending in Scope");
-            return;
-        }
+            throw new SsParseExceptions("level mismatched of Appending in Scope");
         Property.Add(property);
     }
 
