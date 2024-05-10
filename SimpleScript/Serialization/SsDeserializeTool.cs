@@ -17,7 +17,6 @@ public static class SsDeserializeTool
         try
         {
             var tokenizer = new Tokenizer(path);
-            tokenizer.ParseToNextStep();
             var token = tokenizer.Tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
             serialization.DoDeserialize(token ?? throw new ArgumentException());
             message = null;

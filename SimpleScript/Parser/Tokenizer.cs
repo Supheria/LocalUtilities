@@ -58,26 +58,16 @@ internal class Tokenizer
             Buffer = new byte[file.Length];
             _ = file.Read(Buffer, 0, Buffer.Length);
         }
-    }
-
-    internal Element? ParseNextToken()
-    {
-        if (Buffer is null)
-            return null;
-        while (!Compose((char)Buffer[BufferPosition]))
-        {
-            if (BufferPosition == Buffer.Length)
-                return null;
-        }
-        return Composed;
-        while (BufferPosition < Buffer?.Length)
+        while (BufferPosition < Buffer.Length)
         {
             if (!Compose((char)Buffer[BufferPosition]))
                 continue;
             var tree = Tree.Parse(Composed);
             if (tree is null)
             {
-                CacheList();
+                var token = Tree.OnceGet();
+                if (token is not NullToken)
+                    Tokens.Add(token);
                 Tree = new();
             }
             else
@@ -85,7 +75,6 @@ internal class Tokenizer
         }
         if (Tree.From is not null)
             throw new SsParseExceptions($"interruption at line({Line}), column({Column})");
-        CacheList();
     }
 
     private bool Compose(char ch)
@@ -209,17 +198,10 @@ internal class Tokenizer
             Line++;
             Column = 1;
         }
-        else if(str[0] is (byte)'\t')
+        else if (str[0] is (byte)'\t')
             Column += 4;
         else
             Column += length;
         return Encoding.UTF8.GetString(str.ToArray());
-    }
-
-    private void CacheList()
-    {
-        var token = Tree.OnceGet();
-        if (token is not NullToken)
-            Tokens.Add(token);
     }
 }

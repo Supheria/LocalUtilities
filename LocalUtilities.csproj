@@ -11,10 +11,13 @@
 
   <ItemGroup>
     <Compile Remove="DijkstraShortestPath\**" />
+    <Compile Remove="SimpleScriptParser\**" />
     <Compile Remove="VoronoiDiagram\**" />
     <EmbeddedResource Remove="DijkstraShortestPath\**" />
+    <EmbeddedResource Remove="SimpleScriptParser\**" />
     <EmbeddedResource Remove="VoronoiDiagram\**" />
     <None Remove="DijkstraShortestPath\**" />
+    <None Remove="SimpleScriptParser\**" />
     <None Remove="VoronoiDiagram\**" />
   </ItemGroup>
 
@@ -22,10 +25,6 @@
     <None Remove=".gitignore" />
     <None Remove="FileUtilities\2qefdxcx.tiu~" />
     <None Remove="README.md" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="SimpleScriptParser\" />
   </ItemGroup>
 
 </Project>
