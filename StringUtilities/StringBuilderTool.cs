@@ -6,18 +6,29 @@ public static class StringBuilderTool
 {
     static char[] Blanks { get; } = ['\\', '"', '#', '\t', ' ', '\n', '\r', '#', '=', '>', '<', '}', '{', '"', ',', '\0'];
 
-    private static string GetQuote(this string str)
+    public static bool WriteInMultiLines { get; set; } = false;
+
+    private static string ToQuoted(this string str)
     {
-        foreach (var blank in Blanks)
+        if (WriteInMultiLines)
         {
-            if (str.Contains(blank))
-                return new StringBuilder()
-                    .Append('"')
-                    .Append(str)
-                    .Append('"')
-                    .ToString();
+            foreach (var blank in Blanks)
+            {
+                if (str.Contains(blank))
+                    return new StringBuilder()
+                        .Append('"')
+                        .Append(str)
+                        .Append('"')
+                        .ToString();
+            }
+            return str;
         }
-        return str;
+        else
+            return new StringBuilder()
+                .Append('"')
+                .Append(str)
+                .Append('"')
+                .ToString();
     }
 
     public static StringBuilder AppendJoin<T>(this StringBuilder sb, char separator, List<T> source, Action<StringBuilder, T> func)
@@ -35,58 +46,75 @@ public static class StringBuilderTool
         return sb;
     }
 
+    public static StringBuilder AppendNewLine(this StringBuilder sb)
+    {
+        if (WriteInMultiLines)
+            return sb.AppendLine();
+        else
+            return sb;
+    }
+
     public static StringBuilder AppendTab(this StringBuilder sb, int times)
     {
-        for (var i = 0; i < times; i++)
-            sb.Append('\t');
+        if (WriteInMultiLines)
+        {
+            for (var i = 0; i < times; i++)
+                sb.Append('\t');
+        }
         return sb;
     }
 
     public static StringBuilder AppendNameStart(this StringBuilder sb, int level, string name)
     {
         return sb.AppendTab(level)
-            .Append($"{name.GetQuote()}={{\n");
+            .Append($"{name.ToQuoted()}={{")
+            .AppendNewLine();
     }
 
     public static StringBuilder AppendNameEnd(this StringBuilder sb, int level)
     {
         return sb.AppendTab(level)
-            .Append("}\n");
+            .Append('}')
+            .AppendNewLine();
     }
 
     public static StringBuilder AppendTagValues(this StringBuilder sb, int level, string name, string tag, List<string> values)
     {
         return sb.AppendTab(level)
-            .Append($"{name.GetQuote()}={tag.GetQuote()}{(values.Count is 0 ? "" : '{')}")
+            .Append($"{name.ToQuoted()}={tag.ToQuoted()}{(values.Count is 0 ? "" : '{')}")
             .AppendJoin(' ', values, (sb, value) =>
             {
-                sb.Append(value.GetQuote());
+                sb.Append(value.ToQuoted());
             })
-            .Append($"{(values.Count is 0 ? "" : '}')}\n");
+            .Append($"{(values.Count is 0 ? "" : '}')}")
+            .AppendNewLine();
     }
 
     public static StringBuilder AppendValuesArray(this StringBuilder sb, int level, string name, List<List<string>> valuesArray)
     {
         return sb.AppendTab(level)
-            .Append($"{name.GetQuote()}={{\n")
+            .Append($"{name.ToQuoted()}={{")
+            .AppendNewLine()
             .AppendJoin('\0', valuesArray, (sb, values) =>
             {
                 sb.AppendTab(level + 1)
                 .Append('{')
                 .AppendJoin(' ', values, (sb, value) =>
                 {
-                    sb.Append(value.GetQuote());
+                    sb.Append(value.ToQuoted());
                 })
-                .Append("}\n");
+                .Append('}')
+                .AppendNewLine();
             })
             .AppendTab(level)
-            .Append("}\n");
+            .AppendNewLine();
     }
 
     public static StringBuilder AppendTagValuesPairsArray(this StringBuilder sb, int level, string name, List<List<KeyValuePair<string, List<string>>>> pairsArray)
     {
         return sb.AppendTab(level)
-            .Append($"{name.GetQuote()}={{\n")
+            .Append($"{name.ToQuoted()}={{")
+            .AppendNewLine()
             .AppendJoin('\0', pairsArray, (sb, pairs) =>
             {
                 sb.AppendTab(level + 1)
@@ -97,12 +125,14 @@ public static class StringBuilderTool
                     .Append("={")
                     .AppendJoin(' ', pair.Value, (sb, value) =>
                     {
-                        sb.Append(value.GetQuote());
+                        sb.Append(value.ToQuoted());
                     })
                     .Append('}');
                 })
-                .Append("}\n");
+                .Append('}')
+                .AppendNewLine();
             })
-            .AppendTab(level);
+            .AppendTab(level)
+            .AppendNewLine();
     }
 }

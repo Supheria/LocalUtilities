@@ -23,9 +23,9 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
 
     public void DoSerialize(SsSerializer serializer)
     {
-        serializer.WriteNameStart(LocalName);
+        serializer.AppendNameStart(LocalName);
         OnSerialize?.Invoke(serializer);
-        serializer.WriteNameEnd();
+        serializer.AppendNameEnd();
     }
 
     public void DoDeserialize(Token token)

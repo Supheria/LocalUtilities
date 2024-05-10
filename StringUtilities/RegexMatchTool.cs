@@ -4,9 +4,9 @@ using static System.Text.RegularExpressions.Regex;
 
 namespace LocalUtilities.RegexUtilities;
 
-public partial class RegexMatchTool
+public static partial class RegexMatchTool
 {
-    public static bool GetMatch(string input, string pattern, [NotNullWhen(true)] out Match? match)
+    public static bool GetMatch(this string input, string pattern, [NotNullWhen(true)] out Match? match)
     {
         match = null;
         try
@@ -23,7 +23,7 @@ public partial class RegexMatchTool
     [GeneratedRegex(@"\s")]
     private static partial Regex Blank();
 
-    public static bool GetMatchIgnoreAllBlacks(string input, string pattern, [NotNullWhen(true)] out Match? match)
+    public static bool GetMatchIgnoreAllBlacks(this string input, string pattern, [NotNullWhen(true)] out Match? match)
     {
         return GetMatch(Blank().Replace(input, ""), pattern, out match);
     }

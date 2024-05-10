@@ -1,39 +1,52 @@
 ﻿using LocalUtilities.RegexUtilities;
 using System.ComponentModel;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LocalUtilities.StringUtilities;
 
 public static class StringSimpleTypeConverter
 {
-    public const char ElementSplitter = ',';
+    const char Splitter = ',';
 
-    public static string ToArrayString<T>(this (T item1, T item2) pair) =>
-        ToArrayString(pair.item1?.ToString(), pair.item2?.ToString());
-
-    public static string ToArrayString<T1, T2>(T1 item1, T2 item2) =>
-        ToArrayString(item1?.ToString(), item2?.ToString());
-
-    public static string ToArrayString<T1, T2, T3>(T1 item1, T2 item2, T3 item3) =>
-        ToArrayString(item1?.ToString(), item2?.ToString(), item3?.ToString());
-
-    public static string ToArrayString<T1, T2, T3, T4>(T1 item1, T2 item2, T3 item3, T4 item4) =>
-        ToArrayString(item1?.ToString(), item2?.ToString(), item3?.ToString(), item4?.ToString());
-
-    public static string ToArrayString(params string?[] array) => array.ToArrayString();
-
-    public static string ToArrayString<T>(this IEnumerable<T?> array) =>
-        new StringBuilder().AppendJoin(ElementSplitter, array.Select(x => x?.ToString() ?? "")).ToString();
-
-    public static (T1, T2)? ToPair<T1, T2>(this string str, Func<string, T1> toItem1, Func<string, T2> toItem2)
+    public static string ToArrayString<T>(this (T item1, T item2) pair)
     {
-        if (RegexMatchTool.GetMatchIgnoreAllBlacks(str, @$"(.*){ElementSplitter}(.*)", out var match))
+        return ToArrayString(pair.item1?.ToString(), pair.item2?.ToString());
+    }
+
+    public static string ToArrayString<T>(T item1, T item2)
+    {
+        return ToArrayString(item1?.ToString(), item2?.ToString());
+    }
+
+    public static string ToArrayString<T>(T item1, T item2, T item3, T item4)
+    {
+        return ToArrayString(item1?.ToString(), item2?.ToString(), item3?.ToString(), item4?.ToString());
+    }
+
+    public static string ToArrayString(params string?[] array)
+    {
+        return array.ToArrayString();
+    }
+
+    public static string ToArrayString<T>(this IEnumerable<T?> array)
+    {
+        return new StringBuilder()
+            .AppendJoin(Splitter, array.Select(x => x?.ToString() ?? ""))
+            .ToString();
+    }
+
+    public static List<T> ToTypeList<T>(this string str, Func<string, T> toT)
+    {
+        var result = new List<T>();
+        while (RegexMatchTool.GetMatchIgnoreAllBlacks(str, @$"([^,]*)(?:{Splitter}(.*))+", out var match))
         {
-            var item1 = toItem1(match.Groups[1].Value);
-            var item2 = toItem2(match.Groups[2].Value);
-            return (item1, item2);
+            //foreach(var )
+            result.Add(toT(match.Groups[1].Value));
+            str = match.Groups[2].Value;
         }
-        return null;
+        result.Add(toT(str));
+        return result;
     }
 
     public static string ToArrayString(this Size size)
@@ -46,21 +59,38 @@ public static class StringSimpleTypeConverter
         return ToArrayString(point.X, point.Y);
     }
 
+    public static string ToArrayString(this Rectangle rect)
+    {
+        return ToArrayString(rect.X, rect.Y, rect.Width, rect.Height);
+    }
+
     public static Size ToSize(this string str, Size @default)
     {
-        var pair = str.ToPair((s) => s.ToInt(@default.Width), (s) => s.ToInt(@default.Height));
-        return pair is null ? @default : new(pair.Value.Item1, pair.Value.Item2);
+        var list = str.ToTypeList(s => s.ToInt());
+        if (list.Count is not 2)
+            return @default;
+        return new(list[0] ?? @default.Width, list[1] ?? @default.Height);
     }
 
     public static Point ToPoint(this string str, Point @default)
     {
-        var pair = str.ToPair((s) => s.ToInt(@default.X), (s) => s.ToInt(@default.Y));
-        return pair is null ? @default : new(pair.Value.Item1, pair.Value.Item2);
+        var list = str.ToTypeList(s => s.ToInt());
+        if (list.Count is not 2)
+            return @default;
+        return new(list[0] ?? @default.X, list[1] ?? @default.Y);
+    }
+
+    public static Rectangle ToRectangle(this string str, Rectangle @default)
+    {
+        var list = str.ToTypeList(s=>s.ToInt());
+        if (list.Count is not 4)
+            return @default;
+        return new(list[0] ?? @default.X, list[1] ?? @default.Y, list[2] ?? @default.Width, list[3] ?? @default.Height);
     }
 
     public static string[] ToArray(this string? str) => str is null
         ? Array.Empty<string>()
-        : str.Split(ElementSplitter).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+        : str.Split(Splitter).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
     /// <summary>
     /// 
     /// </summary>
@@ -105,11 +135,6 @@ public static class StringSimpleTypeConverter
         return ((DescriptionAttribute)objs[0]).Description;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="str"></param>
-    /// <returns>int.Parse fail will return null</returns>
     public static int ToInt(this string? str, int @defaut)
     {
         try
@@ -119,6 +144,18 @@ public static class StringSimpleTypeConverter
         catch
         {
             return @defaut;
+        }
+    }
+
+    public static int? ToInt(this string? str)
+    {
+        try
+        {
+            return str is null ? null : int.Parse(str);
+        }
+        catch
+        {
+            return null;
         }
     }
 

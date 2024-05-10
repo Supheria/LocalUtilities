@@ -30,5 +30,10 @@ public abstract class Roster<TSignature, TItem> where TSignature : notnull where
         }
     }
 
+    public void Add(TItem item)
+    {
+        RosterMap.Add(item.Signature, item);
+    }
+
     public virtual void Remove(TSignature signature) => RosterMap.Remove(signature);
 }

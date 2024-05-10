@@ -28,11 +28,11 @@ public class FormDataSerialization<T> : SsSerialization<T> where T : FormData
 
     private void FormData_Serialize(SsSerializer serializer)
     {
-        serializer.WriteTag(nameof(Source.MinimumSize), Source.MinimumSize.ToArrayString());
-        serializer.WriteTag(nameof(Source.Size), Source.Size.ToArrayString());
-        serializer.WriteTag(nameof(Source.Location), Source.Location.ToArrayString());
-        serializer.WriteTag(nameof(Source.WindowState), Source.WindowState.ToString());
-        serializer.WriteTag(nameof(Source.Padding), Source.Padding.ToString());
+        serializer.AppendTag(nameof(Source.MinimumSize), Source.MinimumSize.ToArrayString());
+        serializer.AppendTag(nameof(Source.Size), Source.Size.ToArrayString());
+        serializer.AppendTag(nameof(Source.Location), Source.Location.ToArrayString());
+        serializer.AppendTag(nameof(Source.WindowState), Source.WindowState.ToString());
+        serializer.AppendTag(nameof(Source.Padding), Source.Padding.ToString());
         LabelFontDataSerialization.Source = Source.LabelFontData;
         LabelFontDataSerialization.DoSerialize(serializer);
         ContentFontDataSerialization.Source = Source.ContentFontData;

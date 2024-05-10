@@ -25,17 +25,17 @@ public static class SsSerializeTool
         return message;
     }
 
-    public static void Serialize<T>(this ICollection<T> collection, SsSerializer writer, SsSerialization<T> itemSerialization)
+    public static void Serialize<T>(this ICollection<T> collection, SsSerializer serializer, SsSerialization<T> itemSerialization)
     {
         foreach (var item in collection)
         {
             itemSerialization.Source = item;
-            Serialize(itemSerialization, writer);
+            Serialize(itemSerialization, serializer);
         }
     }
 
-    public static void Serialize<T>(this SsSerialization<T> serialization, SsSerializer writer)
+    public static void Serialize<T>(this SsSerialization<T> serialization, SsSerializer serializer)
     {
-        serialization.DoSerialize(writer);
+        serialization.DoSerialize(serializer);
     }
 }

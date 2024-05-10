@@ -23,10 +23,10 @@ internal class FontDataSerialization : SsSerialization<FontData>
 
     private void FontData_Serialize(SsSerializer serializer)
     {
-        serializer.WriteTag(nameof(Source.FamilyName), Source.FamilyName);
-        serializer.WriteTag(nameof(Source.ScaleFactorToHeight), Source.ScaleFactorToHeight.ToString());
-        serializer.WriteTag(nameof(Source.Style), Source.Style.ToString());
-        serializer.WriteTag(nameof(Source.Unit), Source.Unit.ToString());
+        serializer.AppendTag(nameof(Source.FamilyName), Source.FamilyName);
+        serializer.AppendTag(nameof(Source.ScaleFactorToHeight), Source.ScaleFactorToHeight.ToString());
+        serializer.AppendTag(nameof(Source.Style), Source.Style.ToString());
+        serializer.AppendTag(nameof(Source.Unit), Source.Unit.ToString());
     }
 
     private void FontData_Deserialize(Token token)

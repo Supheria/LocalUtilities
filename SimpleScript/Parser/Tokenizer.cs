@@ -65,9 +65,7 @@ internal class Tokenizer
             var tree = Tree.Parse(Composed);
             if (tree is null)
             {
-                var token = Tree.OnceGet();
-                if (token is not NullToken)
-                    Tokens.Add(token);
+                AddToken();
                 Tree = new();
             }
             else
@@ -75,6 +73,13 @@ internal class Tokenizer
         }
         if (Tree.From is not null)
             throw new SsParseExceptions($"interruption at line({Line}), column({Column})");
+        AddToken();
+        void AddToken()
+        {
+            var token = Tree.DisposableGet();
+            if (token is not NullToken)
+                Tokens.Add(token);
+        }
     }
 
     private bool Compose(char ch)

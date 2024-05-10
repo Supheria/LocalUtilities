@@ -14,37 +14,42 @@ public class SsSerializer
         return StringBuilder.ToString();
     }
 
-    public void WriteNameStart(string name)
+    public void AppendToken(string token)
+    {
+        StringBuilder.Append(token);
+    }
+
+    public void AppendNameStart(string name)
     {
         StringBuilder.AppendNameStart(Level++, name);
     }
 
-    public void WriteNameEnd()
+    public void AppendNameEnd()
     {
         _ = StringBuilder.AppendNameEnd(--Level);
     }
 
-    public void WriteTag(string name, string tag)
+    public void AppendTag(string name, string tag)
     {
         _ = StringBuilder.AppendTagValues(Level, name, tag, []);
     }
 
-    public void WriteValues(string name, List<string> values)
+    public void AppendValues(string name, List<string> values)
     {
         _ = StringBuilder.AppendTagValues(Level, name, "_", values);
     }
 
-    public void WriteTagValues(string name, string tag, List<string> values)
+    public void AppendTagValues(string name, string tag, List<string> values)
     {
         _ = StringBuilder.AppendTagValues(Level, name, tag, values);
     }
 
-    public void WriteValuesArray(string name, List<List<string>> valuesArray)
+    public void AppendValuesArray(string name, List<List<string>> valuesArray)
     {
         _ = StringBuilder.AppendValuesArray(Level, name, valuesArray);
     }
 
-    public void WriteTagValuesPairsArray(string name, List<List<KeyValuePair<string, List<string>>>> pairsArray)
+    public void AppendTagValuesPairsArray(string name, List<List<KeyValuePair<string, List<string>>>> pairsArray)
     {
         _ = StringBuilder.AppendTagValuesPairsArray(Level, name, pairsArray);
     }

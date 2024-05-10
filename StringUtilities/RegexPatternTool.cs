@@ -39,14 +39,16 @@ public class RegexPatternTool
         return sb.ToString();
     }
 
-    private static string ReplaceExclusiveOrUnlimitedCollection(string s) =>
-        s.Substring(s.Length - 1, 1) is "." ? @"[^\s]" : s.Insert(s.Length - 1, @"\s");
+    private static string ReplaceExclusiveOrUnlimitedCollection(string s)
+    {
+        return s.Substring(s.Length - 1, 1) is "." ? @"[^\s]" : s.Insert(s.Length - 1, @"\s");
+    }
 
     private static readonly string[] ExclusiveOrUnlimitedCollection =
-    {
+    [
         @"\[\^[^]]+\]",
         @"(?<!\\)\.",
-    };
+    ];
 
     /// <summary>
     /// make such as "[^a]" to "[^a\s]", ".*" to "[^\s]*"
@@ -54,6 +56,8 @@ public class RegexPatternTool
     /// </summary>
     /// <param name="pattern"></param>
     /// <returns></returns>
-    public static string ExcludeBlankInExclusiveOrUnlimitedCollection(string pattern) =>
-        ReplacePatternStringParts(pattern, ExclusiveOrUnlimitedCollection, ReplaceExclusiveOrUnlimitedCollection);
+    public static string ExcludeBlankInExclusiveOrUnlimitedCollection(string pattern)
+    {
+        return ReplacePatternStringParts(pattern, ExclusiveOrUnlimitedCollection, ReplaceExclusiveOrUnlimitedCollection);
+    }
 }
