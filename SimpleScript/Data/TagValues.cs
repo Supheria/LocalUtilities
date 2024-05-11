@@ -19,7 +19,7 @@ public class TagValues(Token? from, string name, int level, string @operator, st
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendTagValues(Level, Name, Tag, Value)
+            .AppendTagValues(Level, Name, Tag, Value, true)
             .ToString();
     }
 }

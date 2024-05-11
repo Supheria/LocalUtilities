@@ -106,7 +106,7 @@ internal class ParseTree
     public ParseTree? Parse(Element element)
     {
         var ch = element.Head();
-        switch(Step)
+        switch (Step)
         {
             #region ==== Start ====
 

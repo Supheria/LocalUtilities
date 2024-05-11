@@ -2,11 +2,6 @@
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.StringUtilities;
 using LocalUtilities.UIUtilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.Serializations;
 
@@ -34,9 +29,9 @@ public class FormDataSerialization<T> : SsSerialization<T> where T : FormData
         serializer.AppendTag(nameof(Source.WindowState), Source.WindowState.ToString());
         serializer.AppendTag(nameof(Source.Padding), Source.Padding.ToString());
         LabelFontDataSerialization.Source = Source.LabelFontData;
-        LabelFontDataSerialization.DoSerialize(serializer);
+        LabelFontDataSerialization.BeginSerialize(serializer);
         ContentFontDataSerialization.Source = Source.ContentFontData;
-        ContentFontDataSerialization.DoSerialize(serializer);
+        ContentFontDataSerialization.BeginSerialize(serializer);
     }
 
     private void FormData_Deserialize(Token token)

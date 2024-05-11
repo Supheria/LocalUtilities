@@ -1,7 +1,6 @@
 ﻿using LocalUtilities.RegexUtilities;
 using System.ComponentModel;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace LocalUtilities.StringUtilities;
 
@@ -82,7 +81,7 @@ public static class StringSimpleTypeConverter
 
     public static Rectangle ToRectangle(this string str, Rectangle @default)
     {
-        var list = str.ToTypeList(s=>s.ToInt());
+        var list = str.ToTypeList(s => s.ToInt());
         if (list.Count is not 4)
             return @default;
         return new(list[0] ?? @default.X, list[1] ?? @default.Y, list[2] ?? @default.Width, list[3] ?? @default.Height);

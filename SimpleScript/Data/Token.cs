@@ -14,8 +14,7 @@ public class Token(Token? from, string name, int level)
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendTab(Level)
-            .Append($"{Name}\n")
+            .AppendToken(Level, Name, true)
             .ToString();
     }
 }

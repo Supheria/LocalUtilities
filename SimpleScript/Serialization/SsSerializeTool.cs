@@ -5,17 +5,17 @@ namespace LocalUtilities.SimpleScript.Serialization;
 
 public static class SsSerializeTool
 {
-    public static string? SaveToFile<T>(this SsSerialization<T> serialization)
+    public static string? SaveToFile<T>(this SsSerialization<T> serialization, bool writeIntoMultiLines)
     {
         string? message = null;
         try
         {
             using var file = File.Create(serialization.GetInitializationFilePath());
-            var writer = new SsSerializer();
-            serialization.DoSerialize(writer);
+            var serializer = new SsSerializer(writeIntoMultiLines);
+            serialization.BeginSerialize(serializer);
             file.Write([0xEF, 0xBB, 0xBF]);
             using var streamWriter = new StreamWriter(file, Encoding.UTF8);
-            streamWriter.Write(writer.ToString());
+            streamWriter.Write(serializer.ToString());
             streamWriter.Close();
         }
         catch (Exception ex)
@@ -36,6 +36,6 @@ public static class SsSerializeTool
 
     public static void Serialize<T>(this SsSerialization<T> serialization, SsSerializer serializer)
     {
-        serialization.DoSerialize(serializer);
+        serialization.BeginSerialize(serializer);
     }
 }

@@ -21,18 +21,16 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
 
     protected SsDeserializeDelegate? OnDeserialize { get; set; } = null;
 
-    public void DoSerialize(SsSerializer serializer)
+    internal void BeginSerialize(SsSerializer serializer)
     {
         serializer.AppendNameStart(LocalName);
         OnSerialize?.Invoke(serializer);
         serializer.AppendNameEnd();
     }
 
-    public void DoDeserialize(Token token)
+    internal void BeginDeserialize(Token token)
     {
-        if (token is not Scope scope)
-            return;
-        foreach (var property in scope.Property)
-            OnDeserialize?.Invoke(property);
+        if (token is Scope scope)
+            scope.Property.ForEach(p => OnDeserialize?.Invoke(p));
     }
 }

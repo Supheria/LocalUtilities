@@ -18,7 +18,7 @@ public static class SsDeserializeTool
         {
             var tokenizer = new Tokenizer(path);
             var token = tokenizer.Tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
-            serialization.DoDeserialize(token ?? throw new ArgumentException());
+            serialization.BeginDeserialize(token ?? throw new ArgumentException());
             message = null;
         }
         catch (Exception ex)
@@ -30,7 +30,7 @@ public static class SsDeserializeTool
 
     public static T Deserialize<T>(this SsSerialization<T> serialization, Token token)
     {
-        serialization.DoDeserialize(token);
+        serialization.BeginDeserialize(token);
         return serialization.Source;
     }
 }

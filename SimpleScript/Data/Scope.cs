@@ -20,12 +20,12 @@ public class Scope(Token? from, string name, int level) : Token(from, name, leve
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendNameStart(Level, Name)
+            .AppendNameStart(Level, Name, true)
             .AppendJoin('\0', Property, (sb, property) =>
             {
                 sb.Append(property.ToString());
             })
-            .AppendNameEnd(Level)
+            .AppendNameEnd(Level, true)
             .ToString();
     }
 }

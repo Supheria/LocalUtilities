@@ -25,7 +25,7 @@ public class TagValuesPairsArray(Token? from, string name, int level) : Token(fr
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendTagValuesPairsArray(Level, Name, Value)
+            .AppendTagValuesPairsArray(Level, Name, Value, true)
             .ToString();
     }
 }

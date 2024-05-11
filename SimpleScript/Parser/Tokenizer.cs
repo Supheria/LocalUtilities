@@ -1,6 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Data;
-using System.Drawing;
-using System;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;

@@ -20,7 +20,7 @@ public class ValuesArray(Token? from, string name, int level) : Token(from, name
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendValuesArray(Level, Name, Value)
+            .AppendValuesArray(Level, Name, Value, true)
             .ToString();
     }
 }
