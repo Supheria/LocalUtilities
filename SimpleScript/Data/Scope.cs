@@ -4,9 +4,9 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class Scope(Token? from, string name, int level) : Token(from, name, level)
+public class Scope(Token? from, Word name, int level) : Token(from, name, level)
 {
-    public List<Token> Property { get; } = [];
+    public Dictionary<string, List<Token>> Property { get; } = [];
 
     public void Append(Token property)
     {
@@ -14,14 +14,17 @@ public class Scope(Token? from, string name, int level) : Token(from, name, leve
             return;
         if (property.Level != Level + 1)
             throw new SsParseExceptions("level mismatched of Appending in Scope");
-        Property.Add(property);
+        if (Property.TryGetValue(property.Name.Text, out var list))
+            list.Add(property);
+        else
+            Property[property.Name.Text] = [property];
     }
 
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendNameStart(Level, Name, true)
-            .AppendJoin('\0', Property, (sb, property) =>
+            .AppendNameStart(Level, Name.Text, true)
+            .AppendJoin('\0', Property.Values.ToList(), (sb, property) =>
             {
                 sb.Append(property.ToString());
             })

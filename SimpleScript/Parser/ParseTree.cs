@@ -53,13 +53,13 @@ internal class ParseTree
 
     Steps Step { get; set; } = Steps.None;
 
-    string Name { get; set; } = "";
+    Word Name { get; set; } = new();
 
-    string Operator { get; set; } = "";
+    Word Operator { get; set; } = new();
 
-    string Value { get; set; } = "";
+    Word Value { get; set; } = new();
 
-    string Array { get; set; } = "";
+    Word Array { get; set; } = new();
 
     Token Builder { get; set; } = new NullToken();
 
@@ -73,11 +73,11 @@ internal class ParseTree
         Level = 0;
     }
 
-    public ParseTree(ParseTree from, int level, string key, string @operator)
+    public ParseTree(ParseTree from, int level, Word name, Word @operator)
     {
         From = from;
         Level = level;
-        Name = key;
+        Name = name;
         Operator = @operator;
         Step = Steps.Operator;
     }
@@ -145,7 +145,7 @@ internal class ParseTree
                     case Less:
                         throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
                     case OpenBrace:
-                        if (Operator[0] != Equal)
+                        if (Operator.Text[0] != Equal)
                             throw new SsParseExceptions(SsParseExceptions.UnexpectedOperator(element));
                         else
                         {

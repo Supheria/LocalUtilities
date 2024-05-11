@@ -16,26 +16,19 @@ internal class FontDataSerialization : SsSerialization<FontData>
         OnDeserialize += FontData_Deserialize;
     }
 
-    private void FontData_Serialize(SsSerializer serializer)
+    private void FontData_Serialize()
     {
-        serializer.AppendTag(nameof(Source.FamilyName), Source.FamilyName);
-        serializer.AppendTag(nameof(Source.ScaleFactorToHeight), Source.ScaleFactorToHeight.ToString());
-        serializer.AppendTag(nameof(Source.Style), Source.Style.ToString());
-        serializer.AppendTag(nameof(Source.Unit), Source.Unit.ToString());
+        WriteTag(nameof(Source.FamilyName), Source.FamilyName);
+        WriteTag(nameof(Source.ScaleFactorToHeight), Source.ScaleFactorToHeight.ToString());
+        WriteTag(nameof(Source.Style), Source.Style.ToString());
+        WriteTag(nameof(Source.Unit), Source.Unit.ToString());
     }
 
-    private void FontData_Deserialize(Token token)
+    private void FontData_Deserialize()
     {
-        if (token is TagValues tagValues)
-        {
-            if (token.Name is nameof(Source.FamilyName))
-                Source.FamilyName = tagValues.Tag;
-            else if (token.Name is nameof(Source.ScaleFactorToHeight))
-                Source.ScaleFactorToHeight = tagValues.Tag.ToFloat(Source.ScaleFactorToHeight);
-            else if (token.Name is nameof(Source.Style))
-                Source.Style = tagValues.Tag.ToEnum<FontStyle>();
-            else if (token.Name is nameof(Source.Unit))
-                Source.Unit = tagValues.Tag.ToEnum<GraphicsUnit>();
-        }
+        Source.FamilyName = ReadTag(nameof(Source.FamilyName), s => s ?? Source.FamilyName);
+        Source.ScaleFactorToHeight = ReadTag(nameof(Source.ScaleFactorToHeight), s => s.ToFloat(Source.ScaleFactorToHeight));
+        Source.Style = ReadTag(nameof(Source.Style), s => s.ToEnum(Source.Style));
+        Source.Unit = ReadTag(nameof(Source.Unit), s => s.ToEnum(Source.Unit));
     }
 }

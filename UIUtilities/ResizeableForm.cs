@@ -1,5 +1,7 @@
 ﻿using LocalUtilities.DelegateUtilities;
 using LocalUtilities.FileUtilities;
+using LocalUtilities.Serializations;
+using LocalUtilities.SimpleScript.Serialization;
 
 namespace LocalUtilities.UIUtilities;
 
@@ -17,7 +19,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     protected new int Padding { get; set; }
 
-    FormDataXmlSerialization<TFormData> FormDataXmlSerialization { get; }
+    FormDataSerialization<TFormData> FormDataXmlSerialization { get; }
 
     protected new int Left => ClientRectangle.Left;
 
@@ -27,7 +29,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     protected new int Height => ClientRectangle.Height;
 
-    public ResizeableForm(TFormData formData, FormDataXmlSerialization<TFormData> formDataXmlSerialization)
+    public ResizeableForm(TFormData formData, FormDataSerialization<TFormData> formDataXmlSerialization)
     {
         FormData = formData;
         FormDataXmlSerialization = formDataXmlSerialization;
@@ -58,7 +60,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     private void ResizeableForm_Load(object? sender, EventArgs e)
     {
-        FormData = FormDataXmlSerialization.LoadFromXml(out _);
+        FormData = FormDataXmlSerialization.LoadFromFile(out _);
         OnLoadFormData?.Invoke();
         MinimumSize = FormData.MinimumSize;
         Size = FormData.Size;
@@ -77,7 +79,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         FormData.WindowState = WindowState;
         FormData.Padding = Padding;
         FormDataXmlSerialization.Source = FormData;
-        FormDataXmlSerialization.SaveToXml();
+        FormDataXmlSerialization.SaveToFile(true);
     }
 
     protected abstract void InitializeComponent();

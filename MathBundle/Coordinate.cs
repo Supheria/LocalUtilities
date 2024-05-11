@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.MathBundle;
+﻿using LocalUtilities.StringUtilities;
+
+namespace LocalUtilities.MathBundle;
 
 public enum CoordinateType
 {
@@ -15,26 +17,6 @@ public class Coordinate(double x, double y)
     public Coordinate() : this(0, 0)
     {
 
-    }
-
-    public double Parse(CoordinateType type)
-    {
-        return type switch
-        {
-            CoordinateType.X => X,
-            CoordinateType.Y => Y,
-            _ => throw new InvalidOperationException()
-        };
-    }
-
-    public static double Parse(Coordinate coordinate, CoordinateType type)
-    {
-        return type switch
-        {
-            CoordinateType.X => coordinate.X,
-            CoordinateType.Y => coordinate.Y,
-            _ => throw new InvalidOperationException()
-        };
     }
 
     public static implicit operator PointF(Coordinate coordinate)
@@ -69,5 +51,30 @@ public class Coordinate(double x, double y)
     public override bool Equals(object? obj)
     {
         return this == obj;
+    }
+
+    public override string ToString()
+    {
+        return (X, Y).ToArrayString();
+    }
+
+    public double Parse(CoordinateType type)
+    {
+        return type switch
+        {
+            CoordinateType.X => X,
+            CoordinateType.Y => Y,
+            _ => throw new InvalidOperationException()
+        };
+    }
+
+    public static double Parse(Coordinate coordinate, CoordinateType type)
+    {
+        return type switch
+        {
+            CoordinateType.X => coordinate.X,
+            CoordinateType.Y => coordinate.Y,
+            _ => throw new InvalidOperationException()
+        };
     }
 }

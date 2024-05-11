@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace LocalUtilities.StringUtilities;
 
-internal static class EnumDescriptionTool
+internal static class EnumTool
 {
     /// <summary>
     /// 返回 <描述, 枚举项> 词典

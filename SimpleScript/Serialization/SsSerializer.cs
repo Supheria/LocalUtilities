@@ -1,4 +1,5 @@
-﻿using LocalUtilities.StringUtilities;
+﻿using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.StringUtilities;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serialization;
@@ -18,12 +19,12 @@ public class SsSerializer(bool writeIntoMultiLines)
 
     public void AppendToken(string name)
     {
-        StringBuilder.AppendToken(Level, name, WriteIntoMultiLines);
+        _ = StringBuilder.AppendToken(Level, name, WriteIntoMultiLines);
     }
 
     public void AppendNameStart(string name)
     {
-        StringBuilder.AppendNameStart(Level++, name, WriteIntoMultiLines);
+        _ = StringBuilder.AppendNameStart(Level++, name, WriteIntoMultiLines);
     }
 
     public void AppendNameEnd()
@@ -36,22 +37,22 @@ public class SsSerializer(bool writeIntoMultiLines)
         _ = StringBuilder.AppendTagValues(Level, name, tag, [], WriteIntoMultiLines);
     }
 
-    public void AppendValues(string name, List<string> values)
+    public void AppendValues(string name, List<Word> values)
     {
         _ = StringBuilder.AppendTagValues(Level, name, "_", values, WriteIntoMultiLines);
     }
 
-    public void AppendTagValues(string name, string tag, List<string> values)
+    public void AppendTagValues(string name, string tag, List<Word> values)
     {
         _ = StringBuilder.AppendTagValues(Level, name, tag, values, WriteIntoMultiLines);
     }
 
-    public void AppendValuesArray(string name, List<List<string>> valuesArray)
+    public void AppendValuesArray(string name, List<List<Word>> valuesArray)
     {
         _ = StringBuilder.AppendValuesArray(Level, name, valuesArray, WriteIntoMultiLines);
     }
 
-    public void AppendTagValuesPairsArray(string name, List<List<KeyValuePair<string, List<string>>>> pairsArray)
+    public void AppendTagValuesPairsArray(string name, List<List<KeyValuePair<Word, List<Word>>>> pairsArray)
     {
         _ = StringBuilder.AppendTagValuesPairsArray(Level, name, pairsArray, WriteIntoMultiLines);
     }

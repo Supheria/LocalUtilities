@@ -1,17 +1,18 @@
-﻿using LocalUtilities.StringUtilities;
+﻿using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.StringUtilities;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class TagValues(Token? from, string name, int level, string @operator, string tag) : Token(from, name, level)
+public class TagValues(Token? from, Word name, int level, Word @operator, Word tag) : Token(from, name, level)
 {
-    public string Operator { get; } = @operator;
+    public Word Operator { get; } = @operator;
 
-    public string Tag { get; } = tag;
+    public Word Tag { get; } = tag;
 
-    public List<string> Value { get; } = [];
+    public List<Word> Value { get; } = [];
 
-    public void Append(string value)
+    public void Append(Word value)
     {
         Value.Add(value);
     }
@@ -19,7 +20,7 @@ public class TagValues(Token? from, string name, int level, string @operator, st
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendTagValues(Level, Name, Tag, Value, true)
+            .AppendTagValues(Level, Name.Text, Tag.Text, Value, true)
             .ToString();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.SimpleScript.Parser;
+﻿using System.Xml.Linq;
+
+namespace LocalUtilities.SimpleScript.Parser;
 
 internal class SsParseExceptions(string message) : Exception(message)
 {
@@ -31,5 +33,10 @@ internal class SsParseExceptions(string message) : Exception(message)
     internal static string UnexpectedArraySyntax(Element element)
     {
         return ($"unexpected array syntax at line({element.Line}), column({element.Column})");
+    }
+
+    internal static string MultiAssignment(Word name)
+    {
+        return $"multi-assignment to {name.Text} at line({name.Line}), column({name.Column})";
     }
 }

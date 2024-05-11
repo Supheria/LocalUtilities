@@ -19,15 +19,16 @@ public abstract class KeyValuePairsSerialization<TKey, TValue> : SsSerialization
         OnDeserialize += KeyValuePair_Deserialize;
     }
 
-    private void KeyValuePair_Serialize(SsSerializer serializer)
+    private void KeyValuePair_Serialize()
     {
         foreach (var (key, value) in Source)
-            serializer.AppendTag(WriteKey(key), WriteValue(value));
+            WriteTag(WriteKey(key), WriteValue(value));
     }
 
-    private void KeyValuePair_Deserialize(Token token)
+    private void KeyValuePair_Deserialize()
     {
-        if (token is TagValues tagValues)
-            Source.Add(new(ReadKey(tagValues.Name), ReadValue(tagValues.Tag)));
+        Deserialize(typeof(TagValues), token => {
+            Source.Add(new(ReadKey(token.Name.Text), ReadValue(((TagValues)token).Tag.Text)));
+        });
     }
 }

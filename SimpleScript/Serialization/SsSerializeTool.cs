@@ -12,7 +12,7 @@ public static class SsSerializeTool
         {
             using var file = File.Create(serialization.GetInitializationFilePath());
             var serializer = new SsSerializer(writeIntoMultiLines);
-            serialization.BeginSerialize(serializer);
+            serialization.Serialize(serializer);
             file.Write([0xEF, 0xBB, 0xBF]);
             using var streamWriter = new StreamWriter(file, Encoding.UTF8);
             streamWriter.Write(serializer.ToString());
@@ -23,19 +23,5 @@ public static class SsSerializeTool
             message = ex.Message;
         }
         return message;
-    }
-
-    public static void Serialize<T>(this ICollection<T> collection, SsSerializer serializer, SsSerialization<T> itemSerialization)
-    {
-        foreach (var item in collection)
-        {
-            itemSerialization.Source = item;
-            Serialize(itemSerialization, serializer);
-        }
-    }
-
-    public static void Serialize<T>(this SsSerialization<T> serialization, SsSerializer serializer)
-    {
-        serialization.BeginSerialize(serializer);
     }
 }

@@ -2,6 +2,7 @@
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.StringUtilities;
 using LocalUtilities.UIUtilities;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace LocalUtilities.Serializations;
 
@@ -21,40 +22,25 @@ public class FormDataSerialization<T> : SsSerialization<T> where T : FormData
         OnDeserialize += FormData_Deserialize;
     }
 
-    private void FormData_Serialize(SsSerializer serializer)
+    private void FormData_Serialize()
     {
-        serializer.AppendTag(nameof(Source.MinimumSize), Source.MinimumSize.ToArrayString());
-        serializer.AppendTag(nameof(Source.Size), Source.Size.ToArrayString());
-        serializer.AppendTag(nameof(Source.Location), Source.Location.ToArrayString());
-        serializer.AppendTag(nameof(Source.WindowState), Source.WindowState.ToString());
-        serializer.AppendTag(nameof(Source.Padding), Source.Padding.ToString());
-        LabelFontDataSerialization.Source = Source.LabelFontData;
-        LabelFontDataSerialization.BeginSerialize(serializer);
-        ContentFontDataSerialization.Source = Source.ContentFontData;
-        ContentFontDataSerialization.BeginSerialize(serializer);
+        WriteTag(nameof(Source.MinimumSize), Source.MinimumSize.ToArrayString());
+        WriteTag(nameof(Source.Size), Source.Size.ToArrayString());
+        WriteTag(nameof(Source.Location), Source.Location.ToArrayString());
+        WriteTag(nameof(Source.WindowState), Source.WindowState.ToString());
+        WriteTag(nameof(Source.Padding), Source.Padding.ToString());
+        Serialize(Source.LabelFontData, LabelFontDataSerialization);
+        Serialize(Source.ContentFontData, ContentFontDataSerialization);
     }
 
-    private void FormData_Deserialize(Token token)
+    private void FormData_Deserialize()
     {
-        if (token is TagValues tagValues)
-        {
-            if (token.Name is nameof(Source.MinimumSize))
-                Source.MinimumSize = tagValues.Tag.ToSize(Source.MinimumSize);
-            if (token.Name is nameof(Source.Size))
-                Source.Size = tagValues.Tag.ToSize(Source.Size);
-            else if (token.Name is nameof(Source.Location))
-                Source.Location = tagValues.Tag.ToPoint(Source.Location);
-            else if (token.Name is nameof(Source.WindowState))
-                Source.WindowState = tagValues.Tag.ToEnum<FormWindowState>();
-            else if (token.Name is nameof(Source.Padding))
-                Source.Padding = tagValues.Tag.ToInt(Source.Padding);
-        }
-        else if (token is Scope scope)
-        {
-            if (token.Name == LabelFontDataSerialization.LocalName)
-                Source.LabelFontData = LabelFontDataSerialization.Deserialize(scope);
-            else if (token.Name == ContentFontDataSerialization.LocalName)
-                Source.ContentFontData = ContentFontDataSerialization.Deserialize(scope);
-        }
+        Source.MinimumSize = ReadTag(nameof(Source.MinimumSize), s => s.ToSize(Source.MinimumSize));
+        Source.Size = ReadTag(nameof(Source.Size), s => s.ToSize(Source.Size));
+        Source.Location = ReadTag(nameof(Source.Location), s => s.ToPoint(Source.Location));
+        Source.WindowState = ReadTag(nameof(Source.WindowState), s=>s.ToEnum(Source.WindowState));
+        Source.Padding = ReadTag(nameof(Source.Padding), s => s.ToInt(Source.Padding));
+        Source.LabelFontData = Deserialize(Source.LabelFontData, LabelFontDataSerialization);
+        Source.ContentFontData = Deserialize(Source.ContentFontData, ContentFontDataSerialization);
     }
 }

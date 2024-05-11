@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.FileUtilities;
 using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
+using System.Data.SqlTypes;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -16,21 +17,18 @@ public static class SsDeserializeTool
         }
         try
         {
-            var tokenizer = new Tokenizer(path);
-            var token = tokenizer.Tokens.FirstOrDefault(t => t.Name == serialization.LocalName);
-            serialization.BeginDeserialize(token ?? throw new ArgumentException());
             message = null;
+            foreach (var token in new Tokenizer(path).Tokens)
+            {
+                if (serialization.Deserialize(token))
+                    return serialization.Source;
+            }
+            throw new SsParseExceptions($"cannot find an entry of {serialization.LocalName}");
         }
         catch (Exception ex)
         {
             message = ex.Message;
         }
-        return serialization.Source;
-    }
-
-    public static T Deserialize<T>(this SsSerialization<T> serialization, Token token)
-    {
-        serialization.BeginDeserialize(token);
         return serialization.Source;
     }
 }

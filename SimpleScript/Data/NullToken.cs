@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.SimpleScript.Data;
 
-public class NullToken() : Token(null, "", 0)
+public class NullToken() : Token(null, new(), 0)
 {
 
 }
