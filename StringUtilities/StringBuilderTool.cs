@@ -9,28 +9,29 @@ public static class StringBuilderTool
 
     public static string ToQuoted(this string str, bool writeIntoMultiLines)
     {
+        if (str is "")
+            return toQuoted();
         if (writeIntoMultiLines)
         {
             foreach (var blank in Blanks)
             {
                 if (str.Contains(blank))
-                    return new StringBuilder()
-                        .Append('"')
-                        .Append(str)
-                        .Append('"')
-                        .ToString();
+                    return toQuoted();
             }
             return str;
         }
         else
+            return toQuoted();
+        string toQuoted(){
             return new StringBuilder()
                 .Append('"')
                 .Append(str)
                 .Append('"')
                 .ToString();
+        };
     }
 
-    public static StringBuilder AppendJoin<T>(this StringBuilder sb, char separator, List<T> source, Action<StringBuilder, T> func)
+    public static StringBuilder AppendJoin<T>(this StringBuilder sb, char separator, IList<T> source, Action<StringBuilder, T> func)
     {
         if (source.Count is 0)
             return sb;

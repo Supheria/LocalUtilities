@@ -1,19 +1,21 @@
-﻿using LocalUtilities.Interface;
+﻿using LocalUtilities.FileUtilities;
+using LocalUtilities.Interface;
 using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
+using System.Text;
 using System.Xml.Linq;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
 public delegate void SerializationOnRunning();
 
-public abstract class SsSerialization<T>(T source) : IInitializeable
+public abstract class SsSerialization<T>() : IInitializeable where T : new()
 {
-    public T Source = source;
+    public T Source = new();
 
     public abstract string LocalName { get; }
 
-    public string? IniFileName { get; set; } = null;
+    public string IniFileName => LocalName;
 
     public string IniFileExtension { get; } = "ss";
 
@@ -24,6 +26,58 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
     SsSerializer? Serializer { get; set; }
 
     Scope? Scope { get; set; } = null;
+
+
+    ////
+    ////
+    ////
+    
+    
+    public string? SaveToFile(bool writeIntoMultiLines, string? outFilePath = null)
+    {
+        string? message = null;
+        try
+        {
+            var path = outFilePath ?? this.GetInitializationFilePath();
+            using var file = File.Create(path);
+            var serializer = new SsSerializer(writeIntoMultiLines);
+            Serialize(serializer);
+            file.Write([0xEF, 0xBB, 0xBF]);
+            using var streamWriter = new StreamWriter(file, Encoding.UTF8);
+            streamWriter.Write(serializer.ToString());
+            streamWriter.Close();
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+        return message;
+    }
+
+    public T LoadFromFile(out string? message, string? inFilePath = null)
+    {
+        var path = inFilePath ?? this.GetInitializationFilePath();
+        if (!File.Exists(path))
+        {
+            message = $"\"{path}\" file path is not existed.";
+            return Source;
+        }
+        try
+        {
+            message = null;
+            foreach (var token in new Tokenizer(path).Tokens)
+            {
+                if (Deserialize(token))
+                    return Source;
+            }
+            throw new SsParseExceptions($"cannot find an entry of {LocalName}");
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+        return Source;
+    }
 
 
     ////
@@ -53,7 +107,7 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
         Serializer.AppendTag(name, property);
     }
 
-    protected void Serialize<TProperty>(TProperty property, SsSerialization<TProperty> serialization)
+    protected void Serialize<TProperty>(TProperty property, SsSerialization<TProperty> serialization) where TProperty : new()
     {
         if (Serializer is null)
             return;
@@ -61,7 +115,7 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
         serialization.Serialize(Serializer);
     }
 
-    public void Serialize<TProperty>(ICollection<TProperty> collection, SsSerialization<TProperty> itemSerialization)
+    public void Serialize<TProperty>(ICollection<TProperty> collection, SsSerialization<TProperty> itemSerialization) where TProperty : new()
     {
         if (Serializer is null)
             return;
@@ -80,6 +134,7 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
 
     public bool Deserialize(Token token)
     {
+        Source = new();
         if (token.Name.Text == LocalName && token is Scope scope)
         {
             Scope = scope;
@@ -107,7 +162,7 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
         return toT(str);
     }
 
-    protected TProperty Deserialize<TProperty>(TProperty @default, SsSerialization<TProperty> serialization)
+    protected TProperty Deserialize<TProperty>(TProperty @default, SsSerialization<TProperty> serialization) where TProperty : new()
     {
         if (Scope is null || !Scope.Property.TryGetValue(serialization.LocalName, out var tokens) || tokens.Count is 0)
             return @default; 
@@ -121,7 +176,9 @@ public abstract class SsSerialization<T>(T source) : IInitializeable
                     throw new SsParseExceptions(SsParseExceptions.MultiAssignment(scope.Name));
             }
         }
-        return serialization.Source;
+        var source = serialization.Source;
+        serialization.Source = new();
+        return source;
     }
 
     protected void Deserialize(string name, Action<Token> addToken)

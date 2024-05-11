@@ -5,7 +5,7 @@ using LocalUtilities.SimpleScript.Serialization;
 
 namespace LocalUtilities.UIUtilities;
 
-public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData
+public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData, new()
 {
     bool _resizing { get; set; } = false;
 

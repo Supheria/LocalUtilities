@@ -6,24 +6,30 @@ using LocalUtilities.SimpleScript.Serialization;
 namespace LocalUtilities.Serializations;
 
 public abstract class RosterSerialization<TRoster, TSignature, TItem> : SsSerialization<TRoster>
-    where TRoster : Roster<TSignature, TItem> where TItem : RosterItem<TSignature> where TSignature : notnull
+    where TRoster : Roster<TSignature, TItem>, new() where TItem : RosterItem<TSignature>, new() where TSignature : notnull
 {
     SsSerialization<TItem> ItemSerialization { get; }
 
-    public RosterSerialization(TRoster source, SsSerialization<TItem> itemXmlSerialzition) : base(source)
+    protected new SerializationOnRunning? OnSerialize { get; set; } = null;
+
+    protected new SerializationOnRunning? OnDeserialize { get; set; } = null;
+
+    public RosterSerialization(TRoster source, SsSerialization<TItem> itemXmlSerialzition)
     {
         ItemSerialization = itemXmlSerialzition;
-        OnSerialize += Roster_Serialize;
-        OnDeserialize += Roster_Deserialize;
+        base.OnSerialize += Serialize;
+        base.OnDeserialize += Deserialize;
     }
 
-    private void Roster_Serialize()
+    private void Serialize()
     {
+        OnSerialize?.Invoke();
         Serialize(Source.RosterList, ItemSerialization);
     }
 
-    private void Roster_Deserialize()
+    private void Deserialize()
     {
+        OnDeserialize?.Invoke();
         Deserialize(ItemSerialization.LocalName, token =>
         {
             if(ItemSerialization.Deserialize(token))

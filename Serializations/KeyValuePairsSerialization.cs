@@ -13,19 +13,19 @@ public abstract class KeyValuePairsSerialization<TKey, TValue> : SsSerialization
 
     protected abstract Func<TValue, string> WriteValue { get; }
 
-    public KeyValuePairsSerialization() : base([])
+    public KeyValuePairsSerialization()
     {
-        OnSerialize += KeyValuePair_Serialize;
-        OnDeserialize += KeyValuePair_Deserialize;
+        OnSerialize += Serialize;
+        OnDeserialize += Deserialize;
     }
 
-    private void KeyValuePair_Serialize()
+    private void Serialize()
     {
         foreach (var (key, value) in Source)
             WriteTag(WriteKey(key), WriteValue(value));
     }
 
-    private void KeyValuePair_Deserialize()
+    private void Deserialize()
     {
         Deserialize(typeof(TagValues), token => {
             Source.Add(new(ReadKey(token.Name.Text), ReadValue(((TagValues)token).Tag.Text)));

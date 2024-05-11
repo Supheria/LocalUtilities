@@ -2,11 +2,10 @@
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.StringUtilities;
 using LocalUtilities.UIUtilities;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace LocalUtilities.Serializations;
 
-public class FormDataSerialization<T> : SsSerialization<T> where T : FormData
+public class FormDataSerialization<T> : SsSerialization<T> where T : FormData, new()
 {
     public override string LocalName { get; }
 
@@ -15,14 +14,14 @@ public class FormDataSerialization<T> : SsSerialization<T> where T : FormData
     FontDataSerialization ContentFontDataSerialization { get; } = new(nameof(Source.ContentFontData));
 
 
-    public FormDataSerialization(string localName, T formData) : base(formData)
+    public FormDataSerialization(string localName)
     {
         LocalName = localName;
-        OnSerialize += FormData_Serialize;
-        OnDeserialize += FormData_Deserialize;
+        OnSerialize += Serialize;
+        OnDeserialize += Deserialize;
     }
 
-    private void FormData_Serialize()
+    private void Serialize()
     {
         WriteTag(nameof(Source.MinimumSize), Source.MinimumSize.ToArrayString());
         WriteTag(nameof(Source.Size), Source.Size.ToArrayString());
@@ -33,7 +32,7 @@ public class FormDataSerialization<T> : SsSerialization<T> where T : FormData
         Serialize(Source.ContentFontData, ContentFontDataSerialization);
     }
 
-    private void FormData_Deserialize()
+    private void Deserialize()
     {
         Source.MinimumSize = ReadTag(nameof(Source.MinimumSize), s => s.ToSize(Source.MinimumSize));
         Source.Size = ReadTag(nameof(Source.Size), s => s.ToSize(Source.Size));

@@ -64,7 +64,7 @@ public static class StringSimpleTypeConverter
         return array.ToArrayString();
     }
 
-    public static string ToArrayString<T>(this IEnumerable<T?> array)
+    public static string ToArrayString<T>(this ICollection<T?> array)
     {
         return new StringBuilder()
             .AppendJoin(Splitter, array.Select(x => x?.ToString() ?? ""))

@@ -12,6 +12,7 @@ public enum Direction
     TopRight = Top | Right,
     LeftBottom = Left | Bottom,
     BottomRight = Bottom | Right,
+    Center = 0x16,
 }
 
 public static class DirectionBundle

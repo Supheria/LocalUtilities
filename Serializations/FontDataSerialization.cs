@@ -9,14 +9,14 @@ internal class FontDataSerialization : SsSerialization<FontData>
 {
     public override string LocalName { get; }
 
-    public FontDataSerialization(string localName) : base(new())
+    public FontDataSerialization(string localName)
     {
         LocalName += localName;
-        OnSerialize += FontData_Serialize;
-        OnDeserialize += FontData_Deserialize;
+        OnSerialize += Serialize;
+        OnDeserialize += Deserialize;
     }
 
-    private void FontData_Serialize()
+    private void Serialize()
     {
         WriteTag(nameof(Source.FamilyName), Source.FamilyName);
         WriteTag(nameof(Source.ScaleFactorToHeight), Source.ScaleFactorToHeight.ToString());
@@ -24,7 +24,7 @@ internal class FontDataSerialization : SsSerialization<FontData>
         WriteTag(nameof(Source.Unit), Source.Unit.ToString());
     }
 
-    private void FontData_Deserialize()
+    private void Deserialize()
     {
         Source.FamilyName = ReadTag(nameof(Source.FamilyName), s => s ?? Source.FamilyName);
         Source.ScaleFactorToHeight = ReadTag(nameof(Source.ScaleFactorToHeight), s => s.ToFloat(Source.ScaleFactorToHeight));
