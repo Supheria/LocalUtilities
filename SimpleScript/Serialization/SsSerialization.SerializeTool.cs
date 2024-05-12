@@ -1,16 +1,17 @@
 ﻿using LocalUtilities.FileUtilities;
-using LocalUtilities.Interface;
-using LocalUtilities.SimpleScript.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
 partial class SsSerialization<T>
 {
+    public override string ToString()
+    {
+        var serializer = new SsSerializer(false);
+        Serialize(serializer);
+        return serializer.ToString();
+    }
+
     public string? SaveToFile(bool writeIntoMultiLines, string? outFilePath = null)
     {
         string? message = null;

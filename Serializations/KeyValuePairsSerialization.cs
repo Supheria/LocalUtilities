@@ -21,7 +21,8 @@ public abstract class KeyValuePairsSerialization<TKey, TValue> : SsSerialization
 
     protected override void Deserialize()
     {
-        Deserialize(typeof(TagValues), token => {
+        Deserialize(typeof(TagValues), token =>
+        {
             Source.Add(new(ReadKey(token.Name.Text), ReadValue(((TagValues)token).Tag.Text)));
         });
     }

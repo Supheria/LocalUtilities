@@ -40,22 +40,20 @@ internal class Tokenizer
 
     internal List<Token> Tokens { get; } = [];
 
-    internal Tokenizer(string filePath)
+    internal Tokenizer(string str)
     {
-        if (!File.Exists(filePath))
-            throw new SsParseExceptions($"could not open file: {filePath}");
-        using var file = File.OpenRead(filePath);
-        if (file.ReadByte() == 0xEF && file.ReadByte() == 0xBB && file.ReadByte() == 0xBF)
-        {
-            Buffer = new byte[file.Length - 3];
-            _ = file.Read(Buffer, 0, Buffer.Length);
-        }
-        else
-        {
-            file.Seek(0, SeekOrigin.Begin);
-            Buffer = new byte[file.Length];
-            _ = file.Read(Buffer, 0, Buffer.Length);
-        }
+        Buffer = Encoding.UTF8.GetBytes(str);
+        Tokenize();
+    }
+
+    internal Tokenizer(byte[] bytes)
+    {
+        Buffer = bytes;
+        Tokenize();
+    }
+
+    private void Tokenize()
+    {
         while (BufferPosition < Buffer.Length)
         {
             if (!Compose((char)Buffer[BufferPosition]))

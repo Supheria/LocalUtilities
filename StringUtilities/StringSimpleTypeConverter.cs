@@ -1,7 +1,4 @@
 ﻿using LocalUtilities.MathBundle;
-using LocalUtilities.RegexUtilities;
-using System.ComponentModel;
-using System.Linq;
 using System.Text;
 
 namespace LocalUtilities.StringUtilities;
@@ -23,20 +20,20 @@ public static class StringSimpleTypeConverter
             return null;
         var array = str.ToArray();
         var list = new List<T>();
-        foreach(var s in array)
+        foreach (var s in array)
         {
             var value = toT(s);
-            if(value is not null)
+            if (value is not null)
                 list.Add(value);
         }
-        if(list.Count > 0)
+        if (list.Count > 0)
             return list;
         return null;
     }
 
     public static (T1, T2)? ToPair<T1, T2>(this string? str, Func<string, T1> toT1, Func<string, T2> toT2)
     {
-        if(str is null)
+        if (str is null)
             return null;
         var array = str.ToArray();
         if (array.Length is not 2)

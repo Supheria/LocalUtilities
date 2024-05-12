@@ -1,29 +1,51 @@
 ﻿using LocalUtilities.FileUtilities;
 using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
 partial class SsSerialization<T>
 {
-    public T LoadFromFile(out string? message, string? inFilePath = null)
+    public T Parse(string str, out string? message)
     {
-        var path = inFilePath ?? this.GetInitializationFilePath();
-        if (!File.Exists(path))
-        {
-            message = $"\"{path}\" file path is not existed.";
-            return Source;
-        }
         try
         {
             message = null;
-            foreach (var token in new Tokenizer(path).Tokens)
+            foreach (var token in new Tokenizer(str).Tokens)
+            {
+                if (Deserialize(token))
+                    return Source;
+            }
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+        return Source;
+    }
+
+    public T LoadFromFile(out string? message, string? inFilePath = null)
+    {
+        try
+        {
+            var path = inFilePath ?? this.GetInitializationFilePath();
+            if (!File.Exists(path))
+                throw new SsParseExceptions($"could not open file: {path}");
+            message = null;
+            byte[] buffer;
+            using var file = File.OpenRead(path);
+            if (file.ReadByte() == 0xEF && file.ReadByte() == 0xBB && file.ReadByte() == 0xBF)
+            {
+                buffer = new byte[file.Length - 3];
+                _ = file.Read(buffer, 0, buffer.Length);
+            }
+            else
+            {
+                file.Seek(0, SeekOrigin.Begin);
+                buffer = new byte[file.Length];
+                _ = file.Read(buffer, 0, buffer.Length);
+            }
+            foreach (var token in new Tokenizer(buffer).Tokens)
             {
                 if (Deserialize(token))
                     return Source;

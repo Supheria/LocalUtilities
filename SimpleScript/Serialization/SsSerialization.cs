@@ -1,9 +1,5 @@
-﻿using LocalUtilities.FileUtilities;
-using LocalUtilities.Interface;
+﻿using LocalUtilities.Interface;
 using LocalUtilities.SimpleScript.Data;
-using LocalUtilities.SimpleScript.Parser;
-using System.Text;
-using System.Xml.Linq;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
