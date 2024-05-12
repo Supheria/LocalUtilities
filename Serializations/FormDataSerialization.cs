@@ -5,24 +5,17 @@ using LocalUtilities.UIUtilities;
 
 namespace LocalUtilities.Serializations;
 
-public class FormDataSerialization<T> : SsSerialization<T> where T : FormData, new()
+public abstract class FormDataSerialization<T>(string localName) : SsSerialization<T> where T : FormData, new()
 {
-    public override string LocalName { get; }
+    public override string LocalName { get; } = localName;
 
     FontDataSerialization LabelFontDataSerialization { get; } = new(nameof(Source.LabelFontData));
 
     FontDataSerialization ContentFontDataSerialization { get; } = new(nameof(Source.ContentFontData));
 
-
-    public FormDataSerialization(string localName)
+    protected sealed override void Serialize()
     {
-        LocalName = localName;
-        OnSerialize += Serialize;
-        OnDeserialize += Deserialize;
-    }
-
-    private void Serialize()
-    {
+        SerializeFormData();
         WriteTag(nameof(Source.MinimumSize), Source.MinimumSize.ToArrayString());
         WriteTag(nameof(Source.Size), Source.Size.ToArrayString());
         WriteTag(nameof(Source.Location), Source.Location.ToArrayString());
@@ -32,14 +25,18 @@ public class FormDataSerialization<T> : SsSerialization<T> where T : FormData, n
         Serialize(Source.ContentFontData, ContentFontDataSerialization);
     }
 
-    private void Deserialize()
+    protected abstract void SerializeFormData();
+
+    protected sealed override void Deserialize()
     {
+        DeserializeFormData();
         Source.MinimumSize = ReadTag(nameof(Source.MinimumSize), s => s.ToSize(Source.MinimumSize));
         Source.Size = ReadTag(nameof(Source.Size), s => s.ToSize(Source.Size));
         Source.Location = ReadTag(nameof(Source.Location), s => s.ToPoint(Source.Location));
-        Source.WindowState = ReadTag(nameof(Source.WindowState), s=>s.ToEnum(Source.WindowState));
+        Source.WindowState = ReadTag(nameof(Source.WindowState), s => s.ToEnum(Source.WindowState));
         Source.Padding = ReadTag(nameof(Source.Padding), s => s.ToInt(Source.Padding));
         Source.LabelFontData = Deserialize(Source.LabelFontData, LabelFontDataSerialization);
         Source.ContentFontData = Deserialize(Source.ContentFontData, ContentFontDataSerialization);
     }
+    protected abstract void DeserializeFormData();
 }

@@ -8,32 +8,21 @@ namespace LocalUtilities.Serializations;
 public abstract class RosterSerialization<TRoster, TSignature, TItem> : SsSerialization<TRoster>
     where TRoster : Roster<TSignature, TItem>, new() where TItem : RosterItem<TSignature>, new() where TSignature : notnull
 {
-    SsSerialization<TItem> ItemSerialization { get; }
+    protected abstract SsSerialization<TItem> ItemSerialization { get; }
 
-    protected new SerializationOnRunning? OnSerialize { get; set; } = null;
-
-    protected new SerializationOnRunning? OnDeserialize { get; set; } = null;
-
-    public RosterSerialization(TRoster source, SsSerialization<TItem> itemXmlSerialzition)
+    protected sealed override void Serialize()
     {
-        ItemSerialization = itemXmlSerialzition;
-        base.OnSerialize += Serialize;
-        base.OnDeserialize += Deserialize;
+        SerializeRoster();
+        Serialize(Source, ItemSerialization);
     }
 
-    private void Serialize()
+    protected abstract void SerializeRoster();
+
+    protected sealed override void Deserialize()
     {
-        OnSerialize?.Invoke();
-        Serialize(Source.RosterList, ItemSerialization);
+        DeserializeRoster();
+        Deserialize(ItemSerialization, Source);
     }
 
-    private void Deserialize()
-    {
-        OnDeserialize?.Invoke();
-        Deserialize(ItemSerialization.LocalName, token =>
-        {
-            if(ItemSerialization.Deserialize(token))
-                Source.Add(ItemSerialization.Source);
-        });
-    }
+    protected abstract void DeserializeRoster();
 }

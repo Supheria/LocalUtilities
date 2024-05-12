@@ -22,7 +22,8 @@ public static class StringBuilderTool
         }
         else
             return toQuoted();
-        string toQuoted(){
+        string toQuoted()
+        {
             return new StringBuilder()
                 .Append('"')
                 .Append(str)
@@ -61,6 +62,23 @@ public static class StringBuilderTool
             for (var i = 0; i < times; i++)
                 sb.Append('\t');
         }
+        return sb;
+    }
+
+    /// <summary>
+    /// when <paramref name="writeIntoMultiLines"/> is false, comment won't be written out
+    /// </summary>
+    /// <param name="sb"></param>
+    /// <param name="level"></param>
+    /// <param name="comment"></param>
+    /// <param name="writeIntoMultiLines"></param>
+    /// <returns></returns>
+    public static StringBuilder AppendComment(this StringBuilder sb, int level, string comment, bool writeIntoMultiLines)
+    {
+        if (writeIntoMultiLines)
+            return sb.AppendTab(level, writeIntoMultiLines)
+                .Append(comment)
+                .AppendNewLine(writeIntoMultiLines);
         return sb;
     }
 

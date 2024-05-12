@@ -39,9 +39,14 @@ public class RegexPatternTool
         return sb.ToString();
     }
 
-    private static string ReplaceExclusiveOrUnlimitedCollection(string s)
+    /// <summary>
+    /// Replace . to [^\s], or change such as [^xyz] to [^xyz\s]. Such as [^xyz\s] won't be changed
+    /// </summary>
+    /// <param name="s"></param>
+    /// <returns></returns>
+    private static string ReplaceUnlimitedCollectionToBlanckExclusive(string s)
     {
-        return s.Substring(s.Length - 1, 1) is "." ? @"[^\s]" : s.Insert(s.Length - 1, @"\s");
+        return s.Substring(s.Length - 1, 1) is "." ? @"[^\s]" : s.Substring(s.Length - 3, 2) is @"\s" ? s : s.Insert(s.Length - 1, @"\s");
     }
 
     private static readonly string[] ExclusiveOrUnlimitedCollection =
@@ -58,6 +63,6 @@ public class RegexPatternTool
     /// <returns></returns>
     public static string ExcludeBlankInExclusiveOrUnlimitedCollection(string pattern)
     {
-        return ReplacePatternStringParts(pattern, ExclusiveOrUnlimitedCollection, ReplaceExclusiveOrUnlimitedCollection);
+        return ReplacePatternStringParts(pattern, ExclusiveOrUnlimitedCollection, ReplaceUnlimitedCollectionToBlanckExclusive);
     }
 }

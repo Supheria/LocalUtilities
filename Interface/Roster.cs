@@ -1,19 +1,19 @@
-﻿namespace LocalUtilities.Interface;
+﻿using System.Collections;
 
-public abstract class Roster<TSignature, TItem> where TSignature : notnull where TItem : RosterItem<TSignature>
+namespace LocalUtilities.Interface;
+
+public abstract class Roster<TSignature, TItem> : ICollection<TItem>, IEnumerable where TSignature : notnull where TItem : RosterItem<TSignature>
 {
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
-    public TItem[] RosterList
+    public List<TItem> GetRosterList()
     {
-        get => RosterMap.Values.ToArray();
-        set
-        {
-            RosterMap.Clear();
-            foreach (var item in value)
-                RosterMap[item.Signature] = item;
-        }
+        return RosterMap.Values.ToList();
     }
+
+    public int Count => RosterMap.Count;
+
+    public bool IsReadOnly => true;
 
     public TItem? this[TSignature signature]
     {
@@ -35,5 +35,38 @@ public abstract class Roster<TSignature, TItem> where TSignature : notnull where
         RosterMap.Add(item.Signature, item);
     }
 
-    public virtual void Remove(TSignature signature) => RosterMap.Remove(signature);
+    public virtual void Remove(TSignature signature)
+    {
+        RosterMap.Remove(signature);
+    }
+
+    public void Clear()
+    {
+        RosterMap.Clear();
+    }
+
+    public bool Contains(TItem item)
+    {
+        return RosterMap.ContainsKey(item.Signature);
+    }
+
+    public void CopyTo(TItem[] array, int arrayIndex)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool Remove(TItem item)
+    {
+        return RosterMap.Remove(item.Signature);
+    }
+
+    public IEnumerator<TItem> GetEnumerator()
+    {
+        return RosterMap.Values.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return RosterMap.GetEnumerator();
+    }
 }
