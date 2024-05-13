@@ -25,6 +25,7 @@ public abstract class KeyValuePairs<TKey, TValue> : ISsSerializable
 
     public void Deserialize(SsDeserializer deserializer)
     {
+        Pairs.Clear();
         deserializer.Deserialize(typeof(TagValues), token =>
         {
             Pairs.Add(new(ReadKey(token.Name.Text), ReadValue(((TagValues)token).Tag.Text)));

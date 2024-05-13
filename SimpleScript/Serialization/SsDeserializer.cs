@@ -7,16 +7,6 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
 {
     Scope? Scope { get; set; } = null;
 
-    public T Parse<T>(string str) where T : ISsSerializable
-    {
-        foreach (var token in new Tokenizer(str).Tokens)
-        {
-            if (Deserialize(token))
-                break;
-        }
-        return (T)Source;
-    }
-
     /// <summary>
     /// read begin of this
     /// </summary>
@@ -61,6 +51,21 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         return toProperty(str);
     }
 
+    public void ReadTags<T>(string name, ICollection<T> collection, Func<string?, T?> toProperty)
+    {
+        if (Scope is null || !Scope.Property.TryGetValue(name, out var tokens) || tokens.Count is 0)
+            return;
+        foreach (var token in tokens)
+        {
+            if (token is TagValues tagValues)
+            {
+                var item = toProperty(tagValues.Tag.Text);
+                if(item is not null)
+                    collection.Add(item);
+            }
+        }
+    }
+
     /// <summary>
     /// read for property of given type
     /// </summary>
@@ -95,6 +100,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// <param name="collection"></param>
     public void Deserialize<TItem>(TItem sample, ICollection<TItem> collection) where TItem : ISsSerializable, new()
     {
+        collection.Clear();
         if (Scope is null || !Scope.Property.TryGetValue(sample.LocalName, out var tokens) || tokens.Count is 0)
             return;
         foreach (var token in tokens)
@@ -102,6 +108,18 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
             var deserializer = new SsDeserializer(new TItem { LocalName = sample.LocalName });
             if (deserializer.Deserialize(token))
                 collection.Add((TItem)deserializer.Source);
+        }
+    }
+
+    public void Deserialize<TItem>(TItem sample, Action<TItem> addItem) where TItem : ISsSerializable, new()
+    {
+        if (Scope is null || !Scope.Property.TryGetValue(sample.LocalName, out var tokens) || tokens.Count is 0)
+            return;
+        foreach (var token in tokens)
+        {
+            var deserializer = new SsDeserializer(new TItem { LocalName = sample.LocalName });
+            if (deserializer.Deserialize(token))
+                addItem((TItem)deserializer.Source);
         }
     }
 

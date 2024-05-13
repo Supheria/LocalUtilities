@@ -7,7 +7,7 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 {
     public abstract string LocalName { get; set; }
 
-    public abstract string ItemLocalName { get; }
+    public abstract TItem ItemSample { get; }
 
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
@@ -43,8 +43,9 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 
     public void Deserialize(SsDeserializer deserializer)
     {
+        RosterMap.Clear();
         DeserializeRoster(deserializer);
-        deserializer.Deserialize(new TItem() { LocalName = ItemLocalName }, RosterMap.Values);
+        deserializer.Deserialize(ItemSample, Add);
     }
 
     public int Count => RosterMap.Count;
@@ -53,7 +54,7 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 
     public void Add(TItem item)
     {
-        RosterMap.Add(item.Signature, item);
+        RosterMap[item.Signature] = item;
     }
 
     public virtual void Remove(TSignature signature)

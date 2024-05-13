@@ -27,7 +27,6 @@ public abstract class FormData(string localName) : ISsSerializable
 
     public void Serialize(SsSerializer serializer)
     {
-        SerializeFormData(serializer);
         serializer.WriteTag(nameof(MinimumSize), MinimumSize.ToArrayString());
         serializer.WriteTag(nameof(Size), Size.ToArrayString());
         serializer.WriteTag(nameof(Location), Location.ToArrayString());
@@ -35,11 +34,11 @@ public abstract class FormData(string localName) : ISsSerializable
         serializer.WriteTag(nameof(Padding), Padding.ToString());
         serializer.Serialize(LabelFontData);
         serializer.Serialize(ContentFontData);
+        SerializeFormData(serializer);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        DeserializeFormData(deserializer);
         MinimumSize = deserializer.ReadTag(nameof(MinimumSize), s => s.ToSize(MinimumSize));
         Size = deserializer.ReadTag(nameof(Size), s => s.ToSize(Size));
         Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint(Location));
@@ -47,5 +46,6 @@ public abstract class FormData(string localName) : ISsSerializable
         Padding = deserializer.ReadTag(nameof(Padding), s => s.ToInt(Padding));
         LabelFontData = deserializer.Deserialize<FontData>(new(nameof(LabelFontData)));
         ContentFontData = deserializer.Deserialize<FontData>(new(nameof(ContentFontData)));
+        DeserializeFormData(deserializer);
     }
 }

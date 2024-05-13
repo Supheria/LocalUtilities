@@ -5,6 +5,8 @@ namespace LocalUtilities.TypeBundle;
 
 public static class StringBuilderTool
 {
+    const char Comment = '#';
+
     static char[] Blanks { get; } = ['\\', '"', '#', '\t', ' ', '\n', '\r', '#', '=', '>', '<', '}', '{', '"', ',', '\0'];
 
     public static string ToQuoted(this string str, bool writeIntoMultiLines)
@@ -77,6 +79,7 @@ public static class StringBuilderTool
     {
         if (writeIntoMultiLines)
             return sb.AppendTab(level, writeIntoMultiLines)
+                .Append(Comment)
                 .Append(comment)
                 .AppendNewLine(writeIntoMultiLines);
         return sb;

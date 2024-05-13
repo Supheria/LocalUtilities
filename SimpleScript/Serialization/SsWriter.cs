@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.SimpleScript.Parser;
 using LocalUtilities.TypeBundle;
 using System.Text;
+using System.Xml.Linq;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -15,6 +16,11 @@ public class SsWriter(bool writeIntoMultiLines)
     public override string ToString()
     {
         return StringBuilder.ToString();
+    }
+
+    internal void AppendComment(string comment)
+    {
+        _ = StringBuilder.AppendComment(Level, comment, WriteIntoMultiLines);
     }
 
     internal void AppendToken(string name)

@@ -8,12 +8,17 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// write begin of this
     /// </summary>
     /// <param name="serializer"></param>
-    public override string ToString()
+    public string Serialize()
     {
         Writer.AppendNameStart(Source.LocalName);
         Source.Serialize(this);
         Writer.AppendNameEnd();
         return Writer.ToString();
+    }
+
+    public void WriteComment(string comment)
+    {
+        Writer.AppendComment(comment);
     }
 
     /// <summary>
@@ -43,7 +48,7 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// <param name="serialization"></param>
     public void Serialize<T>(T property) where T : ISsSerializable
     {
-        new SsSerializer(property, Writer).ToString();
+        new SsSerializer(property, Writer).Serialize();
     }
 
     /// <summary>
@@ -55,6 +60,6 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     public void Serialize<T>(ICollection<T> collection) where T : ISsSerializable
     {
         foreach (var item in collection)
-            new SsSerializer(item, Writer).ToString();
+            new SsSerializer(item, Writer).Serialize();
     }
 }

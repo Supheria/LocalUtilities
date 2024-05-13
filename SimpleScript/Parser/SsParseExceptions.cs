@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.SimpleScript.Parser;
+﻿using System.IO;
+
+namespace LocalUtilities.SimpleScript.Parser;
 
 internal class SsParseExceptions(string message) : Exception(message)
 {
@@ -36,5 +38,15 @@ internal class SsParseExceptions(string message) : Exception(message)
     internal static SsParseExceptions MultiAssignment(Word name)
     {
         return new($"multi-assignment to {name.Text} at line({name.Line}), column({name.Column})");
+    }
+
+    internal static SsParseExceptions CannotFindEntry(string localName)
+    {
+        return new($"cannot find any entry of {localName}");
+    }
+
+    internal static SsParseExceptions CannotOpenFile(string filePath)
+    {
+        return new($"cannot open file: {filePath}");
     }
 }
