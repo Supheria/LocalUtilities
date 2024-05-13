@@ -1,6 +1,4 @@
-﻿using LocalUtilities.Interface;
-
-namespace LocalUtilities.FileUtilities;
+﻿namespace LocalUtilities.FileUtilities;
 
 public static class FileInitializationManager
 {

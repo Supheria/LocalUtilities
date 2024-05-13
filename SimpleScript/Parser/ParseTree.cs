@@ -118,7 +118,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedName(element));
+                        throw SsParseExceptions.UnexpectedName(element);
                     default:
                         Step = Steps.Name;
                         Name = element.Get();
@@ -134,7 +134,7 @@ internal class ParseTree
                         Operator = element.Get();
                         return this;
                     default:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedOperator(element));
+                        throw SsParseExceptions.UnexpectedOperator(element);
                 }
             case Steps.Operator: // 2
                 switch (ch)
@@ -143,10 +143,10 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case OpenBrace:
                         if (Operator.Text[0] != Equal)
-                            throw new SsParseExceptions(SsParseExceptions.UnexpectedOperator(element));
+                            throw SsParseExceptions.UnexpectedOperator(element);
                         else
                         {
                             Step = Steps.OperatorOn;
@@ -177,7 +177,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         element.Get();
                         Done();
@@ -193,7 +193,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         element.Get();
                         Done();
@@ -218,7 +218,7 @@ internal class ParseTree
                 switch (ch)
                 {
                     case OpenBrace:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         ((Scope)Builder).Append(new(From?.Builder, Value, Level + 1));
                         element.Get();
@@ -263,7 +263,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         Step = Steps.ArrayOff;
                         element.Get();
@@ -285,16 +285,16 @@ internal class ParseTree
                         Done();
                         return From;
                     default:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedArraySyntax(element));
+                        throw SsParseExceptions.UnexpectedArraySyntax(element);
                 }
             case Steps.ArrayName: // 10
                 switch (ch)
                 {
                     case OpenBrace:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedOperator(element));
+                        throw SsParseExceptions.UnexpectedOperator(element);
                     case Equal:
                         Step = Steps.TagArray;
                         Builder = new TagValuesPairsArray(From?.Builder, Name, Level);
@@ -327,7 +327,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         Step = Steps.ValueArrayOff;
                         element.Get();
@@ -348,7 +348,7 @@ internal class ParseTree
                         Done();
                         return From;
                     default:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedArraySyntax(element));
+                        throw SsParseExceptions.UnexpectedArraySyntax(element);
                 }
             case Steps.ValueArrayOn: // 13
                 switch (ch)
@@ -357,7 +357,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         Step = Steps.ValueArrayOff;
                         element.Get();
@@ -374,7 +374,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedArrayType(element));
+                        throw SsParseExceptions.UnexpectedArrayType(element);
                     case CloseBrace:
                         Step = Steps.ValueArrayOff;
                         element.Get();
@@ -398,7 +398,7 @@ internal class ParseTree
                         element.Get();
                         return this;
                     default:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedArrayType(element));
+                        throw SsParseExceptions.UnexpectedArrayType(element);
                 }
             case Steps.TagArrayValue: // 16
                 switch (ch)
@@ -407,7 +407,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedValue(element));
+                        throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         Step = Steps.TagArrayValueOff;
                         element.Get();
@@ -424,7 +424,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedName(element));
+                        throw SsParseExceptions.UnexpectedName(element);
                     case CloseBrace:
                         Step = Steps.TagArrayOff;
                         element.Get();
@@ -446,7 +446,7 @@ internal class ParseTree
                         Done();
                         return From;
                     default:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedArraySyntax(element));
+                        throw SsParseExceptions.UnexpectedArraySyntax(element);
                 }
             case Steps.TagArrayOn: // 19
                 switch (ch)
@@ -455,7 +455,7 @@ internal class ParseTree
                     case Equal:
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedName(element));
+                        throw SsParseExceptions.UnexpectedName(element);
                     case CloseBrace:
                         Step = Steps.TagArrayOff;
                         element.Get();
@@ -474,9 +474,9 @@ internal class ParseTree
                         return this;
                     case Greater:
                     case Less:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedOperator(element));
+                        throw SsParseExceptions.UnexpectedOperator(element);
                     default:
-                        throw new SsParseExceptions(SsParseExceptions.UnexpectedArrayType(element));
+                        throw SsParseExceptions.UnexpectedArrayType(element);
                 }
 
             #endregion

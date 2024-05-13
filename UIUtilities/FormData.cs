@@ -1,7 +1,12 @@
-﻿namespace LocalUtilities.UIUtilities;
+﻿using LocalUtilities.SimpleScript.Serialization;
+using LocalUtilities.TypeBundle;
 
-public abstract class FormData
+namespace LocalUtilities.UIUtilities;
+
+public abstract class FormData(string localName) : ISsSerializable
 {
+    public string LocalName { get; set; } = localName;
+
     public abstract Size MinimumSize { get; set; }
 
     public virtual Size Size { get; set; }
@@ -12,7 +17,35 @@ public abstract class FormData
 
     public virtual int Padding { get; set; } = 12;
 
-    public virtual FontData LabelFontData { get; set; } = new("黑体", 0.03f, FontStyle.Regular, GraphicsUnit.Pixel);
+    public virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData));
 
-    public virtual FontData ContentFontData { get; set; } = new("黑体", 0.05f, FontStyle.Regular, GraphicsUnit.Pixel);
+    public virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { ScaleFactorToHeight = 0.05f };
+
+    protected abstract void SerializeFormData(SsSerializer serializer);
+
+    protected abstract void DeserializeFormData(SsDeserializer deserializer);
+
+    public void Serialize(SsSerializer serializer)
+    {
+        SerializeFormData(serializer);
+        serializer.WriteTag(nameof(MinimumSize), MinimumSize.ToArrayString());
+        serializer.WriteTag(nameof(Size), Size.ToArrayString());
+        serializer.WriteTag(nameof(Location), Location.ToArrayString());
+        serializer.WriteTag(nameof(WindowState), WindowState.ToString());
+        serializer.WriteTag(nameof(Padding), Padding.ToString());
+        serializer.Serialize(LabelFontData);
+        serializer.Serialize(ContentFontData);
+    }
+
+    public void Deserialize(SsDeserializer deserializer)
+    {
+        DeserializeFormData(deserializer);
+        MinimumSize = deserializer.ReadTag(nameof(MinimumSize), s => s.ToSize(MinimumSize));
+        Size = deserializer.ReadTag(nameof(Size), s => s.ToSize(Size));
+        Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint(Location));
+        WindowState = deserializer.ReadTag(nameof(WindowState), s => s.ToEnum(WindowState));
+        Padding = deserializer.ReadTag(nameof(Padding), s => s.ToInt(Padding));
+        LabelFontData = deserializer.Deserialize<FontData>(new(nameof(LabelFontData)));
+        ContentFontData = deserializer.Deserialize<FontData>(new(nameof(ContentFontData)));
+    }
 }

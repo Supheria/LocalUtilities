@@ -3,38 +3,38 @@
 internal class SsParseExceptions(string message) : Exception(message)
 {
 
-    internal static string UnknownError(Element element)
+    internal static SsParseExceptions UnknownError(Element element)
     {
-        return ($"unknown error at line({element.Line}), column({element.Column})");
+        return new($"unknown error at line({element.Line}), column({element.Column})");
     }
 
-    internal static string UnexpectedName(Element element)
+    internal static SsParseExceptions UnexpectedName(Element element)
     {
-        return ($"unexpected name at line({element.Line}), column({element.Column})");
+        return new($"unexpected name at line({element.Line}), column({element.Column})");
     }
 
-    internal static string UnexpectedOperator(Element element)
+    internal static SsParseExceptions UnexpectedOperator(Element element)
     {
-        return ($"unexpected operator at line({element.Line}), column({element.Column})");
+        return new($"unexpected operator at line({element.Line}), column({element.Column})");
     }
 
-    internal static string UnexpectedValue(Element element)
+    internal static SsParseExceptions UnexpectedValue(Element element)
     {
-        return ($"unexpected value at line({element.Line}), column({element.Column})");
+        return new($"unexpected value at line({element.Line}), column({element.Column})");
     }
 
-    internal static string UnexpectedArrayType(Element element)
+    internal static SsParseExceptions UnexpectedArrayType(Element element)
     {
-        return ($"unexpected array type at line({element.Line}), column({element.Column})");
+        return new($"unexpected array type at line({element.Line}), column({element.Column})");
     }
 
-    internal static string UnexpectedArraySyntax(Element element)
+    internal static SsParseExceptions UnexpectedArraySyntax(Element element)
     {
-        return ($"unexpected array syntax at line({element.Line}), column({element.Column})");
+        return new($"unexpected array syntax at line({element.Line}), column({element.Column})");
     }
 
-    internal static string MultiAssignment(Word name)
+    internal static SsParseExceptions MultiAssignment(Word name)
     {
-        return $"multi-assignment to {name.Text} at line({name.Line}), column({name.Column})";
+        return new($"multi-assignment to {name.Text} at line({name.Line}), column({name.Column})");
     }
 }

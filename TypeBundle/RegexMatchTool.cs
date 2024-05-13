@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using static System.Text.RegularExpressions.Regex;
 
-namespace LocalUtilities.RegexUtilities;
+namespace LocalUtilities.TypeBundle;
 
 public static partial class RegexMatchTool
 {

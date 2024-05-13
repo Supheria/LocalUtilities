@@ -1,59 +1,60 @@
-﻿using LocalUtilities.SimpleScript.Parser;
-using LocalUtilities.StringUtilities;
-using System.Text;
+﻿namespace LocalUtilities.SimpleScript.Serialization;
 
-namespace LocalUtilities.SimpleScript.Serialization;
-
-public class SsSerializer(bool writeIntoMultiLines)
+public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
 {
-    StringBuilder StringBuilder { get; } = new();
+    SsWriter Writer { get; } = writer;
 
-    int Level { get; set; } = 0;
-
-    public bool WriteIntoMultiLines { get; } = writeIntoMultiLines;
-
+    /// <summary>
+    /// write begin of this
+    /// </summary>
+    /// <param name="serializer"></param>
     public override string ToString()
     {
-        return StringBuilder.ToString();
+        Writer.AppendNameStart(Source.LocalName);
+        Source.Serialize(this);
+        Writer.AppendNameEnd();
+        return Writer.ToString();
     }
 
-    public void AppendToken(string name)
+    /// <summary>
+    /// write for a pure token
+    /// </summary>
+    /// <param name="name"></param>
+    public void WriteToken(string name)
     {
-        _ = StringBuilder.AppendToken(Level, name, WriteIntoMultiLines);
+        Writer.AppendToken(name);
     }
 
-    public void AppendNameStart(string name)
+    /// <summary>
+    /// write for a tag of given name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="tag"></param>
+    public void WriteTag(string name, string tag)
     {
-        _ = StringBuilder.AppendNameStart(Level++, name, WriteIntoMultiLines);
+        Writer.AppendTag(name, tag);
     }
 
-    public void AppendNameEnd()
+    /// <summary>
+    /// write for property of given type
+    /// </summary>
+    /// <typeparam name="TProperty"></typeparam>
+    /// <param name="property"></param>
+    /// <param name="serialization"></param>
+    public void Serialize<T>(T property) where T : ISsSerializable
     {
-        _ = StringBuilder.AppendNameEnd(--Level, WriteIntoMultiLines);
+        new SsSerializer(property, Writer).ToString();
     }
 
-    public void AppendTag(string name, string tag)
+    /// <summary>
+    /// write for all items in collection of given type
+    /// </summary>
+    /// <typeparam name="TProperty"></typeparam>
+    /// <param name="collection"></param>
+    /// <param name="itemSerialization"></param>
+    public void Serialize<T>(ICollection<T> collection) where T : ISsSerializable
     {
-        _ = StringBuilder.AppendTagValues(Level, name, tag, [], WriteIntoMultiLines);
-    }
-
-    public void AppendValues(string name, List<Word> values)
-    {
-        _ = StringBuilder.AppendTagValues(Level, name, "_", values, WriteIntoMultiLines);
-    }
-
-    public void AppendTagValues(string name, string tag, List<Word> values)
-    {
-        _ = StringBuilder.AppendTagValues(Level, name, tag, values, WriteIntoMultiLines);
-    }
-
-    public void AppendValuesArray(string name, List<List<Word>> valuesArray)
-    {
-        _ = StringBuilder.AppendValuesArray(Level, name, valuesArray, WriteIntoMultiLines);
-    }
-
-    public void AppendTagValuesPairsArray(string name, List<List<KeyValuePair<Word, List<Word>>>> pairsArray)
-    {
-        _ = StringBuilder.AppendTagValuesPairsArray(Level, name, pairsArray, WriteIntoMultiLines);
+        foreach (var item in collection)
+            new SsSerializer(item, Writer).ToString();
     }
 }

@@ -1,4 +1,4 @@
-﻿using LocalUtilities.StringUtilities;
+﻿using LocalUtilities.TypeBundle;
 using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.MathBundle;

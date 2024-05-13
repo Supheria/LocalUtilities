@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.Interface;
+﻿namespace LocalUtilities.FileUtilities;
 
 public interface IHistoryRecordable : IHashStringCheckable
 {

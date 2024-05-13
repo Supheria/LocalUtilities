@@ -1,9 +1,10 @@
-﻿using LocalUtilities.DelegateUtilities;
-using LocalUtilities.Serializations;
+﻿using LocalUtilities.SimpleScript.Serialization;
 
 namespace LocalUtilities.UIUtilities;
 
-public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData, new()
+public delegate void FormOnRunninigDelegate();
+
+public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData
 {
     bool _resizing { get; set; } = false;
 
@@ -17,8 +18,6 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     protected new int Padding { get; set; }
 
-    FormDataSerialization<TFormData> FormDataXmlSerialization { get; }
-
     protected new int Left => ClientRectangle.Left;
 
     protected new int Top => ClientRectangle.Top;
@@ -27,10 +26,9 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     protected new int Height => ClientRectangle.Height;
 
-    public ResizeableForm(TFormData formData, FormDataSerialization<TFormData> formDataXmlSerialization)
+    public ResizeableForm(TFormData formData)
     {
         FormData = formData;
-        FormDataXmlSerialization = formDataXmlSerialization;
         ResizeBegin += ResizeableForm_ResizeBegin;
         ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
@@ -58,7 +56,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     private void ResizeableForm_Load(object? sender, EventArgs e)
     {
-        FormData = FormDataXmlSerialization.LoadFromFile(out _);
+        FormData = FormData.LoadFromSimpleScript();
         OnLoadFormData?.Invoke();
         MinimumSize = FormData.MinimumSize;
         Size = FormData.Size;
@@ -76,8 +74,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         FormData.Location = Location;
         FormData.WindowState = WindowState;
         FormData.Padding = Padding;
-        FormDataXmlSerialization.Source = FormData;
-        FormDataXmlSerialization.SaveToFile(true);
+        FormData.SaveToSimpleScript(true);
     }
 
     protected abstract void InitializeComponent();

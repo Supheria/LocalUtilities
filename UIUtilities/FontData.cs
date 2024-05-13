@@ -1,17 +1,33 @@
-﻿namespace LocalUtilities.UIUtilities;
+﻿using LocalUtilities.SimpleScript.Serialization;
+using LocalUtilities.TypeBundle;
 
-public class FontData(string familyName, float scaleFactorToHeight, FontStyle style, GraphicsUnit unit)
+namespace LocalUtilities.UIUtilities;
+
+public class FontData(string localName) : ISsSerializable
 {
-    public string FamilyName { get; set; } = familyName;
+    public string LocalName { get; set; } = localName;
 
-    public float ScaleFactorToHeight { get; set; } = scaleFactorToHeight;
+    public string FamilyName { get; set; } = "黑体";
 
-    public FontStyle Style { get; set; } = style;
+    public float ScaleFactorToHeight { get; set; } = 0.03f;
 
-    public GraphicsUnit Unit { get; set; } = unit;
+    public FontStyle Style { get; set; } = FontStyle.Regular;
 
-    public FontData() : this("黑体", 0.03f, FontStyle.Regular, GraphicsUnit.Pixel)
+    public GraphicsUnit Unit { get; set; } = GraphicsUnit.Pixel;
+
+    public void Serialize(SsSerializer serializer)
     {
+        serializer.WriteTag(nameof(FamilyName), FamilyName);
+        serializer.WriteTag(nameof(ScaleFactorToHeight), ScaleFactorToHeight.ToString());
+        serializer.WriteTag(nameof(Style), Style.ToString());
+        serializer.WriteTag(nameof(Unit), Unit.ToString());
+    }
 
+    public void Deserialize(SsDeserializer deserializer)
+    {
+        FamilyName = deserializer.ReadTag(nameof(FamilyName), s => s ?? FamilyName);
+        ScaleFactorToHeight = deserializer.ReadTag(nameof(ScaleFactorToHeight), s => s.ToFloat(ScaleFactorToHeight));
+        Style = deserializer.ReadTag(nameof(Style), s => s.ToEnum(Style));
+        Unit = deserializer.ReadTag(nameof(Unit), s => s.ToEnum(Unit));
     }
 }

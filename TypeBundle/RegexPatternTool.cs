@@ -1,7 +1,6 @@
-﻿using LocalUtilities.RegexUtilities;
-using System.Text;
+﻿using System.Text;
 
-namespace LocalUtilities.StringUtilities;
+namespace LocalUtilities.TypeBundle;
 
 public class RegexPatternTool
 {
@@ -14,15 +13,15 @@ public class RegexPatternTool
         {
             var ignore = part;
             // remove the condition limit part of "look behind", some like (?<=pattern)
-            if (RegexMatchTool.GetMatch(ignore, @"\(\?.+\)(.+)", out var m))
+            if (ignore.GetMatch(@"\(\?.+\)(.+)", out var m))
                 ignore = m.Groups[1].Value;
             // if escaped also add the escape mark
-            ignore = RegexMatchTool.GetMatch(ignore, @"\\.+", out m) ? m.Groups[0].Value[..2] : part[..1];
+            ignore = ignore.GetMatch(@"\\.+", out m) ? m.Groups[0].Value[..2] : part[..1];
             ignores.Add(ignore);
         }
         var pattern = $"([^{new StringBuilder().AppendJoin("", ignores)}]*)({new StringBuilder().AppendJoin('|', partPatterns)})(.*)";
         StringBuilder sb;
-        if (!RegexMatchTool.GetMatch(input, pattern, out var match))
+        if (!input.GetMatch(pattern, out var match))
             sb = new(input);
         else
         {
@@ -33,7 +32,7 @@ public class RegexPatternTool
                 sb.Append(match.Groups[1].Value);
                 sb.Append(replace(match.Groups[2].Value));
                 post = match.Groups[3].Value;
-            } while (RegexMatchTool.GetMatch(post, pattern, out match));
+            } while (post.GetMatch(pattern, out match));
             sb.Append(post);
         }
         return sb.ToString();
