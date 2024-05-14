@@ -58,6 +58,11 @@ public class Coordinate(double x, double y)
         return (X, Y).ToArrayString();
     }
 
+    public string ToIntString()
+    {
+        return ((int)X, (int)Y).ToArrayString();
+    }
+
     public double Parse(CoordinateType type)
     {
         return type switch

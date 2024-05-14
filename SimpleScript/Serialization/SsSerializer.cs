@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.SimpleScript.Serialization;
+﻿using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
+namespace LocalUtilities.SimpleScript.Serialization;
 
 public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
 {
@@ -37,7 +39,17 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// <param name="tag"></param>
     public void WriteTag(string name, string tag)
     {
-        Writer.AppendTag(name, tag);
+        Writer.AppendTagValues(name, tag, []);
+    }
+
+    public void WriteValue<TItem>(string name, TItem item, Func<TItem, List<string>> toStrings)
+    {
+        Writer.AppendValues(name, toStrings(item));
+    }
+
+    public void WriteTagValue<TItem>(string name, string tag, IList<TItem> value, Func<TItem, string> toString)
+    {
+        Writer.AppendTagValues(name, tag, value.Select(x => toString(x)).ToList());
     }
 
     /// <summary>

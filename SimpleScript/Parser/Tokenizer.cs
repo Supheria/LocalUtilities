@@ -8,8 +8,8 @@ internal class Tokenizer
     const char Note = '#';
     const char Quote = '"';
     const char Escape = '\\';
-    static char[] Delimiter { get; } = ['\t', ' ', '\n', '\r', ',', '#', '=', '>', '<', '}', '{', '"', '\0'];
-    static char[] Blank { get; } = ['\t', ' ', '\n', '\r', ',', '\0'];
+    static char[] Delimiter { get; } = ['\t', ' ', '\n', '\r', /*',',*/ '#', '=', '>', '<', '}', '{', '"', '\0'];
+    static char[] Blank { get; } = ['\t', ' ', '\n', '\r', /*',',*/ '\0'];
     static char[] EndLine { get; } = ['\n', '\r', '\0'];
     static char[] Marker { get; } = ['=', '>', '<', '}', '{'];
 

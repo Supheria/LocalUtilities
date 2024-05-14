@@ -44,8 +44,8 @@ public abstract class FormData(string localName) : ISsSerializable
         Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint(Location));
         WindowState = deserializer.ReadTag(nameof(WindowState), s => s.ToEnum(WindowState));
         Padding = deserializer.ReadTag(nameof(Padding), s => s.ToInt(Padding));
-        LabelFontData = deserializer.Deserialize<FontData>(new(nameof(LabelFontData)));
-        ContentFontData = deserializer.Deserialize<FontData>(new(nameof(ContentFontData)));
+        deserializer.Deserialize(LabelFontData);
+        deserializer.Deserialize(ContentFontData);
         DeserializeFormData(deserializer);
     }
 }

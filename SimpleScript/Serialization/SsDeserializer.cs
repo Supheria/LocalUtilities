@@ -1,6 +1,8 @@
 ﻿using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
 using LocalUtilities.TypeBundle;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -40,7 +42,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         var count = 0;
         foreach (var token in tokens)
         {
-            if (token is TagValues tagValues)
+            if (token is TagValue tagValues)
             {
                 str = tagValues.Tag.Text;
                 if (++count > 1)
@@ -50,19 +52,49 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         return toProperty(str);
     }
 
-    public void ReadTags<T>(string name, ICollection<T> collection, Func<string?, T?> toProperty)
+    public IList<T> ReadTags<T>(string name, IList<T> list, Func<string, T?> toProperty)
+    {
+        list.Clear();
+        return GeneralReadCollection(name, list, tagValue =>
+        {
+            var tag = toProperty(tagValue.Tag.Text);
+            if (tag is not null)
+                list.Add(tag);
+        });
+    }
+
+    public IList<KeyValuePair<TTag, List<TValue>>> ReadTagValues<TTag, TValue>(string name, Func<string, TTag> toTag, Func<string, TValue> toValue)
+    {
+        var list = new List<KeyValuePair<TTag, List<TValue>>>();
+        return GeneralReadCollection(name, list, tagValue =>
+        {
+            var tag = toTag(tagValue.Tag.Text);
+            var value = tagValue.Value.Select(x => toValue(x)).ToList();
+            list.Add(new(tag, value));
+        });
+    }
+
+    public IList<TItem> ReadValues<TItem>(string name, IList<TItem> items, Func<List<string>, TItem?> toItem)
+    {
+        items.Clear();
+        return GeneralReadCollection(name, items, tagValue =>
+        {
+            var item = toItem(tagValue.Value);
+            if (item is not null)
+                items.Add(item);
+        });
+    }
+
+    private T GeneralReadCollection<T>(string name, T collection, Action<TagValue> add)
     {
         if (Scope is null || !Scope.Property.TryGetValue(name, out var tokens) || tokens.Count is 0)
-            return;
+            return collection;
         foreach (var token in tokens)
         {
-            if (token is TagValues tagValues)
-            {
-                var item = toProperty(tagValues.Tag.Text);
-                if (item is not null)
-                    collection.Add(item);
-            }
+            if (token is TagValue tagValue)
+                add(tagValue);
         }
+        return collection;
     }
 
     /// <summary>
@@ -109,24 +141,5 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
                 list.Add((TItem)deserializer.Source);
         }
         return list;
-    }
-
-    /// <summary>
-    /// read for collection to add all tokens of given type
-    /// </summary>
-    /// <param name="type"></param>
-    /// <param name="addToken"></param>
-    public void Deserialize<TToken>(Action<TToken> addToken) where TToken : Token
-    {
-        if (Scope is null)
-            return;
-        foreach (var tokens in Scope.Property.Values)
-        {
-            foreach (var token in tokens)
-            {
-                if (token.GetType() == typeof(TToken))
-                    addToken((TToken)token);
-            }
-        }
     }
 }
