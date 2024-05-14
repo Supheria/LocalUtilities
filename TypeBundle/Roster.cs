@@ -9,7 +9,7 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
-    public IList<TItem> RosterList
+    public List<TItem> RosterList
     {
         get => RosterMap.Values.ToList();
         set
@@ -42,13 +42,13 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
     public void Serialize(SsSerializer serializer)
     {
         SerializeRoster(serializer);
-        serializer.Serialize(RosterMap.Values);
+        serializer.WriteSerializableItems(RosterMap.Values);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
         DeserializeRoster(deserializer);
-        RosterList = deserializer.Deserialize(RosterList);
+        RosterList = deserializer.ReadSerializableItems<TItem>();
     }
 
     public int Count => RosterMap.Count;

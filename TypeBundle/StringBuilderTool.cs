@@ -29,7 +29,7 @@ public static class StringBuilderTool
         };
     }
 
-    public static StringBuilder AppendJoin<T>(this StringBuilder sb, char separator, IList<T> source, Action<StringBuilder, T> func)
+    public static StringBuilder AppendJoin<T>(this StringBuilder sb, string separator, IList<T> source, Action<StringBuilder, T> func)
     {
         if (source.Count is 0)
             return sb;
@@ -49,7 +49,7 @@ public static class StringBuilderTool
         if (writeIntoMultiLines)
             return sb.AppendLine();
         else
-            return sb.Append(' ');
+            return sb.Append("");
     }
 
     public static StringBuilder AppendTab(this StringBuilder sb, int times, bool writeIntoMultiLines)
@@ -84,6 +84,7 @@ public static class StringBuilderTool
     {
         return sb.AppendTab(level, writeIntoMultiLines)
             .Append(name.ToQuoted(writeIntoMultiLines))
+            .Append(' ')
             .AppendNewLine(writeIntoMultiLines);
     }
 
@@ -103,33 +104,41 @@ public static class StringBuilderTool
 
     public static StringBuilder AppendTagValue(this StringBuilder sb, int level, string name, string tag, IList<string> values, bool writeIntoMultiLines)
     {
+        if(values.Count is 0)
+        {
+            return sb.AppendTab(level, writeIntoMultiLines)
+            .Append($"{name.ToQuoted(writeIntoMultiLines)}={tag.ToQuoted(writeIntoMultiLines)}")
+            .Append(' ')
+            .AppendNewLine(writeIntoMultiLines);
+        }
         return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted(writeIntoMultiLines)}={tag.ToQuoted(writeIntoMultiLines)}{(values.Count is 0 ? "" : '{')}")
-            .AppendJoin(' ', values, (sb, value) =>
+            .Append($"{name.ToQuoted(writeIntoMultiLines)}={tag.ToQuoted(writeIntoMultiLines)}{{")
+            .AppendJoin(" ", values, (sb, value) =>
             {
                 sb.Append(value.ToQuoted(writeIntoMultiLines));
             })
-            .Append($"{(values.Count is 0 ? "" : '}')}")
+            .Append('}')
             .AppendNewLine(writeIntoMultiLines);
     }
 
-    public static StringBuilder AppendValueArray(this StringBuilder sb, int level, string name, List<List<Word>> valuesArray, bool writeIntoMultiLines)
+    public static StringBuilder AppendValueArrays(this StringBuilder sb, int level, string name, List<List<string>> valueArrays, bool writeIntoMultiLines)
     {
         return sb.AppendTab(level, writeIntoMultiLines)
             .Append($"{name.ToQuoted(writeIntoMultiLines)}={{")
             .AppendNewLine(writeIntoMultiLines)
-            .AppendJoin('\0', valuesArray, (sb, values) =>
+            .AppendJoin("", valueArrays, (sb, values) =>
             {
                 sb.AppendTab(level + 1, writeIntoMultiLines)
                 .Append('{')
-                .AppendJoin(' ', values, (sb, value) =>
+                .AppendJoin(" ", values, (sb, value) =>
                 {
-                    sb.Append(value.Text.ToQuoted(writeIntoMultiLines));
+                    sb.Append(value.ToQuoted(writeIntoMultiLines));
                 })
                 .Append('}')
                 .AppendNewLine(writeIntoMultiLines);
             })
             .AppendTab(level, writeIntoMultiLines)
+            .Append('}')
             .AppendNewLine(writeIntoMultiLines);
     }
 
@@ -138,15 +147,15 @@ public static class StringBuilderTool
         return sb.AppendTab(level, writeIntoMultiLines)
             .Append($"{name.ToQuoted(writeIntoMultiLines)}={{")
             .AppendNewLine(writeIntoMultiLines)
-            .AppendJoin('\0', pairsArray, (sb, pairs) =>
+            .AppendJoin("", pairsArray, (sb, pairs) =>
             {
                 sb.AppendTab(level + 1, writeIntoMultiLines)
                 .Append('{')
-                .AppendJoin(' ', pairs, (sb, pair) =>
+                .AppendJoin(" ", pairs, (sb, pair) =>
                 {
                     sb.Append(pair.Key.Text)
                     .Append("={")
-                    .AppendJoin(' ', pair.Value, (sb, value) =>
+                    .AppendJoin(" ", pair.Value, (sb, value) =>
                     {
                         sb.Append(value.Text.ToQuoted(writeIntoMultiLines));
                     })
@@ -156,6 +165,7 @@ public static class StringBuilderTool
                 .AppendNewLine(writeIntoMultiLines);
             })
             .AppendTab(level, writeIntoMultiLines)
+            .Append('}')
             .AppendNewLine(writeIntoMultiLines);
     }
 }

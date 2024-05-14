@@ -6,22 +6,22 @@ namespace LocalUtilities.SimpleScript.Data;
 
 public class ValueArrays(Token? from, Word name, int level) : Token(from, name, level)
 {
-    public List<List<Word>> Value { get; } = [];
+    public List<List<string>> Value { get; } = [];
 
     public void Append(Word value)
     {
-        Value.LastOrDefault()?.Add(value);
+        Value.LastOrDefault()?.Add(value.Text);
     }
 
     public void AppendNew(Word value)
     {
-        Value.Add([value]);
+        Value.Add([value.Text]);
     }
 
     public override string ToString()
     {
         return new StringBuilder()
-            .AppendValueArray(Level, Name.Text, Value, true)
+            .AppendValueArrays(Level, Name.Text, Value, true)
             .ToString();
     }
 }

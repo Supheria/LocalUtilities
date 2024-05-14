@@ -18,6 +18,17 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
         return Writer.ToString();
     }
 
+    /// <summary>
+    /// write for property of given type
+    /// </summary>
+    /// <typeparam name="TProperty"></typeparam>
+    /// <param name="property"></param>
+    /// <param name="serialization"></param>
+    public void Serialize<T>(T property) where T : ISsSerializable
+    {
+        new SsSerializer(property, Writer).Serialize();
+    }
+
     public void WriteComment(string comment)
     {
         Writer.AppendComment(comment);
@@ -39,28 +50,22 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// <param name="tag"></param>
     public void WriteTag(string name, string tag)
     {
-        Writer.AppendTagValues(name, tag, []);
+        Writer.AppendTagValue(name, tag, []);
     }
 
     public void WriteValue<TItem>(string name, TItem item, Func<TItem, List<string>> toStrings)
     {
-        Writer.AppendValues(name, toStrings(item));
+        Writer.AppendValue(name, toStrings(item));
     }
 
-    public void WriteTagValue<TItem>(string name, string tag, IList<TItem> value, Func<TItem, string> toString)
+    public void WriteTagValue<TItem>(string name, string tag, List<TItem> items, Func<TItem, string> toString)
     {
-        Writer.AppendTagValues(name, tag, value.Select(x => toString(x)).ToList());
+        Writer.AppendTagValue(name, tag, items.Select(x => toString(x)).ToList());
     }
 
-    /// <summary>
-    /// write for property of given type
-    /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    /// <param name="property"></param>
-    /// <param name="serialization"></param>
-    public void Serialize<T>(T property) where T : ISsSerializable
+    public void WriteValueArrays<TItem>(string name, List<TItem> items, Func<TItem, List<string>> toStringArray)
     {
-        new SsSerializer(property, Writer).Serialize();
+        Writer.AppendValueArrays(name, items.Select(x => toStringArray(x)).ToList());
     }
 
     /// <summary>
@@ -69,7 +74,7 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// <typeparam name="TProperty"></typeparam>
     /// <param name="collection"></param>
     /// <param name="itemSerialization"></param>
-    public void Serialize<T>(ICollection<T> collection) where T : ISsSerializable
+    public void WriteSerializableItems<T>(ICollection<T> collection) where T : ISsSerializable
     {
         foreach (var item in collection)
             new SsSerializer(item, Writer).Serialize();

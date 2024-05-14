@@ -24,7 +24,7 @@ public class Scope(Token? from, Word name, int level) : Token(from, name, level)
     {
         return new StringBuilder()
             .AppendNameStart(Level, Name.Text, true)
-            .AppendJoin('\0', Property.Values.ToList(), (sb, property) =>
+            .AppendJoin("", Property.Values.ToList(), (sb, property) =>
             {
                 sb.Append(property.ToString());
             })

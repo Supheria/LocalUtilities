@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.TypeBundle;
 
-public class SerializableList<TItem>(string localName, IList<TItem> collection) : ISsSerializable where TItem : ISsSerializable, new()
+public class SerializableList<TItem>(string localName, List<TItem> collection) : ISsSerializable where TItem : ISsSerializable, new()
 {
-    public IList<TItem> List { get; } = collection;
+    public List<TItem> List { get; private set; } = collection;
 
     public string LocalName { get; set; } = localName;
 
@@ -21,11 +21,11 @@ public class SerializableList<TItem>(string localName, IList<TItem> collection) 
 
     public void Serialize(SsSerializer serializer)
     {
-        serializer.Serialize(List);
+        serializer.WriteSerializableItems(List);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        deserializer.Deserialize(List);
+        List = deserializer.ReadSerializableItems<TItem>();
     }
 }
