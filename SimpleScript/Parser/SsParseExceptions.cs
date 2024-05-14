@@ -45,8 +45,13 @@ internal class SsParseExceptions(string message) : Exception(message)
         return new($"cannot find any entry of {localName}");
     }
 
+    internal static SsParseExceptions CannotFindEntry(string localName, string filePath)
+    {
+        return new($"cannot find any entry of {localName} in \"{filePath}\"");
+    }
+
     internal static SsParseExceptions CannotOpenFile(string filePath)
     {
-        return new($"cannot open file: {filePath}");
+        return new($"cannot open file: \"{filePath}\"");
     }
 }

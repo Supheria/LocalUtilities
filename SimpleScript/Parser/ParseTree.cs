@@ -196,6 +196,8 @@ internal class ParseTree
                         throw SsParseExceptions.UnexpectedValue(element);
                     case CloseBrace:
                         element.Get();
+                        // some case like xyz = {}
+                        Builder = Builder is NullToken ? new Scope(From?.Builder, Name, Level) : Builder;
                         Done();
                         return From;
                     case OpenBrace:

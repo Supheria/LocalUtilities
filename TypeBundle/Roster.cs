@@ -7,13 +7,17 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 {
     public abstract string LocalName { get; set; }
 
-    public abstract TItem ItemSample { get; }
-
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
-    public List<TItem> GetRosterList()
+    public IList<TItem> RosterList
     {
-        return RosterMap.Values.ToList();
+        get => RosterMap.Values.ToList();
+        set
+        {
+            RosterMap.Clear();
+            foreach (var item in value)
+                RosterMap[item.Signature] = item;
+        }
     }
 
     public TItem? this[TSignature signature]
@@ -43,9 +47,8 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        RosterMap.Clear();
         DeserializeRoster(deserializer);
-        deserializer.Deserialize(ItemSample, Add);
+        RosterList = deserializer.Deserialize(RosterList);
     }
 
     public int Count => RosterMap.Count;
@@ -89,6 +92,6 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return RosterMap.GetEnumerator();
+        return GetEnumerator();
     }
 }

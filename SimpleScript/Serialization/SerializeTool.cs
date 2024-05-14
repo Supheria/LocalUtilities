@@ -52,32 +52,43 @@ public static class SerializeTool
 
     public static T LoadFromSimpleScript<T>(this T obj, string inFilePath) where T : ISsSerializable
     {
-        var deserializer = new SsDeserializer(obj);
-        var path = inFilePath ?? deserializer.GetInitializationFilePath();
-        if (!File.Exists(path))
-            throw SsParseExceptions.CannotOpenFile(path);
-        byte[] buffer;
-        using var file = File.OpenRead(path);
-        if (file.ReadByte() == Utf8_BOM[0] && file.ReadByte() == Utf8_BOM[1] && file.ReadByte() == Utf8_BOM[2])
+        try
         {
-            buffer = new byte[file.Length - 3];
-            _ = file.Read(buffer, 0, buffer.Length);
+            return load(obj, inFilePath);
         }
-        else
+        catch (Exception ex)
         {
-            file.Seek(0, SeekOrigin.Begin);
-            buffer = new byte[file.Length];
-            _ = file.Read(buffer, 0, buffer.Length);
+            throw new Exception(ex.Message);
         }
-        var successful = false;
-        foreach (var token in new Tokenizer(buffer).Tokens)
+
+        static T load(T obj, string inFilePath)
         {
-            if (deserializer.Deserialize(token))
+            var deserializer = new SsDeserializer(obj);
+            if (!File.Exists(inFilePath))
+                throw SsParseExceptions.CannotOpenFile(inFilePath);
+            byte[] buffer;
+            using var file = File.OpenRead(inFilePath);
+            if (file.ReadByte() == Utf8_BOM[0] && file.ReadByte() == Utf8_BOM[1] && file.ReadByte() == Utf8_BOM[2])
             {
-                successful = true;
-                break;
+                buffer = new byte[file.Length - 3];
+                _ = file.Read(buffer, 0, buffer.Length);
             }
+            else
+            {
+                file.Seek(0, SeekOrigin.Begin);
+                buffer = new byte[file.Length];
+                _ = file.Read(buffer, 0, buffer.Length);
+            }
+            var successful = false;
+            foreach (var token in new Tokenizer(buffer).Tokens)
+            {
+                if (deserializer.Deserialize(token))
+                {
+                    successful = true;
+                    break;
+                }
+            }
+            return successful ? obj : throw SsParseExceptions.CannotFindEntry(obj.LocalName, inFilePath);
         }
-        return successful ? obj : throw SsParseExceptions.CannotFindEntry(obj.LocalName);
     }
 }

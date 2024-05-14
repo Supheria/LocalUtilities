@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.TypeBundle;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -14,8 +15,6 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// <returns></returns>
     public bool Deserialize(Token token)
     {
-        //Source = new();
-        //Source.Comments.AddRange(token.Comments);
         if (token.Name.Text == Source.LocalName && token is Scope scope)
         {
             Scope = scope;
@@ -60,7 +59,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
             if (token is TagValues tagValues)
             {
                 var item = toProperty(tagValues.Tag.Text);
-                if(item is not null)
+                if (item is not null)
                     collection.Add(item);
             }
         }
@@ -97,30 +96,19 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// </summary>
     /// <typeparam name="TItem"></typeparam>
     /// <param name="Deserializer"></param>
-    /// <param name="collection"></param>
-    public void Deserialize<TItem>(TItem sample, ICollection<TItem> collection) where TItem : ISsSerializable, new()
+    /// <param name="list"></param>
+    public IList<TItem> Deserialize<TItem>(IList<TItem> list) where TItem : ISsSerializable, new()
     {
-        collection.Clear();
-        if (Scope is null || !Scope.Property.TryGetValue(sample.LocalName, out var tokens) || tokens.Count is 0)
-            return;
+        list.Clear();
+        if (Scope is null || !Scope.Property.TryGetValue(new TItem().LocalName, out var tokens) || tokens.Count is 0)
+            return list;
         foreach (var token in tokens)
         {
-            var deserializer = new SsDeserializer(new TItem { LocalName = sample.LocalName });
+            var deserializer = new SsDeserializer(new TItem());
             if (deserializer.Deserialize(token))
-                collection.Add((TItem)deserializer.Source);
+                list.Add((TItem)deserializer.Source);
         }
-    }
-
-    public void Deserialize<TItem>(TItem sample, Action<TItem> addItem) where TItem : ISsSerializable, new()
-    {
-        if (Scope is null || !Scope.Property.TryGetValue(sample.LocalName, out var tokens) || tokens.Count is 0)
-            return;
-        foreach (var token in tokens)
-        {
-            var deserializer = new SsDeserializer(new TItem { LocalName = sample.LocalName });
-            if (deserializer.Deserialize(token))
-                addItem((TItem)deserializer.Source);
-        }
+        return list;
     }
 
     /// <summary>
@@ -128,7 +116,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// </summary>
     /// <param name="type"></param>
     /// <param name="addToken"></param>
-    public void Deserialize(Type type, Action<Token> addToken)
+    public void Deserialize<TToken>(Action<TToken> addToken) where TToken : Token
     {
         if (Scope is null)
             return;
@@ -136,8 +124,8 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         {
             foreach (var token in tokens)
             {
-                if (token.GetType() == type)
-                    addToken(token);
+                if (token.GetType() == typeof(TToken))
+                    addToken((TToken)token);
             }
         }
     }
