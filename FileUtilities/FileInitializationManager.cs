@@ -1,6 +1,4 @@
-﻿using LocalUtilities.Interface;
-
-namespace LocalUtilities.FileUtilities;
+﻿namespace LocalUtilities.FileUtilities;
 
 public static class FileInitializationManager
 {
@@ -17,10 +15,8 @@ public static class FileInitializationManager
     /// <returns></returns>
     public static string GetInitializationFilePath<T>(this T obj) where T : IInitializeable
     {
-        if (obj.IniFileName is null)
-            return "";
         var cachePath = Path.Combine(RootDirectoryInfo.FullName, obj.IniFileName);
-        return Path.ChangeExtension(cachePath, ".xml"); ;
+        return Path.ChangeExtension(cachePath, obj.IniFileExtension);
     }
 
     /// <summary>

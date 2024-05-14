@@ -1,25 +1,34 @@
-﻿using LocalUtilities.DelegateUtilities;
-using LocalUtilities.FileUtilities;
+﻿using LocalUtilities.SimpleScript.Serialization;
 
 namespace LocalUtilities.UIUtilities;
+
+public delegate void FormOnRunninigDelegate();
 
 public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData
 {
     bool _resizing { get; set; } = false;
 
-    protected FormDataLoadSaveDelegate? OnLoadFormData { get; set; }
+    protected FormOnRunninigDelegate? OnLoadFormData { get; set; }
 
-    protected FormDataLoadSaveDelegate? OnSaveFormData { get; set; }
+    protected FormOnRunninigDelegate? OnSaveFormData { get; set; }
+
+    protected FormOnRunninigDelegate? OnDrawingClient { get; set; }
 
     protected TFormData FormData { get; set; }
 
-    FormDataXmlSerialization<TFormData> FormDataXmlSerialization { get; }
+    protected new int Padding { get; set; }
 
+    protected new int Left => ClientRectangle.Left;
 
-    public ResizeableForm(TFormData formData, FormDataXmlSerialization<TFormData> formDataXmlSerialization)
+    protected new int Top => ClientRectangle.Top;
+
+    protected new int Width => ClientRectangle.Width;
+
+    protected new int Height => ClientRectangle.Height;
+
+    public ResizeableForm(TFormData formData)
     {
         FormData = formData;
-        FormDataXmlSerialization = formDataXmlSerialization;
         ResizeBegin += ResizeableForm_ResizeBegin;
         ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
@@ -28,7 +37,10 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         InitializeComponent();
     }
 
-    private void ResizeableForm_ResizeBegin(object? sender, EventArgs e) => _resizing = true;
+    private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
+    {
+        _resizing = true;
+    }
 
     private void ResizeableForm_ResizeEnd(object? sender, EventArgs e)
     {
@@ -44,12 +56,13 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     private void ResizeableForm_Load(object? sender, EventArgs e)
     {
-        FormData = FormDataXmlSerialization.LoadFromXml(out _);
+        FormData = FormData.LoadFromSimpleScript();
         OnLoadFormData?.Invoke();
         MinimumSize = FormData.MinimumSize;
         Size = FormData.Size;
         Location = FormData.Location;
         WindowState = FormData.WindowState;
+        Padding = FormData.Padding;
         DrawClient();
     }
 
@@ -60,11 +73,18 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         FormData.Size = Size;
         FormData.Location = Location;
         FormData.WindowState = WindowState;
-        FormDataXmlSerialization.Source = FormData;
-        FormDataXmlSerialization.SaveToXml();
+        FormData.Padding = Padding;
+        FormData.SaveToSimpleScript(true);
     }
 
     protected abstract void InitializeComponent();
 
-    protected abstract void DrawClient();
+    private void DrawClient()
+    {
+        if (WindowState is FormWindowState.Minimized)
+            return;
+        SuspendLayout();
+        OnDrawingClient?.Invoke();
+        ResumeLayout();
+    }
 }

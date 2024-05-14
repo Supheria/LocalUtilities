@@ -11,10 +11,13 @@
 
   <ItemGroup>
     <Compile Remove="DijkstraShortestPath\**" />
+    <Compile Remove="SimpleScriptParser\**" />
     <Compile Remove="VoronoiDiagram\**" />
     <EmbeddedResource Remove="DijkstraShortestPath\**" />
+    <EmbeddedResource Remove="SimpleScriptParser\**" />
     <EmbeddedResource Remove="VoronoiDiagram\**" />
     <None Remove="DijkstraShortestPath\**" />
+    <None Remove="SimpleScriptParser\**" />
     <None Remove="VoronoiDiagram\**" />
   </ItemGroup>
 
