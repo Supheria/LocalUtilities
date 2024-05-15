@@ -58,7 +58,7 @@ public static class SerializeTool
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            throw new SsParseExceptions(ex.Message);
         }
 
         static T load(T obj, string inFilePath)

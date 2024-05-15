@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class TagValue(Token? from, Word name, int level, Word @operator, Word tag) : Token(from, name, level)
+public class TagValue(Element? from, Word name, Word @operator, Word tag, int level) : Element(from, name, @operator, tag, level)
 {
     public Word Operator { get; } = @operator;
 

@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.SimpleScript.Parser;
 
-internal class Element
+internal class Token
 {
     private string Text { get; }
 
@@ -10,13 +10,13 @@ internal class Element
 
     public int Column { get; }
 
-    public Element()
+    public Token()
     {
         Text = "";
         Submitted = true;
     }
 
-    public Element(string text, int line, int column)
+    public Token(string text, int line, int column)
     {
         Text = text;
         Line = line;
@@ -32,5 +32,10 @@ internal class Element
     {
         Submitted = true;
         return new(Text, Line, Column);
+    }
+
+    public override string ToString()
+    {
+        return $"\"{Text}\" at Line({Line}), Column({Column})";
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class TagValueArrays(Token? from, Word name, int level) : Token(from, name, level)
+public class TagValueArrays(Element? from, Word name, Word @operator, Word tag, int level) : Element(from, name, @operator, tag, level)
 {
     public List<List<KeyValuePair<Word, List<Word>>>> Value { get; } = [];
 

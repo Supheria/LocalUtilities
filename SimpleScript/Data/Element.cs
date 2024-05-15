@@ -4,11 +4,15 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class Token(Token? from, Word name, int level)
+public class Element(Element? from, Word name, Word @operator, Word tag, int level)
 {
-    public Token? From { get; } = from is NullToken ? null : from;
+    public Element? From { get; } = from is NullElement ? null : from;
 
     public Word Name { get; } = name;
+
+    public Word Operator { get; set; } = @operator;
+
+    public Word Tag { get; set; } = tag;
 
     public int Level { get; } = level;
 

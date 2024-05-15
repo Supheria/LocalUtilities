@@ -30,15 +30,15 @@ internal class Tokenizer
 
     int Line { get; set; } = 1;
 
-    int Column { get; set; } = 1;
+    int Column { get; set; } = 0;
 
     ParseTree Tree { get; set; } = new();
 
-    Element Composed { get; set; } = new();
+    Token Composed { get; set; } = new();
 
     StringBuilder Composing { get; } = new();
 
-    internal List<Token> Tokens { get; } = [];
+    internal List<Element> Tokens { get; } = [];
 
     internal Tokenizer(string str)
     {
@@ -73,7 +73,7 @@ internal class Tokenizer
         void AddToken()
         {
             var token = Tree.DisposableGet();
-            if (token is not NullToken)
+            if (token is not NullElement)
                 Tokens.Add(token);
         }
     }
@@ -197,7 +197,7 @@ internal class Tokenizer
         if (str[0] is (byte)'\n')
         {
             Line++;
-            Column = 1;
+            Column = 0;
         }
         else if (str[0] is (byte)'\t')
             Column += 4;

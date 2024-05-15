@@ -8,16 +8,16 @@ namespace LocalUtilities.SimpleScript.Serialization;
 
 public class SsDeserializer(object obj) : SsSerializeBase(obj)
 {
-    Scope? Scope { get; set; } = null;
+    ElementScope? Scope { get; set; } = null;
 
     /// <summary>
     /// read begin of this
     /// </summary>
     /// <param name="token"></param>
     /// <returns></returns>
-    public bool Deserialize(Token token)
+    public bool Deserialize(Element token)
     {
-        if (token.Name.Text == Source.LocalName && token is Scope scope)
+        if (token.Name.Text == Source.LocalName && token is ElementScope scope)
         {
             Scope = scope;
             Source.Deserialize(this);
@@ -41,7 +41,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         var count = 0;
         foreach (var token in tokens)
         {
-            if (token is Scope scope)
+            if (token is ElementScope scope)
             {
                 var deserializer = new SsDeserializer(@default);
                 deserializer.Deserialize(scope);
@@ -142,7 +142,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// <param name="list"></param>
     public List<TItem> ReadSerializableItems<TItem>() where TItem : ISsSerializable, new()
     {
-        return GeneralReadList<Scope, TItem>(new TItem().LocalName, (scope, list) =>
+        return GeneralReadList<ElementScope, TItem>(new TItem().LocalName, (scope, list) =>
         {
             var deserializer = new SsDeserializer(new TItem());
             if (deserializer.Deserialize(scope))

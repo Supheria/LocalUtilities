@@ -11,4 +11,9 @@ public class Word(string text, int line, int column)
     public Word() : this("", 0, 0)
     {
     }
+
+    public override string ToString()
+    {
+        return $"\"{Text}\" at Line({Line}), Column({Column})";
+    }
 }

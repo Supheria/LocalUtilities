@@ -4,40 +4,24 @@ namespace LocalUtilities.SimpleScript.Parser;
 
 internal class SsParseExceptions(string message) : Exception(message)
 {
-
-    internal static SsParseExceptions UnknownError(Element element)
+    internal static SsParseExceptions UnexpectedOperator(Token element, string step)
     {
-        return new($"unknown error at line({element.Line}), column({element.Column})");
+        return new($"step on {step}: unexpected operator {element}");
     }
 
-    internal static SsParseExceptions UnexpectedName(Element element)
+    internal static SsParseExceptions UnexpectedDelimiter(Token element, string step)
     {
-        return new($"unexpected name at line({element.Line}), column({element.Column})");
+        return new($"step on {step}: unexpected delimiter {element}");
     }
 
-    internal static SsParseExceptions UnexpectedOperator(Element element)
+    internal static SsParseExceptions UnexpectedValue(Token element, string step)
     {
-        return new($"unexpected operator at line({element.Line}), column({element.Column})");
-    }
-
-    internal static SsParseExceptions UnexpectedValue(Element element)
-    {
-        return new($"unexpected value at line({element.Line}), column({element.Column})");
-    }
-
-    internal static SsParseExceptions UnexpectedArrayType(Element element)
-    {
-        return new($"unexpected array type at line({element.Line}), column({element.Column})");
-    }
-
-    internal static SsParseExceptions UnexpectedArraySyntax(Element element)
-    {
-        return new($"unexpected array syntax at line({element.Line}), column({element.Column})");
+        return new($"step on {step}: unexpected value {element})");
     }
 
     internal static SsParseExceptions MultiAssignment(Word name)
     {
-        return new($"multi-assignment to {name.Text} at line({name.Line}), column({name.Column})");
+        return new($"multi-assignment to {name}");
     }
 
     internal static SsParseExceptions CannotFindEntry(string localName)
