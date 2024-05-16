@@ -23,11 +23,6 @@ public class SsWriter(bool writeIntoMultiLines)
         _ = StringBuilder.AppendComment(Level, comment, WriteIntoMultiLines);
     }
 
-    internal void AppendToken(string name)
-    {
-        _ = StringBuilder.AppendToken(Level, name, WriteIntoMultiLines);
-    }
-
     internal void AppendNameStart(string name)
     {
         _ = StringBuilder.AppendNameStart(Level++, name, WriteIntoMultiLines);
@@ -63,13 +58,8 @@ public class SsWriter(bool writeIntoMultiLines)
         _ = StringBuilder.AppendTag(Level, name, tag, WriteIntoMultiLines);
     }
 
-    internal void AppendValueArrays(string name, List<List<string>> valuesArray)
+    internal void AppendValuesArray(string name, List<List<string>> valuesArray)
     {
-        _ = StringBuilder.AppendValueArrays(Level, name, valuesArray, WriteIntoMultiLines);
-    }
-
-    internal void AppendTagValueArrays(string name, List<List<KeyValuePair<Word, List<Word>>>> pairsArray)
-    {
-        _ = StringBuilder.AppendTagValueArrays(Level, name, pairsArray, WriteIntoMultiLines);
+        _ = StringBuilder.AppendValuesArray(Level, name, valuesArray, WriteIntoMultiLines);
     }
 }

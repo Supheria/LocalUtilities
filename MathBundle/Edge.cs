@@ -23,9 +23,14 @@ public class Edge(Coordinate starter, Coordinate ender)
         return false;
     }
 
-    public List<string> ToStringArray(bool useInt)
+    public List<string> ToStringArray()
     {
-        return useInt ? [Starter.ToIntString(), Ender.ToIntString()] : [Starter.ToString(), Ender.ToString()];
+        return [Starter.ToString(), Ender.ToString()];
+    }
+
+    public List<string> ToIntStringArray()
+    {
+        return [Starter.ToIntString(), Ender.ToIntString()];
     }
 
     public static Edge? ParseStringArray(List<string> array)

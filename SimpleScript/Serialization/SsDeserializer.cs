@@ -68,6 +68,20 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         });
     }
 
+    public List<TItem> ReadValuesArray<TItem>(string name, Func<List<string>, TItem?> toItem)
+    {
+        return GeneralReadList<ElementArray, TItem>(name, (array, list) =>
+        {
+            foreach (var elements in array.Properties)
+            {
+                var arr = elements.Values.SelectMany(x => x.Select(x => x.Name.Text)).ToList();
+                var item = toItem(arr);
+                if (item is not null)
+                    list.Add(item);
+            }
+        });
+    }
+
     public List<KeyValuePair<TTag, TValue>> ReadTagValuesArray<TTag, TValue>(string name, Func<string, TTag> toTag, Func<List<string>, TValue> toValue)
     {
         return GeneralReadList<ElementScope, KeyValuePair<TTag, TValue>>(name, (scope, list) =>

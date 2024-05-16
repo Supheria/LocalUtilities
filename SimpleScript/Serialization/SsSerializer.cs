@@ -38,6 +38,14 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
         Writer.AppendValues(name, items.Select(x => toString(x)).ToList());
     }
 
+    public void WriteValuesArray<TItem>(string name, List<TItem> items, Func<TItem, List<string>> toValues)
+    {
+        var array = new List<List<string>>();
+        foreach (var item in items)
+            array.Add(toValues(item));
+        Writer.AppendValuesArray(name, array);
+    }
+
     public void WriteTagValuesArray<TTag, TValue>(string name, ICollection<KeyValuePair<TTag, TValue>> pairs, Func<TTag, string> writeKey, Func<TValue, List<string>> writeValue)
     {
         foreach (var (tag, value) in pairs)

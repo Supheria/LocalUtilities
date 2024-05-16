@@ -1,10 +1,12 @@
 ﻿using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeBundle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LocalUtilities.SimpleScript.Data;
 
@@ -19,15 +21,19 @@ public class ElementArray(Element? from, Word name, Word @operator, Word tag, in
 
     public override string ToString()
     {
-        //return new StringBuilder()
-        //    .AppendNameStart(Level, Name.Text, true)
-        //    .AppendJoin("", Property.Values.ToList(), (sb, property) =>
-        //    {
-        //        sb.Append(property.ToString());
-        //    })
-        //    .AppendNameEnd(Level, true)
-        //    .ToString();
-        return "";
+        return new StringBuilder()
+            .AppendNameStart(Level, Name.Text, true)
+            .AppendJoin("", Properties, (sb, elements) =>
+            {
+                sb.AppendArrayStart(Level, true)
+                .AppendJoin("", elements.Values.ToList(), (sb, property) =>
+                {
+                    sb.Append(property.ToString());
+                })
+                .AppendArrayEnd(Level, true);
+            })
+            .AppendNameEnd(Level, true)
+            .ToString();
     }
 
 }

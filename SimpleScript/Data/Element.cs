@@ -21,10 +21,5 @@ public abstract class Element(Element? from, Word name, Word @operator, Word tag
 
     }
 
-    public override string ToString()
-    {
-        return new StringBuilder()
-            .AppendToken(Level, Name.Text, true)
-            .ToString();
-    }
+    public override abstract string ToString();
 }
