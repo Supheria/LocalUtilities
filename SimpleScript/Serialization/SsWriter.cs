@@ -1,7 +1,5 @@
-﻿using LocalUtilities.SimpleScript.Parser;
-using LocalUtilities.TypeBundle;
+﻿using LocalUtilities.TypeBundle;
 using System.Text;
-using System.Xml.Linq;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 

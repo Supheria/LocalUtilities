@@ -1,6 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Parser;
-using LocalUtilities.TypeBundle;
-using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 

@@ -1,9 +1,5 @@
 ﻿using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
-using LocalUtilities.TypeBundle;
-using System.Collections;
-using System.Collections.Generic;
-using System.Xml.Linq;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -122,7 +118,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         var item = new TItem();
         return GeneralReadList<ElementArray, TItem>(item.LocalName, (array, list) =>
         {
-            foreach(var elements in array.Properties)
+            foreach (var elements in array.Properties)
             {
                 item = new();
                 new SsDeserializer(item).Deserialize(elements);

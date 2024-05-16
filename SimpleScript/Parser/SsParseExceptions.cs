@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace LocalUtilities.SimpleScript.Parser;
+﻿namespace LocalUtilities.SimpleScript.Parser;
 
 internal class SsParseExceptions(string message) : Exception(message)
 {

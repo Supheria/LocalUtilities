@@ -1,7 +1,6 @@
 ﻿using LocalUtilities.FileUtilities;
 using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
-using System;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serialization;
@@ -67,7 +66,7 @@ public static class SerializeTool
         return ParseToObject(obj, buffer);
     }
 
-    public static List<T> LoadFromSimpleScript<T>(string filePath) where T: ISsSerializable, new()
+    public static List<T> LoadFromSimpleScript<T>(string filePath) where T : ISsSerializable, new()
     {
         var buffer = ReadFileBuffer(filePath);
         return ParseToArray<T>(buffer);

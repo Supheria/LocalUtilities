@@ -1,6 +1,4 @@
-﻿using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-
-namespace LocalUtilities.SimpleScript.Serialization;
+﻿namespace LocalUtilities.SimpleScript.Serialization;
 
 public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
 {
@@ -71,7 +69,7 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     public void WriteObjects<T>(ICollection<T> array) where T : ISsSerializable, new()
     {
         Writer.AppendNameStart(new T().LocalName);
-        foreach(var obj in array)
+        foreach (var obj in array)
         {
             Writer.AppendArrayStart();
             obj.Serialize(this);

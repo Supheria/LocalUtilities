@@ -1,5 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Data;
-using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.SimpleScript.Serialization;
 
 namespace LocalUtilities.TypeBundle;
 
