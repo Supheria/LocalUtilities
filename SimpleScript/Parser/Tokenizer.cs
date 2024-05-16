@@ -38,7 +38,7 @@ internal class Tokenizer
 
     StringBuilder Composing { get; } = new();
 
-    internal ElementScope Elements { get; } = new(null, new(), new(), new(), -1);
+    internal ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
 
     internal Tokenizer(byte[] bytes)
     {

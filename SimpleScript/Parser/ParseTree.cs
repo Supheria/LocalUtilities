@@ -109,7 +109,7 @@ internal class ParseTree
                         Name = new();
                         return this;
                     default:
-                        Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
+                        Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         Done();
                         return From;
                 }
@@ -143,7 +143,7 @@ internal class ParseTree
                         Step = Steps.OperatorOn;
                         return this;
                     default:
-                        Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
+                        Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         Done();
                         // element.Get(); // leave element to next tree
                         return From;
@@ -157,7 +157,7 @@ internal class ParseTree
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
                     case CloseBrace:
                         token.Submit();
-                        Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
+                        Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         Done();
                         return From;
                     case OpenBrace:
@@ -166,7 +166,7 @@ internal class ParseTree
                         return this;
                     default:
                         Step = Steps.Sub;
-                        Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
+                        Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         return new(this, Level + 1);
                 }
             case Steps.Sub: // 6
@@ -201,7 +201,7 @@ internal class ParseTree
                         return this;
                     default:
                         Step = Steps.ArraySub;
-                        Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
+                        Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         return new(this, Level + 1);
                 }
             case Steps.ArrayOff: // 8
@@ -213,7 +213,7 @@ internal class ParseTree
                         return this;
                     case CloseBrace:
                         token.Submit();
-                        Builder = new ElementArray(From?.Builder, Name, Operator, Tag, Level);
+                        Builder = new ElementArray(/*From?.Builder, */Name, Operator, Tag, Level);
                         foreach (var scope in Arrays.Cast<ElementScope>())
                             ((ElementArray)Builder).Append(scope.Property);
                         Done();

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class ElementScope(Element? from, Word name, Word @operator, Word tag, int level) : Element(from, name, @operator, tag, level)
+public class ElementScope(Word name, Word @operator, Word tag, int level) : Element(name, @operator, tag, level)
 {
     public Dictionary<string, List<Element>> Property { get; } = [];
 

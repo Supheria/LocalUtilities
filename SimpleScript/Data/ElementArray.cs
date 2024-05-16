@@ -10,7 +10,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class ElementArray(Element? from, Word name, Word @operator, Word tag, int level) : Element(from, name, @operator, tag, level)
+public class ElementArray(Word name, Word @operator, Word tag, int level) : Element(name, @operator, tag, level)
 {
     public List<Dictionary<string, List<Element>>> Properties { get; } = [];
 
