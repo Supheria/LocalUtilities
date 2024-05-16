@@ -127,8 +127,10 @@ public static class StringBuilderTool
 
     public static StringBuilder AppendTagValues(this StringBuilder sb, int level, string name, string tag, List<string> values, bool writeIntoMultiLines)
     {
-        return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted()}={tag.ToQuoted()}{{")
+        sb.AppendTab(level, writeIntoMultiLines);
+        if (name is not "")
+            sb.Append($"{name.ToQuoted()}=");
+        return sb.Append($"{tag.ToQuoted()}{{")
             .AppendJoin("", values, (sb, value) =>
             {
                 sb.AppendNewLine(writeIntoMultiLines)

@@ -24,15 +24,6 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     }
 
     /// <summary>
-    /// write for a pure token
-    /// </summary>
-    /// <param name="name"></param>
-    public void WriteToken(string name)
-    {
-        Writer.AppendToken(name);
-    }
-
-    /// <summary>
     /// write for a tag of given name
     /// </summary>
     /// <param name="name"></param>
@@ -42,24 +33,15 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
         Writer.AppendTag(name, tag);
     }
 
-    public void WriteValue<TItem>(string name, TItem item, Func<TItem, List<string>> toStrings)
-    {
-        Writer.AppendValues(name, toStrings(item));
-    }
-
     public void WriteValues<TItem>(string name, List<TItem> items, Func<TItem, string> toString)
     {
         Writer.AppendValues(name, items.Select(x => toString(x)).ToList());
     }
 
-    public void WriteTagValues<TItem>(string name, string tag, List<TItem> items, Func<TItem, string> toString)
+    public void WriteTagValuesArray<TTag, TValue>(string name, ICollection<KeyValuePair<TTag, TValue>> pairs, Func<TTag, string> writeKey, Func<TValue, List<string>> writeValue)
     {
-        Writer.AppendTagValues(name, tag, items.Select(x => toString(x)).ToList());
-    }
-
-    public void WriteValueArrays<TItem>(string name, List<TItem> items, Func<TItem, List<string>> toStringArray)
-    {
-        Writer.AppendValueArrays(name, items.Select(x => toStringArray(x)).ToList());
+        foreach (var (tag, value) in pairs)
+            Writer.AppendTagValues(name, writeKey(tag), writeValue(value));
     }
 
     /// <summary>

@@ -68,23 +68,13 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         });
     }
 
-    public List<KeyValuePair<TTag, List<TValue>>> ReadTagValues<TTag, TValue>(string name, Func<string, TTag> toTag, Func<string, TValue> toValue)
+    public List<KeyValuePair<TTag, TValue>> ReadTagValuesArray<TTag, TValue>(string name, Func<string, TTag> toTag, Func<List<string>, TValue> toValue)
     {
-        return GeneralReadList<ElementScope, KeyValuePair<TTag, List<TValue>>>(name, (scope, list) =>
+        return GeneralReadList<ElementScope, KeyValuePair<TTag, TValue>>(name, (scope, list) =>
         {
             var tag = toTag(scope.Tag.Text);
-            var value = scope.Property.SelectMany(x => x.Value.Select(x => toValue(x.Name.Text))).ToList();
-            list.Add(new(tag, value));
-        });
-    }
-
-    public List<TItem> ReadValues<TItem>(string name, Func<List<string>, TItem?> toItem)
-    {
-        return GeneralReadList<ElementScope, TItem>(name, (scope, list) =>
-        {
-            var item = toItem(scope.Property.SelectMany(x => x.Value.Select(x => x.Name.Text)).ToList());
-            if (item is not null)
-                list.Add(item);
+            var values = scope.Property.SelectMany(x => x.Value.Select(x => x.Name.Text)).ToList();
+            list.Add(new(tag, toValue(values)));
         });
     }
 

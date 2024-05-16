@@ -102,6 +102,12 @@ internal class ParseTree
                         Step = Steps.Operator;
                         Operator = token.Submit();
                         return this;
+                    case OpenBrace:
+                        token.Submit();
+                        Step = Steps.OperatorOn;
+                        Tag = Name;
+                        Name = new();
+                        return this;
                     default:
                         Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
                         Done();
@@ -117,24 +123,24 @@ internal class ParseTree
                     case Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
                     case OpenBrace:
+                        token.Submit();
                         if (Operator.Text[0] != Equal)
                             throw SsParseExceptions.UnexpectedOperator(new(Operator.Text, Operator.Line, Operator.Column), Step.ToString());
                         Step = Steps.OperatorOn;
-                        token.Submit();
                         return this;
                     default:
-                        Step = Steps.Tag;
                         Tag = token.Submit();
+                        Step = Steps.Tag;
                         return this;
                 }
             case Steps.Tag: // 3
                 switch (ch)
                 {
                     case OpenBrace:
+                        token.Submit();
                         if (Operator.Text[0] != Equal)
                             throw SsParseExceptions.UnexpectedOperator(new(Operator.Text, Operator.Line, Operator.Column), Step.ToString());
                         Step = Steps.OperatorOn;
-                        token.Submit();
                         return this;
                     default:
                         Builder = new ElementScope(From?.Builder, Name, Operator, Tag, Level);
@@ -155,8 +161,8 @@ internal class ParseTree
                         Done();
                         return From;
                     case OpenBrace:
-                        Step = Steps.ArrayOn;
                         token.Submit();
+                        Step = Steps.ArrayOn;
                         return this;
                     default:
                         Step = Steps.Sub;
@@ -190,8 +196,8 @@ internal class ParseTree
                     case Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
                     case CloseBrace:
-                        Step = Steps.ArrayOff;
                         token.Submit();
+                        Step = Steps.ArrayOff;
                         return this;
                     default:
                         Step = Steps.ArraySub;
