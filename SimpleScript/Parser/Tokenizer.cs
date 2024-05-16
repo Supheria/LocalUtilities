@@ -38,13 +38,7 @@ internal class Tokenizer
 
     StringBuilder Composing { get; } = new();
 
-    internal List<Element> Tokens { get; } = [];
-
-    internal Tokenizer(string str)
-    {
-        Buffer = Encoding.UTF8.GetBytes(str);
-        Tokenize();
-    }
+    internal ElementScope Elements { get; } = new(null, new(), new(), new(), -1);
 
     internal Tokenizer(byte[] bytes)
     {
@@ -72,9 +66,9 @@ internal class Tokenizer
         AddToken();
         void AddToken()
         {
-            var token = Tree.DisposableGet();
-            if (token is not NullElement)
-                Tokens.Add(token);
+            var token = Tree.Submit();
+            if (token is not null)
+                Elements.Append(token);
         }
     }
 

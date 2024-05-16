@@ -4,22 +4,22 @@ namespace LocalUtilities.SimpleScript.Parser;
 
 internal class SsParseExceptions(string message) : Exception(message)
 {
-    internal static SsParseExceptions UnexpectedOperator(Token element, string step)
+    internal static SsParseExceptions UnexpectedOperator(Token token, string step)
     {
-        return new($"step on {step}: unexpected operator {element}");
+        return new($"step on {step}: unexpected operator {token}");
     }
 
-    internal static SsParseExceptions UnexpectedDelimiter(Token element, string step)
+    internal static SsParseExceptions UnexpectedDelimiter(Token token, string step)
     {
-        return new($"step on {step}: unexpected delimiter {element}");
+        return new($"step on {step}: unexpected delimiter {token}");
     }
 
-    internal static SsParseExceptions UnexpectedValue(Token element, string step)
+    internal static SsParseExceptions UnexpectedValue(Token token, string step)
     {
-        return new($"step on {step}: unexpected value {element})");
+        return new($"step on {step}: unexpected value {token})");
     }
 
-    internal static SsParseExceptions MultiAssignment(Word name)
+    internal static SsParseExceptions MultiAssignment(string name)
     {
         return new($"multi-assignment to {name}");
     }
@@ -29,13 +29,18 @@ internal class SsParseExceptions(string message) : Exception(message)
         return new($"cannot find any entry of {localName}");
     }
 
-    internal static SsParseExceptions CannotFindEntry(string localName, string filePath)
-    {
-        return new($"cannot find any entry of {localName} in \"{filePath}\"");
-    }
-
     internal static SsParseExceptions CannotOpenFile(string filePath)
     {
         return new($"cannot open file: \"{filePath}\"");
+    }
+
+    public static SsParseExceptions WrongObjectEntry(string localName)
+    {
+        return new($"not a proper object entry of {localName}");
+    }
+
+    internal static SsParseExceptions WrongArrayEntry(string localName)
+    {
+        return new($"not a proper array entry of {localName}");
     }
 }

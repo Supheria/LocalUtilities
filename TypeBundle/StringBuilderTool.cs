@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.SimpleScript.Parser;
 using System.Text;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace LocalUtilities.TypeBundle;
 
@@ -9,7 +10,7 @@ public static class StringBuilderTool
 
     static char[] Blanks { get; } = ['\\', '"', '#', '\t', ' ', '\n', '\r', '#', '=', '>', '<', '}', '{', '"', /*',',*/ '\0'];
 
-    public static string ToQuoted(this string str, bool writeIntoMultiLines)
+    public static string ToQuoted(this string str)
     {
         if (str is "")
             return toQuoted();
@@ -83,7 +84,7 @@ public static class StringBuilderTool
     public static StringBuilder AppendToken(this StringBuilder sb, int level, string name, bool writeIntoMultiLines)
     {
         return sb.AppendTab(level, writeIntoMultiLines)
-            .Append(name.ToQuoted(writeIntoMultiLines))
+            .Append(name.ToQuoted())
             .Append(' ')
             .AppendNewLine(writeIntoMultiLines);
     }
@@ -91,7 +92,7 @@ public static class StringBuilderTool
     public static StringBuilder AppendNameStart(this StringBuilder sb, int level, string name, bool writeIntoMultiLines)
     {
         return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted(writeIntoMultiLines)}={{")
+            .Append($"{name.ToQuoted()}={{")
             .AppendNewLine(writeIntoMultiLines);
     }
 
@@ -102,21 +103,56 @@ public static class StringBuilderTool
             .AppendNewLine(writeIntoMultiLines);
     }
 
-    public static StringBuilder AppendTagValue(this StringBuilder sb, int level, string name, string tag, IList<string> values, bool writeIntoMultiLines)
+    public static StringBuilder AppendArrayStart(this StringBuilder sb, int level, bool writeIntoMultiLines)
     {
-        if(values.Count is 0)
-        {
-            return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted(writeIntoMultiLines)}={tag.ToQuoted(writeIntoMultiLines)}")
-            .Append(' ')
-            .AppendNewLine(writeIntoMultiLines);
-        }
         return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted(writeIntoMultiLines)}={tag.ToQuoted(writeIntoMultiLines)}{{")
-            .AppendJoin(" ", values, (sb, value) =>
+            .Append('{')
+            .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendArrayEnd(this StringBuilder sb, int level, bool writeIntoMultiLines)
+    {
+        return sb.AppendTab(level, writeIntoMultiLines)
+            .Append('}')
+            .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendTag(this StringBuilder sb, int level, string name, string tag, bool writeIntoMultiLines)
+    {
+        return sb.AppendTab(level, writeIntoMultiLines)
+            .Append($"{name.ToQuoted()}={tag.ToQuoted()}")
+            .Append($"{(tag is "" ? "" : " ")}")
+            .AppendNewLine(writeIntoMultiLines); ;
+    }
+
+    public static StringBuilder AppendTagValues(this StringBuilder sb, int level, string name, string tag, List<string> values, bool writeIntoMultiLines)
+    {
+        return sb.AppendTab(level, writeIntoMultiLines)
+            .Append($"{name.ToQuoted()}={tag.ToQuoted()}{{")
+            .AppendJoin("", values, (sb, value) =>
             {
-                sb.Append(value.ToQuoted(writeIntoMultiLines));
+                sb.AppendNewLine(writeIntoMultiLines)
+                .AppendTab(level + 1, writeIntoMultiLines)
+                .Append(value.ToQuoted());
             })
+            .AppendNewLine(writeIntoMultiLines)
+            .AppendTab(level, writeIntoMultiLines)
+            .Append('}')
+            .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendValues(this StringBuilder sb, int level, string name, List<string> values, bool writeIntoMultiLines)
+    {
+        return sb.AppendTab(level, writeIntoMultiLines)
+            .Append($"{name.ToQuoted()}={{")
+            .AppendJoin("", values, (sb, value) =>
+            {
+                sb.AppendNewLine(writeIntoMultiLines)
+                .AppendTab(level + 1, writeIntoMultiLines)
+                .Append(value.ToQuoted());
+            })
+            .AppendNewLine(writeIntoMultiLines)
+            .AppendTab(level, writeIntoMultiLines)
             .Append('}')
             .AppendNewLine(writeIntoMultiLines);
     }
@@ -124,7 +160,7 @@ public static class StringBuilderTool
     public static StringBuilder AppendValueArrays(this StringBuilder sb, int level, string name, List<List<string>> valueArrays, bool writeIntoMultiLines)
     {
         return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted(writeIntoMultiLines)}={{")
+            .Append($"{name.ToQuoted()}={{")
             .AppendNewLine(writeIntoMultiLines)
             .AppendJoin("", valueArrays, (sb, values) =>
             {
@@ -132,7 +168,7 @@ public static class StringBuilderTool
                 .Append('{')
                 .AppendJoin(" ", values, (sb, value) =>
                 {
-                    sb.Append(value.ToQuoted(writeIntoMultiLines));
+                    sb.Append(value.ToQuoted());
                 })
                 .Append('}')
                 .AppendNewLine(writeIntoMultiLines);
@@ -145,7 +181,7 @@ public static class StringBuilderTool
     public static StringBuilder AppendTagValueArrays(this StringBuilder sb, int level, string name, List<List<KeyValuePair<Word, List<Word>>>> pairsArray, bool writeIntoMultiLines)
     {
         return sb.AppendTab(level, writeIntoMultiLines)
-            .Append($"{name.ToQuoted(writeIntoMultiLines)}={{")
+            .Append($"{name.ToQuoted()}={{")
             .AppendNewLine(writeIntoMultiLines)
             .AppendJoin("", pairsArray, (sb, pairs) =>
             {
@@ -157,7 +193,7 @@ public static class StringBuilderTool
                     .Append("={")
                     .AppendJoin(" ", pair.Value, (sb, value) =>
                     {
-                        sb.Append(value.Text.ToQuoted(writeIntoMultiLines));
+                        sb.Append(value.Text.ToQuoted());
                     })
                     .Append('}');
                 })

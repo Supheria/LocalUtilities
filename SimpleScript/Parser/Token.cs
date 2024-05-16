@@ -28,7 +28,7 @@ internal class Token
         return Text.FirstOrDefault();
     }
 
-    public Word Get()
+    public Word Submit()
     {
         Submitted = true;
         return new(Text, Line, Column);

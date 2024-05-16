@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.FileUtilities;
+
+namespace LocalUtilities.SimpleScript.Serialization;
 
 public interface ISsSerializable
 {

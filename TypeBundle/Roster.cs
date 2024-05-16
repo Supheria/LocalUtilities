@@ -42,13 +42,13 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
     public void Serialize(SsSerializer serializer)
     {
         SerializeRoster(serializer);
-        serializer.WriteSerializableItems(RosterMap.Values);
+        serializer.WriteObjects(RosterMap.Values);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
         DeserializeRoster(deserializer);
-        RosterList = deserializer.ReadSerializableItems<TItem>();
+        RosterList = deserializer.ReadObjects<TItem>();
     }
 
     public int Count => RosterMap.Count;

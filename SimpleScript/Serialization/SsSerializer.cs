@@ -18,17 +18,6 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
         return Writer.ToString();
     }
 
-    /// <summary>
-    /// write for property of given type
-    /// </summary>
-    /// <typeparam name="TProperty"></typeparam>
-    /// <param name="property"></param>
-    /// <param name="serialization"></param>
-    public void Serialize<T>(T property) where T : ISsSerializable
-    {
-        new SsSerializer(property, Writer).Serialize();
-    }
-
     public void WriteComment(string comment)
     {
         Writer.AppendComment(comment);
@@ -50,17 +39,22 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// <param name="tag"></param>
     public void WriteTag(string name, string tag)
     {
-        Writer.AppendTagValue(name, tag, []);
+        Writer.AppendTag(name, tag);
     }
 
     public void WriteValue<TItem>(string name, TItem item, Func<TItem, List<string>> toStrings)
     {
-        Writer.AppendValue(name, toStrings(item));
+        Writer.AppendValues(name, toStrings(item));
     }
 
-    public void WriteTagValue<TItem>(string name, string tag, List<TItem> items, Func<TItem, string> toString)
+    public void WriteValues<TItem>(string name, List<TItem> items, Func<TItem, string> toString)
     {
-        Writer.AppendTagValue(name, tag, items.Select(x => toString(x)).ToList());
+        Writer.AppendValues(name, items.Select(x => toString(x)).ToList());
+    }
+
+    public void WriteTagValues<TItem>(string name, string tag, List<TItem> items, Func<TItem, string> toString)
+    {
+        Writer.AppendTagValues(name, tag, items.Select(x => toString(x)).ToList());
     }
 
     public void WriteValueArrays<TItem>(string name, List<TItem> items, Func<TItem, List<string>> toStringArray)
@@ -69,14 +63,30 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     }
 
     /// <summary>
-    /// write for all items in collection of given type
+    /// write for <see cref="ISsSerializable"/> object, not for array of object, otherwise use <see cref="WriteObjects"/>
     /// </summary>
     /// <typeparam name="TProperty"></typeparam>
-    /// <param name="collection"></param>
-    /// <param name="itemSerialization"></param>
-    public void WriteSerializableItems<T>(ICollection<T> collection) where T : ISsSerializable
+    /// <param name="property"></param>
+    /// <param name="serialization"></param>
+    public void WriteObject<T>(T property) where T : ISsSerializable
     {
-        foreach (var item in collection)
-            new SsSerializer(item, Writer).Serialize();
+        new SsSerializer(property, Writer).Serialize();
+    }
+
+    /// <summary>
+    /// write for array of <see cref="ISsSerializable"/> object, not for single object, otherwise use <see cref="WriteObject"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="array"></param>
+    public void WriteObjects<T>(ICollection<T> array) where T : ISsSerializable, new()
+    {
+        Writer.AppendNameStart(new T().LocalName);
+        foreach(var obj in array)
+        {
+            Writer.AppendArrayStart();
+            obj.Serialize(this);
+            Writer.AppendArrayEnd();
+        }
+        Writer.AppendNameEnd();
     }
 }

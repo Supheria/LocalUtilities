@@ -22,7 +22,7 @@ public abstract class SerializableTagValues<TKey, TValue> : ISsSerializable wher
     public void Serialize(SsSerializer serializer)
     {
         foreach (var (key, value) in Map)
-            serializer.WriteTagValue(KeyName, WriteKey(key), value, WriteValue);
+            serializer.WriteTagValues(KeyName, WriteKey(key), value, WriteValue);
     }
 
     public void Deserialize(SsDeserializer deserializer)

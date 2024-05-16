@@ -8,10 +8,10 @@ public class ElementScope(Element? from, Word name, Word @operator, Word tag, in
 {
     public Dictionary<string, List<Element>> Property { get; } = [];
 
-    public void Append(Element property)
+    public void Append(Element? property)
     {
-        if (property is NullElement)
-            return;
+        if (property is null)
+            throw new SsParseExceptions("property to append cannot be null");
         if (property.Level != Level + 1)
             throw new SsParseExceptions("level mismatched of Appending in Scope");
         if (Property.TryGetValue(property.Name.Text, out var list))

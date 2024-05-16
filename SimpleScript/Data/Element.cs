@@ -4,9 +4,9 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
 
-public class Element(Element? from, Word name, Word @operator, Word tag, int level)
+public abstract class Element(Element? from, Word name, Word @operator, Word tag, int level)
 {
-    public Element? From { get; } = from is NullElement ? null : from;
+    public Element? From { get; } = from;
 
     public Word Name { get; } = name;
 
@@ -15,6 +15,11 @@ public class Element(Element? from, Word name, Word @operator, Word tag, int lev
     public Word Tag { get; set; } = tag;
 
     public int Level { get; } = level;
+
+    public Element() : this(null, new(), new(), new(), 0)
+    {
+
+    }
 
     public override string ToString()
     {

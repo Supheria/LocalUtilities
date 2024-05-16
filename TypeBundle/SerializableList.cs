@@ -21,11 +21,11 @@ public class SerializableList<TItem>(string localName, List<TItem> collection) :
 
     public void Serialize(SsSerializer serializer)
     {
-        serializer.WriteSerializableItems(List);
+        serializer.WriteObjects(List);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        List = deserializer.ReadSerializableItems<TItem>();
+        List = deserializer.ReadObjects<TItem>();
     }
 }

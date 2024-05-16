@@ -38,14 +38,29 @@ public class SsWriter(bool writeIntoMultiLines)
         _ = StringBuilder.AppendNameEnd(--Level, WriteIntoMultiLines);
     }
 
-    internal void AppendValue(string name, IList<string> value)
+    internal void AppendArrayStart()
     {
-        _ = StringBuilder.AppendTagValue(Level, name, "_", value, WriteIntoMultiLines);
+        _ = StringBuilder.AppendArrayStart(Level++, WriteIntoMultiLines);
     }
 
-    internal void AppendTagValue(string name, string tag, IList<string> values)
+    internal void AppendArrayEnd()
     {
-        _ = StringBuilder.AppendTagValue(Level, name, tag, values, WriteIntoMultiLines);
+        _ = StringBuilder.AppendArrayEnd(--Level, WriteIntoMultiLines);
+    }
+
+    internal void AppendValues(string name, List<string> value)
+    {
+        _ = StringBuilder.AppendValues(Level, name, value, WriteIntoMultiLines);
+    }
+
+    internal void AppendTagValues(string name, string tag, List<string> values)
+    {
+        _ = StringBuilder.AppendTagValues(Level, name, tag, values, WriteIntoMultiLines);
+    }
+
+    internal void AppendTag(string name, string tag)
+    {
+        _ = StringBuilder.AppendTag(Level, name, tag, WriteIntoMultiLines);
     }
 
     internal void AppendValueArrays(string name, List<List<string>> valuesArray)
