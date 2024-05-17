@@ -1,5 +1,5 @@
-﻿using LocalUtilities.SimpleScript.Data;
-using LocalUtilities.SimpleScript.Parser;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.SimpleScript.Data;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -39,11 +39,10 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// <param name="toProperty">need default value for type convert failure</param>
     /// <returns></returns>
     /// <exception cref="SsParseExceptions">multiAssignment of name</exception>
-    public T ReadTag<T>(string name, Func<string?, T> toProperty)
+    public T ReadTag<T>(string name, Func<string, T> toProperty)
     {
-        string? str = null;
         if (!Elements.TryGetValue(name, out var elements) || elements.Count is 0)
-            return toProperty(str);
+            throw SsParseExceptions.CannotFindEntry(name);
         if (elements.Count > 1)
             throw SsParseExceptions.MultiAssignment(name);
         return toProperty(elements.First().Tag.Text);
@@ -64,16 +63,14 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         });
     }
 
-    public List<TItem> ReadValuesArray<TItem>(string name, Func<List<string>, TItem?> toItem)
+    public List<TItem> ReadValuesArray<TItem>(string name, Func<List<string>, TItem> toItem)
     {
         return GeneralReadList<ElementArray, TItem>(name, (array, list) =>
         {
             foreach (var elements in array.Properties)
             {
                 var arr = elements.Values.SelectMany(x => x.Select(x => x.Name.Text)).ToList();
-                var item = toItem(arr);
-                if (item is not null)
-                    list.Add(item);
+                list.Add(toItem(arr));
             }
         });
     }

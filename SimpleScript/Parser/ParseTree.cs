@@ -1,15 +1,10 @@
-﻿using LocalUtilities.SimpleScript.Data;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.SimpleScript.Data;
 
 namespace LocalUtilities.SimpleScript.Parser;
 
 internal class ParseTree
 {
-    const char OpenBrace = '{';
-    const char CloseBrace = '}';
-    const char Equal = '=';
-    const char Greater = '>';
-    const char Less = '<';
-
     private enum Steps
     {
         None,
@@ -81,12 +76,12 @@ internal class ParseTree
             case Steps.None: // 0
                 switch (ch)
                 {
-                    case OpenBrace:
-                    case CloseBrace:
+                    case SignTable.OpenBrace:
+                    case SignTable.CloseBrace:
                         throw SsParseExceptions.UnexpectedDelimiter(token, Step.ToString());
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
                     default:
                         Step = Steps.Name;
@@ -96,13 +91,13 @@ internal class ParseTree
             case Steps.Name: // 1
                 switch (ch)
                 {
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         Step = Steps.Operator;
                         Operator = token.Submit();
                         return this;
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         token.Submit();
                         Step = Steps.OperatorOn;
                         Tag = Name;
@@ -116,15 +111,15 @@ internal class ParseTree
             case Steps.Operator: // 2
                 switch (ch)
                 {
-                    case CloseBrace:
+                    case SignTable.CloseBrace:
                         throw SsParseExceptions.UnexpectedDelimiter(token, Step.ToString());
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         token.Submit();
-                        if (Operator.Text[0] != Equal)
+                        if (Operator.Text[0] != SignTable.Equal)
                             throw SsParseExceptions.UnexpectedOperator(new(Operator.Text, Operator.Line, Operator.Column), Step.ToString());
                         Step = Steps.OperatorOn;
                         return this;
@@ -136,9 +131,9 @@ internal class ParseTree
             case Steps.Tag: // 3
                 switch (ch)
                 {
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         token.Submit();
-                        if (Operator.Text[0] != Equal)
+                        if (Operator.Text[0] != SignTable.Equal)
                             throw SsParseExceptions.UnexpectedOperator(new(Operator.Text, Operator.Line, Operator.Column), Step.ToString());
                         Step = Steps.OperatorOn;
                         return this;
@@ -151,16 +146,16 @@ internal class ParseTree
             case Steps.OperatorOn: // 5
                 switch (ch)
                 {
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
-                    case CloseBrace:
+                    case SignTable.CloseBrace:
                         token.Submit();
                         Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         Done();
                         return From;
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         token.Submit();
                         Step = Steps.ArrayOn;
                         return this;
@@ -172,13 +167,13 @@ internal class ParseTree
             case Steps.Sub: // 6
                 switch (ch)
                 {
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         throw SsParseExceptions.UnexpectedDelimiter(token, Step.ToString());
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
-                    case CloseBrace:
+                    case SignTable.CloseBrace:
                         token.Submit();
                         Done();
                         return From;
@@ -189,13 +184,13 @@ internal class ParseTree
             case Steps.ArrayOn: // 7
                 switch (ch)
                 {
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         throw SsParseExceptions.UnexpectedDelimiter(token, Step.ToString());
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
-                    case CloseBrace:
+                    case SignTable.CloseBrace:
                         token.Submit();
                         Step = Steps.ArrayOff;
                         return this;
@@ -207,20 +202,20 @@ internal class ParseTree
             case Steps.ArrayOff: // 8
                 switch (ch)
                 {
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         Step = Steps.ArrayOn;
                         token.Submit();
                         return this;
-                    case CloseBrace:
+                    case SignTable.CloseBrace:
                         token.Submit();
                         Builder = new ElementArray(/*From?.Builder, */Name, Operator, Tag, Level);
                         foreach (var scope in Arrays.Cast<ElementScope>())
                             ((ElementArray)Builder).Append(scope.Property);
                         Done();
                         return From;
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
                     default:
                         throw SsParseExceptions.UnexpectedValue(token, Step.ToString());
@@ -228,16 +223,16 @@ internal class ParseTree
             case Steps.ArraySub: // 9
                 switch (ch)
                 {
-                    case CloseBrace:
+                    case SignTable.CloseBrace:
                         Step = Steps.ArrayOff;
                         token.Submit();
                         Arrays.Add(Builder!);
                         return this;
-                    case OpenBrace:
+                    case SignTable.OpenBrace:
                         throw SsParseExceptions.UnexpectedDelimiter(token, Step.ToString());
-                    case Equal:
-                    case Greater:
-                    case Less:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
                         throw SsParseExceptions.UnexpectedOperator(token, Step.ToString());
                     default:
                         Step = Steps.ArraySub;

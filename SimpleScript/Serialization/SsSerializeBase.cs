@@ -1,5 +1,5 @@
-﻿using LocalUtilities.FileUtilities;
-using LocalUtilities.SimpleScript.Parser;
+﻿using LocalUtilities.FileHelper;
+using LocalUtilities.SimpleScript.Common;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 

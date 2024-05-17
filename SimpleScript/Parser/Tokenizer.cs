@@ -1,18 +1,11 @@
-﻿using LocalUtilities.SimpleScript.Data;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.SimpleScript.Data;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;
 
 internal class Tokenizer
 {
-    const char Note = '#';
-    const char Quote = '"';
-    const char Escape = '\\';
-    static char[] Delimiter { get; } = ['\t', ' ', '\n', '\r', /*',',*/ '#', '=', '>', '<', '}', '{', '"', '\0'];
-    static char[] Blank { get; } = ['\t', ' ', '\n', '\r', /*',',*/ '\0'];
-    static char[] EndLine { get; } = ['\n', '\r', '\0'];
-    static char[] Marker { get; } = ['=', '>', '<', '}', '{'];
-
     private enum States
     {
         None,
@@ -81,18 +74,20 @@ internal class Tokenizer
             case States.Quotation:
                 switch (ch)
                 {
-                    case Escape:
+                    case SignTable.Escape:
                         Composing.Append(GetU8Char());
                         State = States.Escape;
                         return false;
-                    case Quote:
+                    case SignTable.Quote:
                         //Composing.Append(GetChar());
                         Composed = new(Composing.ToString(), Line, Column);
                         State = States.None;
                         GetU8Char();
                         return true;
-                    case { } when EndLine.Contains(ch):
-                        Composing.Append(Quote);
+                    case SignTable.Return:
+                    case SignTable.NewLine:
+                    case SignTable.Empty:
+                        Composing.Append(SignTable.Quote);
                         Composed = new(Composing.ToString(), Line, Column);
                         State = States.None;
                         return true;
@@ -100,61 +95,87 @@ internal class Tokenizer
                 Composing.Append(GetU8Char());
                 return false;
             case States.Escape:
-                if (EndLine.Contains(ch))
+                switch (ch)
                 {
-                    //Composing.Append(Quote).Append(Quote);
-                    Composed = new(Composing.ToString(), Line, Column);
-                    State = States.None;
-                    return true;
-                }
-                else
-                {
-                    Composing.Append(GetU8Char());
-                    State = States.Quotation;
-                    return false;
+                    case SignTable.Return:
+                    case SignTable.NewLine:
+                    case SignTable.Empty:
+                        Composed = new(Composing.ToString(), Line, Column);
+                        State = States.None;
+                        return true;
+                    default:
+                        Composing.Append(GetU8Char());
+                        State = States.Quotation;
+                        return false;
                 }
             case States.Word:
-                if (Delimiter.Contains(ch))
+                switch (ch)
                 {
-                    Composed = new(Composing.ToString(), Line, Column);
-                    State = States.None;
-                    return true;
+                    case SignTable.Tab:
+                    case SignTable.Space:
+                    case SignTable.Return:
+                    case SignTable.NewLine:
+                    case SignTable.Note:
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
+                    case SignTable.OpenBrace:
+                    case SignTable.CloseBrace:
+                    case SignTable.Quote:
+                    case SignTable.Empty:
+                        Composed = new(Composing.ToString(), Line, Column);
+                        State = States.None;
+                        return true;
+                    default:
+                        Composing.Append(GetU8Char());
+                        return false;
                 }
-                Composing.Append(GetU8Char());
-                return false;
             case States.Note:
-                if (EndLine.Contains(ch))
+                switch (ch)
                 {
-                    State = States.None;
+                    case SignTable.Return:
+                    case SignTable.NewLine:
+                    case SignTable.Empty:
+                        State = States.None;
+                        GetU8Char();
+                        return false;
+                    default:
+                        GetU8Char();
+                        return false;
                 }
-                GetU8Char();
-                return false;
             default:
                 switch (ch)
                 {
-                    case Quote:
+                    case SignTable.Quote:
                         Composing.Clear();
                         //Composing.Append(GetChar());
                         GetU8Char();
                         State = States.Quotation;
-                        break;
-                    case Note:
+                        return false;
+                    case SignTable.Note:
                         State = States.Note;
                         GetU8Char();
-                        break;
-                    case { } when Marker.Contains(ch):
+                        return false;
+                    case SignTable.Equal:
+                    case SignTable.Greater:
+                    case SignTable.Less:
+                    case SignTable.OpenBrace:
+                    case SignTable.CloseBrace:
                         Composed = new(GetU8Char().ToString(), Line, Column);
                         return true;
-                    case { } when Blank.Contains(ch):
+                    case SignTable.Tab:
+                    case SignTable.Space:
+                    case SignTable.Return:
+                    case SignTable.NewLine:
+                    case SignTable.Empty:
                         GetU8Char();
-                        break;
+                        return false;
                     default:
                         Composing.Clear();
                         Composing.Append(GetU8Char());
                         State = States.Word;
-                        break;
+                        return false;
                 }
-                return false;
         }
     }
 

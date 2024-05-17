@@ -1,5 +1,6 @@
-﻿using LocalUtilities.SimpleScript.Parser;
-using LocalUtilities.TypeBundle;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
@@ -24,7 +25,7 @@ public class ElementScope(Word name, Word @operator, Word tag, int level) : Elem
     {
         return new StringBuilder()
             .AppendNameStart(Level, Name.Text, true)
-            .AppendJoin("", Property.Values.ToList(), (sb, property) =>
+            .AppendJoin(SignTable.Empty, Property.Values.ToList(), (sb, property) =>
             {
                 sb.Append(property.ToString());
             })

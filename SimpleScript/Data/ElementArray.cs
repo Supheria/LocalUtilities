@@ -1,5 +1,6 @@
-﻿using LocalUtilities.SimpleScript.Parser;
-using LocalUtilities.TypeBundle;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Data;
@@ -17,10 +18,10 @@ public class ElementArray(Word name, Word @operator, Word tag, int level) : Elem
     {
         return new StringBuilder()
             .AppendNameStart(Level, Name.Text, true)
-            .AppendJoin("", Properties, (sb, elements) =>
+            .AppendJoin(SignTable.Empty, Properties, (sb, elements) =>
             {
                 sb.AppendArrayStart(Level, true)
-                .AppendJoin("", elements.Values.ToList(), (sb, property) =>
+                .AppendJoin(SignTable.Empty, elements.Values.ToList(), (sb, property) =>
                 {
                     sb.Append(property.ToString());
                 })
@@ -29,5 +30,4 @@ public class ElementArray(Word name, Word @operator, Word tag, int level) : Elem
             .AppendNameEnd(Level, true)
             .ToString();
     }
-
 }
