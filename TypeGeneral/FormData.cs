@@ -3,9 +3,9 @@ using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class FormData(string localName) : ISsSerializable
+public abstract class FormData() : ISsSerializable
 {
-    public string LocalName { get; set; } = localName;
+    public abstract string LocalName { get; set; }
 
     public abstract Size MinimumSize { get; set; }
 
@@ -14,12 +14,6 @@ public abstract class FormData(string localName) : ISsSerializable
     public virtual Point Location { get; set; }
 
     public virtual FormWindowState WindowState { get; set; } = FormWindowState.Normal;
-
-    public virtual int Padding { get; set; } = 12;
-
-    public virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData));
-
-    public virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { ScaleFactorToHeight = 0.05f };
 
     protected abstract void SerializeFormData(SsSerializer serializer);
 
@@ -31,9 +25,6 @@ public abstract class FormData(string localName) : ISsSerializable
         serializer.WriteTag(nameof(Size), Size.ToArrayString());
         serializer.WriteTag(nameof(Location), Location.ToArrayString());
         serializer.WriteTag(nameof(WindowState), WindowState.ToString());
-        serializer.WriteTag(nameof(Padding), Padding.ToString());
-        serializer.WriteObject(LabelFontData);
-        serializer.WriteObject(ContentFontData);
         SerializeFormData(serializer);
     }
 
@@ -43,9 +34,6 @@ public abstract class FormData(string localName) : ISsSerializable
         Size = deserializer.ReadTag(nameof(Size), s => s.ToSize());
         Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint());
         WindowState = deserializer.ReadTag(nameof(WindowState), s => s.ToEnum<FormWindowState>());
-        Padding = deserializer.ReadTag(nameof(Padding), int.Parse);
-        deserializer.ReadObject(LabelFontData);
-        deserializer.ReadObject(ContentFontData);
         DeserializeFormData(deserializer);
     }
 }

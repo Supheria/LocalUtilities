@@ -29,10 +29,10 @@ public class Edge(Coordinate starter, Coordinate ender)
 
     public List<string> ToIntStringArray()
     {
-        return [Starter.ToIntString(), Ender.ToIntString()];
+        return [Starter.ToString(), Ender.ToString()];
     }
 
-    public static Edge ParseStringArray(List<string> array)
+    public static Edge Parse(List<string> array)
     {
         return array.Count is 2
             ? new(Coordinate.Parse(array[0]), Coordinate.Parse(array[1]))

@@ -1,28 +1,16 @@
 ﻿using LocalUtilities.TypeGeneral.Convert;
-using LocalUtilities.TypeToolKit.Math;
 
 namespace LocalUtilities.TypeGeneral;
 
-public enum CoordinateType
+public class Coordinate(int x, int y)
 {
-    X,
-    Y,
-}
+    public int X { get; } = x;
 
-public class Coordinate(double x, double y)
-{
-    public double X { get; } = x;
-
-    public double Y { get; } = y;
+    public int Y { get; } = y;
 
     public Coordinate() : this(0, 0)
     {
 
-    }
-
-    public static implicit operator PointF(Coordinate coordinate)
-    {
-        return new((float)coordinate.X, (float)coordinate.Y);
     }
 
     public static bool operator ==(Coordinate? coordinate, object? obj)
@@ -36,7 +24,7 @@ public class Coordinate(double x, double y)
         }
         if (obj is not Coordinate other)
             return false;
-        return coordinate.X.ApproxEqualTo(other.X) && coordinate.Y.ApproxEqualTo(other.Y);
+        return coordinate.X == other.X && coordinate.Y == other.Y;
     }
 
     public static bool operator !=(Coordinate? coordinate, object? obj)
@@ -59,35 +47,16 @@ public class Coordinate(double x, double y)
         return (X, Y).ToArrayString();
     }
 
-    public string ToIntString()
-    {
-        return ((int)X, (int)Y).ToArrayString();
-    }
-
-    public double Parse(CoordinateType type)
-    {
-        return type switch
-        {
-            CoordinateType.X => X,
-            CoordinateType.Y => Y,
-            _ => throw new InvalidOperationException()
-        };
-    }
-
-    public static double Parse(Coordinate coordinate, CoordinateType type)
-    {
-        return type switch
-        {
-            CoordinateType.X => coordinate.X,
-            CoordinateType.Y => coordinate.Y,
-            _ => throw new InvalidOperationException()
-        };
-    }
     public static Coordinate Parse(string str)
     {
         var list = str.ToArray();
         if (list.Length is 2)
             return new(int.Parse(list[0]), int.Parse(list[1]));
         throw TypeConvertException.CannotConvertStringTo<Coordinate>();
+    }
+
+    public static implicit operator PointF(Coordinate coordinate)
+    {
+        return new(coordinate.X, coordinate.Y);
     }
 }

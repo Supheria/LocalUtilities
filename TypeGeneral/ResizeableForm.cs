@@ -4,9 +4,9 @@ namespace LocalUtilities.TypeGeneral;
 
 public delegate void FormOnRunninigDelegate();
 
-public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData
+public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData, new()
 {
-    bool _resizing { get; set; } = false;
+    bool Resizing { get; set; } = false;
 
     protected FormOnRunninigDelegate? OnLoadFormData { get; set; }
 
@@ -14,9 +14,7 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     protected FormOnRunninigDelegate? OnDrawingClient { get; set; }
 
-    protected TFormData FormData { get; set; }
-
-    protected new int Padding { get; set; }
+    protected TFormData FormData { get; set; } = new();
 
     protected new int Left => ClientRectangle.Left;
 
@@ -26,9 +24,8 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     protected new int Height => ClientRectangle.Height;
 
-    public ResizeableForm(TFormData formData)
+    public ResizeableForm()
     {
-        FormData = formData;
         ResizeBegin += ResizeableForm_ResizeBegin;
         ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
@@ -39,18 +36,18 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
 
     private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
     {
-        _resizing = true;
+        Resizing = true;
     }
 
     private void ResizeableForm_ResizeEnd(object? sender, EventArgs e)
     {
-        _resizing = false;
+        Resizing = false;
         DrawClient();
     }
 
     private void ResizeableForm_SizeChanged(object? sender, EventArgs e)
     {
-        if (_resizing is false)
+        if (Resizing is false)
             DrawClient();
     }
 
@@ -62,7 +59,6 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         Size = FormData.Size;
         Location = FormData.Location;
         WindowState = FormData.WindowState;
-        Padding = FormData.Padding;
         DrawClient();
     }
 
@@ -73,7 +69,6 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         FormData.Size = Size;
         FormData.Location = Location;
         FormData.WindowState = WindowState;
-        FormData.Padding = Padding;
         FormData.SaveToSimpleScript(true);
     }
 
