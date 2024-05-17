@@ -1,4 +1,4 @@
-﻿using LocalUtilities.TypeToolKit.Convert;
+﻿using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Math;
 
 namespace LocalUtilities.TypeGeneral;
@@ -25,23 +25,23 @@ public class Coordinate(double x, double y)
         return new((float)coordinate.X, (float)coordinate.Y);
     }
 
-    public static bool operator ==(Coordinate? c1, object? c2)
+    public static bool operator ==(Coordinate? coordinate, object? obj)
     {
-        if (c1 is null)
+        if (coordinate is null)
         {
-            if (c2 is null)
+            if (obj is null)
                 return true;
             else
                 return false;
         }
-        if (c2 is not Coordinate other)
+        if (obj is not Coordinate other)
             return false;
-        return c1.X.ApproxEqualTo(other.X) && c1.Y.ApproxEqualTo(other.Y);
+        return coordinate.X.ApproxEqualTo(other.X) && coordinate.Y.ApproxEqualTo(other.Y);
     }
 
-    public static bool operator !=(Coordinate? c1, object? c2)
+    public static bool operator !=(Coordinate? coordinate, object? obj)
     {
-        return !(c1 == c2);
+        return !(coordinate == obj);
     }
 
     public override int GetHashCode()

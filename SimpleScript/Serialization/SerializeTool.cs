@@ -1,76 +1,36 @@
-﻿using LocalUtilities.FileHelper;
-using LocalUtilities.SimpleScript.Common;
+﻿using LocalUtilities.SimpleScript.Common;
 using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.SimpleScript.Parser;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
-public static class SerializeTool
+public static partial class SerializeTool
 {
-    public static byte[] Utf8_BOM { get; } = [0xEF, 0xBB, 0xBF];
+    static byte[] Utf8_BOM { get; } = [0xEF, 0xBB, 0xBF];
 
-    public static void SaveToSimpleScript<T>(this T obj, bool writeIntoMultiLines, string? outFilePath = null) where T : ISsSerializable
+    private static string FormatObject<T>(T obj, bool writeIntoMultiLines) where T : ISsSerializable
     {
         var writer = new SsWriter(writeIntoMultiLines);
         var serializer = new SsSerializer(obj, writer);
-        var path = outFilePath ?? serializer.GetInitializationFilePath();
-        using var file = File.Create(path);
+        return serializer.Serialize();
+    }
+
+    private static string FormatObjects<T>(List<T> items, bool writeIntoMultiLines) where T : ISsSerializable, new()
+    {
+        var writer = new SsWriter(writeIntoMultiLines);
+        var serializer = new SsSerializer(new T(), writer);
+        serializer.WriteObjects(items);
+        return writer.ToString();
+    }
+
+    private static void WriteUtf8File(string text, string filePath)
+    {
+        using var file = File.Create(filePath);
         file.Write(Utf8_BOM);
         using var streamWriter = new StreamWriter(file, Encoding.UTF8);
-        streamWriter.Write(serializer.Serialize());
+        streamWriter.Write(text);
         streamWriter.Close();
-    }
-
-    public static T ParseSsString<T>(this T obj, string str) where T : ISsSerializable
-    {
-        try
-        {
-            return ParseToObject(obj, Encoding.UTF8.GetBytes(str));
-        }
-        catch
-        {
-            return obj;
-        }
-    }
-
-    public static List<T> ParseSsString<T>(this string str) where T : ISsSerializable, new()
-    {
-        try
-        {
-            return ParseToArray<T>(Encoding.UTF8.GetBytes(str));
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    public static T LoadFromSimpleScript<T>(this T obj) where T : ISsSerializable
-    {
-        try
-        {
-            var deserializer = new SsDeserializer(obj);
-            var buffer = ReadFileBuffer(deserializer.GetInitializationFilePath());
-            return ParseToObject(obj, buffer);
-        }
-        catch
-        {
-            SaveToSimpleScript(obj, true);
-            return obj;
-        }
-    }
-
-    public static T LoadFromSimpleScript<T>(this T obj, string filePath) where T : ISsSerializable
-    {
-        var buffer = ReadFileBuffer(filePath);
-        return ParseToObject(obj, buffer);
-    }
-
-    public static List<T> LoadFromSimpleScript<T>(string filePath) where T : ISsSerializable, new()
-    {
-        var buffer = ReadFileBuffer(filePath);
-        return ParseToArray<T>(buffer);
     }
 
     private static byte[] ReadFileBuffer(string filePath)
@@ -93,7 +53,7 @@ public static class SerializeTool
         return buffer;
     }
 
-    private static T ParseToObject<T>(this T obj, byte[] buffer) where T : ISsSerializable
+    private static T ParseToObject<T>(T obj, byte[] buffer) where T : ISsSerializable
     {
         var elements = new Tokenizer(buffer).Elements.Property[obj.LocalName];
         if (elements.Count is 0)

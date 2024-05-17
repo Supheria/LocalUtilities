@@ -1,4 +1,4 @@
-﻿using LocalUtilities.TypeToolKit.Convert;
+﻿using LocalUtilities.TypeGeneral.Convert;
 using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.TypeGeneral;
@@ -21,8 +21,15 @@ public class LatticedPoint
         Row = row;
     }
 
-    public static bool operator ==(LatticedPoint latticedPoint, object? obj)
+    public static bool operator ==(LatticedPoint? latticedPoint, object? obj)
     {
+        if (latticedPoint is null)
+        {
+            if (latticedPoint is null)
+                return true;
+            else
+                return false;
+        }
         if (obj is not LatticedPoint other)
             return false;
         return latticedPoint.Col == other.Col && latticedPoint.Row == other.Row;

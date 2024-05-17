@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeToolKit.Convert;
+﻿namespace LocalUtilities.TypeGeneral.Convert;
 
 internal class TypeConvertException(string message) : Exception(message)
 {

@@ -1,9 +1,9 @@
-﻿using LocalUtilities.TypeToolKit.Convert;
+﻿using LocalUtilities.TypeGeneral;
 using System.Text;
 
-namespace LocalUtilities.TypeToolKit.Convert;
+namespace LocalUtilities.TypeGeneral;
 
-public static class StringArray
+public static class ArrayString
 {
     const char Splitter = ',';
 

@@ -1,10 +1,10 @@
-﻿namespace LocalUtilities.TypeToolKit.Convert;
+﻿namespace LocalUtilities.TypeGeneral.Convert;
 
 public static class RectangleConvert
 {
     public static string ToArrayString(this Rectangle rect)
     {
-        return StringArray.ToArrayString(rect.X, rect.Y, rect.Width, rect.Height);
+        return ArrayString.ToArrayString(rect.X, rect.Y, rect.Width, rect.Height);
     }
 
     public static Rectangle ToRectangle(this string str)

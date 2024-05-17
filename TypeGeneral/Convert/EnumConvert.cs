@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
 
-namespace LocalUtilities.TypeToolKit.Convert;
+namespace LocalUtilities.TypeGeneral.Convert;
 
 public static class EnumConvert
 {

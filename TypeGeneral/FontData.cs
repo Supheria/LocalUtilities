@@ -1,5 +1,5 @@
 ﻿using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeToolKit.Convert;
+using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.TypeGeneral;
 

@@ -1,10 +1,10 @@
-﻿namespace LocalUtilities.TypeToolKit.Convert;
+﻿namespace LocalUtilities.TypeGeneral.Convert;
 
 public static class PointConverter
 {
     public static string ToArrayString(this Point point)
     {
-        return StringArray.ToArrayString(point.X, point.Y);
+        return ArrayString.ToArrayString(point.X, point.Y);
     }
 
     public static Point ToPoint(this string str)
