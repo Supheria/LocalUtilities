@@ -32,11 +32,11 @@ partial class SerializeTool
         }
     }
 
-    public static void SaveToSimpleScript<T>(this List<T> items, bool writeIntoMultiLines, string filePath) where T : ISsSerializable, new()
+    public static void SaveToSimpleScript<T>(this List<T> items, string arrayName, bool writeIntoMultiLines, string filePath) where T : ISsSerializable, new()
     {
         try
         {
-            var text = FormatObjects(items, writeIntoMultiLines);
+            var text = FormatObjects(arrayName, items, writeIntoMultiLines);
             WriteUtf8File(text, filePath);
         }
         catch (Exception ex)
@@ -57,11 +57,11 @@ partial class SerializeTool
         }
     }
 
-    public static string FormatToSsString<T>(this List<T> items) where T : ISsSerializable, new()
+    public static string FormatToSsString<T>(this List<T> items, string arrayName) where T : ISsSerializable, new()
     {
         try
         {
-            return FormatObjects(items, false);
+            return FormatObjects(arrayName, items, false);
         }
         catch
         {

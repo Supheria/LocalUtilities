@@ -110,14 +110,13 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// <typeparam name="TItem"></typeparam>
     /// <param name="Deserializer"></param>
     /// <param name="list"></param>
-    public List<TItem> ReadObjects<TItem>() where TItem : ISsSerializable, new()
+    public List<TItem> ReadObjects<TItem>(string arrayName) where TItem : ISsSerializable, new()
     {
-        var item = new TItem();
-        return GeneralReadList<ElementArray, TItem>(item.LocalName, (array, list) =>
+        return GeneralReadList<ElementArray, TItem>(arrayName, (array, list) =>
         {
             foreach (var elements in array.Properties)
             {
-                item = new();
+                var item = new TItem();
                 new SsDeserializer(item).Deserialize(elements);
                 list.Add(item);
             }

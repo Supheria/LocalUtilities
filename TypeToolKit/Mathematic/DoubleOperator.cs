@@ -1,6 +1,6 @@
 ﻿using LocalUtilities.TypeGeneral;
 
-namespace LocalUtilities.TypeToolKit.Math;
+namespace LocalUtilities.TypeToolKit.Mathematic;
 
 public static class DoubleOperator
 {

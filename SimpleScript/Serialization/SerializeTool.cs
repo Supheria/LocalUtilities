@@ -16,11 +16,11 @@ public static partial class SerializeTool
         return serializer.Serialize();
     }
 
-    private static string FormatObjects<T>(List<T> items, bool writeIntoMultiLines) where T : ISsSerializable, new()
+    private static string FormatObjects<T>(string arrayName, List<T> items, bool writeIntoMultiLines) where T : ISsSerializable, new()
     {
         var writer = new SsWriter(writeIntoMultiLines);
         var serializer = new SsSerializer(new T(), writer);
-        serializer.WriteObjects(items);
+        serializer.WriteObjects(arrayName, items);
         return writer.ToString();
     }
 
@@ -67,17 +67,17 @@ public static partial class SerializeTool
         return obj;
     }
 
-    private static List<T> ParseToArray<T>(byte[] buffer) where T : ISsSerializable, new()
+    private static List<T> ParseToArray<T>(string arrayName, byte[] buffer) where T : ISsSerializable, new()
     {
         var list = new List<T>();
-        var item = new T();
-        var elements = new Tokenizer(buffer).Elements.Property[item.LocalName];
+        var elements = new Tokenizer(buffer).Elements.Property[arrayName];
         if (elements.Count is 0)
-            throw SsParseExceptions.CannotFindEntry(item.LocalName);
+            throw SsParseExceptions.CannotFindEntry(arrayName);
         if (elements.Count > 1)
-            throw SsParseExceptions.MultiAssignment(item.LocalName);
+            throw SsParseExceptions.MultiAssignment(arrayName);
         if (elements[0] is ElementScope scope)
         {
+            var item = new T();
             new SsDeserializer(item).Deserialize(scope.Property);
             list.Add(item);
         }
@@ -85,13 +85,13 @@ public static partial class SerializeTool
         {
             foreach (var es in array.Properties)
             {
-                item = new T();
+                var item = new T();
                 new SsDeserializer(item).Deserialize(es);
                 list.Add(item);
             }
         }
         else
-            throw SsParseExceptions.WrongArrayEntry(item.LocalName);
+            throw SsParseExceptions.WrongArrayEntry(arrayName);
         return list;
     }
 }

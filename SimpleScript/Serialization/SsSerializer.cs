@@ -66,9 +66,9 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="array"></param>
-    public void WriteObjects<T>(ICollection<T> array) where T : ISsSerializable, new()
+    public void WriteObjects<T>(string arrayName, ICollection<T> array) where T : ISsSerializable, new()
     {
-        Writer.AppendNameStart(new T().LocalName);
+        Writer.AppendNameStart(arrayName);
         foreach (var obj in array)
         {
             Writer.AppendArrayStart();

@@ -27,11 +27,6 @@ public class Edge(Coordinate starter, Coordinate ender)
         return [Starter.ToString(), Ender.ToString()];
     }
 
-    public List<string> ToIntStringArray()
-    {
-        return [Starter.ToString(), Ender.ToString()];
-    }
-
     public static Edge Parse(List<string> array)
     {
         return array.Count is 2

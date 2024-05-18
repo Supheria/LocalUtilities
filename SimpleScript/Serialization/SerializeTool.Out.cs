@@ -18,11 +18,11 @@ partial class SerializeTool
         }
     }
 
-    public static List<T> ParseSsString<T>(this string str) where T : ISsSerializable, new()
+    public static List<T> ParseSsString<T>(this string str, string arrayName) where T : ISsSerializable, new()
     {
         try
         {
-            return ParseToArray<T>(Encoding.UTF8.GetBytes(str));
+            return ParseToArray<T>(arrayName, Encoding.UTF8.GetBytes(str));
         }
         catch
         {
@@ -64,12 +64,12 @@ partial class SerializeTool
         }
     }
 
-    public static List<T> LoadFromSimpleScript<T>(string filePath) where T : ISsSerializable, new()
+    public static List<T> LoadFromSimpleScript<T>(string arrayName, string filePath) where T : ISsSerializable, new()
     {
         try
         {
             var buffer = ReadFileBuffer(filePath);
-            return ParseToArray<T>(buffer);
+            return ParseToArray<T>(arrayName, buffer);
         }
         catch (Exception ex)
         {

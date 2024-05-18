@@ -27,6 +27,11 @@ public class PointBitmap
     /// </summary>
     public int Depth { get; private set; }
 
+    public PointBitmap(Image source)
+    {
+        Source = (Bitmap)source;
+    }
+
     public PointBitmap(Bitmap source)
     {
         Source = source;
