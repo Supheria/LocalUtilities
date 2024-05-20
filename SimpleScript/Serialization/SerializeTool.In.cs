@@ -1,71 +1,87 @@
 ﻿using LocalUtilities.FileHelper;
 using LocalUtilities.SimpleScript.Common;
+using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
 partial class SerializeTool
 {
-    public static void SaveToSimpleScript<T>(this T obj, bool writeIntoMultiLines) where T : ISsSerializable
+    public static T ParseSsString<T>(this T obj, string str) where T : ISsSerializable
     {
         try
         {
-            var deserializer = new SsSerializer(obj, new(writeIntoMultiLines));
-            var text = FormatObject(obj, writeIntoMultiLines);
-            WriteUtf8File(text, deserializer.GetInitializationFilePath());
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"cannot save to ini-file: {ex.Message}");
-        }
-    }
-
-    public static void SaveToSimpleScript<T>(this T obj, bool writeIntoMultiLines, string filePath) where T : ISsSerializable
-    {
-        try
-        {
-            var text = FormatObject(obj, writeIntoMultiLines);
-            WriteUtf8File(text, filePath);
-        }
-        catch (Exception ex)
-        {
-            throw new SsFormatException(ex.Message);
-        }
-    }
-
-    public static void SaveToSimpleScript<T>(this List<T> items, string arrayName, bool writeIntoMultiLines, string filePath) where T : ISsSerializable, new()
-    {
-        try
-        {
-            var text = FormatObjects(arrayName, items, writeIntoMultiLines);
-            WriteUtf8File(text, filePath);
-        }
-        catch (Exception ex)
-        {
-            throw new SsFormatException(ex.Message);
-        }
-    }
-
-    public static string FormatToSsString<T>(this T obj) where T : ISsSerializable
-    {
-        try
-        {
-            return FormatObject(obj, false);
+            return ParseToObject(obj, Encoding.UTF8.GetBytes(str));
         }
         catch
         {
-            return "";
+            return obj;
         }
     }
 
-    public static string FormatToSsString<T>(this List<T> items, string arrayName) where T : ISsSerializable, new()
+    public static List<T> ParseSsString<T>(this string str, string arrayName) where T : ISsSerializable, new()
     {
         try
         {
-            return FormatObjects(arrayName, items, false);
+            return ParseToArray<T>(arrayName, Encoding.UTF8.GetBytes(str));
         }
         catch
         {
-            return "";
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// load ini-file with default name of <see cref="ISsSerializable.LocalName"/>, loading failure will write <paramref name="obj"/> as default value into ini-file
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="obj"></param>
+    /// <returns></returns>
+    public static T LoadFromSimpleScript<T>(this T obj) where T : ISsSerializable
+    {
+        try
+        {
+            var deserializer = new SsDeserializer(obj);
+            var buffer = ReadFileBuffer(deserializer.GetInitializationFilePath());
+            return ParseToObject(obj, buffer);
+        }
+        catch
+        {
+            SaveToSimpleScript(obj, false);
+            return obj;
+        }
+    }
+
+    /// <summary>
+    /// load file from given path, loading failure will cause <see cref="SsParseExceptions"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="obj"></param>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
+    /// <exception cref="SsParseExceptions"></exception>
+    public static T LoadFromSimpleScript<T>(this T obj, string filePath) where T : ISsSerializable
+    {
+        try
+        {
+            var buffer = ReadFileBuffer(filePath);
+            return ParseToObject(obj, buffer);
+        }
+        catch (Exception ex)
+        {
+            throw new SsParseExceptions(ex.Message);
+        }
+    }
+
+    public static List<T> LoadFromSimpleScript<T>(string arrayName, string filePath) where T : ISsSerializable, new()
+    {
+        try
+        {
+            var buffer = ReadFileBuffer(filePath);
+            return ParseToArray<T>(arrayName, buffer);
+        }
+        catch (Exception ex)
+        {
+            throw new SsParseExceptions(ex.Message);
         }
     }
 

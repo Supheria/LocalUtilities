@@ -1,20 +1,29 @@
 ﻿using LocalUtilities.SimpleScript.Serialization;
+using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.TypeGeneral;
 
-public delegate void FormOnRunninigDelegate();
+public delegate void FormOnSaveing(SsSerializer serializer);
 
-public abstract class ResizeableForm<TFormData> : Form where TFormData : FormData, new()
+public delegate void FormOnLoading(SsDeserializer deserializer);
+
+public delegate void FormOnRunninig();
+
+public abstract class ResizeableForm : Form, ISsSerializable
 {
+    public abstract string LocalName { get; set; }
+
+    public string? IniFilePath { get; set; }
+
     bool Resizing { get; set; } = false;
 
-    protected FormOnRunninigDelegate? OnLoadFormData { get; set; }
+    protected FormOnSaveing? OnSaveForm { get; set; }
 
-    protected FormOnRunninigDelegate? OnSaveFormData { get; set; }
+    protected FormOnLoading? OnLoadForm { get; set; }
 
-    protected FormOnRunninigDelegate? OnDrawingClient { get; set; }
+    protected FormOnRunninig? OnDrawingClient { get; set; }
 
-    protected TFormData FormData { get; set; } = new();
+    protected new int Padding { get; set; } = 12;
 
     protected new int Left => ClientRectangle.Left;
 
@@ -23,6 +32,14 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
     protected new int Width => ClientRectangle.Width;
 
     protected new int Height => ClientRectangle.Height;
+
+    protected virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData));
+
+    protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { ScaleFactorToHeight = 0.05f };
+
+    protected virtual Font LabelFont => LabelFontData.GetFont(Height);
+
+    protected virtual Font ContentFont => ContentFontData.GetFont(Height);
 
     public ResizeableForm()
     {
@@ -33,6 +50,8 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         FormClosing += ResizeableForm_FormClosing;
         InitializeComponent();
     }
+
+    protected abstract void InitializeComponent();
 
     private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
     {
@@ -51,29 +70,6 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
             DrawClient();
     }
 
-    private void ResizeableForm_Load(object? sender, EventArgs e)
-    {
-        FormData = FormData.LoadFromSimpleScript();
-        OnLoadFormData?.Invoke();
-        MinimumSize = FormData.MinimumSize;
-        Size = FormData.Size;
-        Location = FormData.Location;
-        WindowState = FormData.WindowState;
-        DrawClient();
-    }
-
-    private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
-    {
-        OnSaveFormData?.Invoke();
-        FormData.MinimumSize = MinimumSize;
-        FormData.Size = Size;
-        FormData.Location = Location;
-        FormData.WindowState = WindowState;
-        FormData.SaveToSimpleScript(true);
-    }
-
-    protected abstract void InitializeComponent();
-
     private void DrawClient()
     {
         if (WindowState is FormWindowState.Minimized)
@@ -81,5 +77,56 @@ public abstract class ResizeableForm<TFormData> : Form where TFormData : FormDat
         SuspendLayout();
         OnDrawingClient?.Invoke();
         ResumeLayout();
+    }
+
+    private void ResizeableForm_Load(object? sender, EventArgs e)
+    {
+        if (IniFilePath is null || IniFilePath is "")
+            _ = this.LoadFromSimpleScript();
+        else
+        {
+            try
+            {
+                _ = this.LoadFromSimpleScript(IniFilePath);
+            }
+            catch
+            {
+                _ = this.LoadFromSimpleScript();
+            }
+        }
+        DrawClient();
+    }
+
+    private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+
+        if (IniFilePath is null || IniFilePath is "")
+            this.SaveToSimpleScript(true);
+        else
+            this.SaveToSimpleScript(true, IniFilePath);
+    }
+
+    public void Serialize(SsSerializer serializer)
+    {
+        serializer.WriteTag(nameof(MinimumSize), MinimumSize.ToArrayString());
+        serializer.WriteTag(nameof(Size), Size.ToArrayString());
+        serializer.WriteTag(nameof(Location), Location.ToArrayString());
+        serializer.WriteTag(nameof(WindowState), WindowState.ToString());
+        serializer.WriteTag(nameof(Padding), Padding.ToString());
+        serializer.WriteObject(LabelFontData);
+        serializer.WriteObject(ContentFontData);
+        OnSaveForm?.Invoke(serializer);
+    }
+
+    public void Deserialize(SsDeserializer deserializer)
+    {
+        MinimumSize = deserializer.ReadTag(nameof(MinimumSize), s => s.ToSize());
+        Size = deserializer.ReadTag(nameof(Size), s => s.ToSize());
+        Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint());
+        WindowState = deserializer.ReadTag(nameof(WindowState), s => s.ToEnum<FormWindowState>());
+        Padding = deserializer.ReadTag(nameof(Padding), int.Parse);
+        deserializer.ReadObject(LabelFontData);
+        deserializer.ReadObject(ContentFontData);
+        OnLoadForm?.Invoke(deserializer);
     }
 }

@@ -24,8 +24,8 @@ public static class EdgeTool
                 list.Add(new(x1, y));
                 for (var i = EdgeInnerDensityUnit; i.ApproxLessThanOrEqualTo(widthHalf); i += EdgeInnerDensityUnit)
                     list.AddRange([
-                        new((int)Math.Round(x1 - i), y),
-                        new((int)Math.Round(x1 + i), y)
+                        new((x1 - i).ToInt(), y),
+                        new((x1 + i).ToInt(), y)
                         ]);
             }
             return list;
@@ -38,8 +38,8 @@ public static class EdgeTool
                 list.Add(new(x, y1));
                 for (var i = EdgeInnerDensityUnit; i.ApproxLessThanOrEqualTo(widthHalf); i += EdgeInnerDensityUnit)
                     list.AddRange([
-                        new(x, (int)Math.Round(y1 - i)),
-                        new(x, (int)Math.Round(y1 + i))
+                        new(x, (y1 - i).ToInt()),
+                        new(x, (y1 + i).ToInt())
                         ]);
             }
             return list;
@@ -53,7 +53,7 @@ public static class EdgeTool
         for (double x = left.X; x.ApproxLessThanOrEqualTo(right.X); x += stepUint)
         {
             var y = slope * (x - left.X) + left.Y;
-            list.Add(new((int)Math.Round(x), (int)Math.Round(y)));
+            list.Add(new(x.ToInt(), y.ToInt()));
             for (var i = EdgeInnerDensityUnit; i.ApproxLessThanOrEqualTo(widthHalf); i += EdgeInnerDensityUnit)
                 list.AddRange(AppendWidthPoints(x, y, slope, i));
         }
@@ -76,6 +76,6 @@ public static class EdgeTool
         var x2 = x + c;
         var y1 = y - (x1 - x) / slope;
         var y2 = y - (x2 - x) / slope;
-        return [new((int)Math.Round(x1), (int)Math.Round(y1)), new((int)Math.Round(x2), (int)Math.Round(y2))];
+        return [new(x1.ToInt(), y1.ToInt()), new(x2.ToInt(), y2.ToInt())];
     }
 }

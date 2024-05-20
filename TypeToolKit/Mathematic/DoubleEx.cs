@@ -2,7 +2,7 @@
 
 namespace LocalUtilities.TypeToolKit.Mathematic;
 
-public static class DoubleOperator
+public static class DoubleEx
 {
     //private const double epsilon = double.Epsilon * 1E100;
     // The above is the original epsilon used for the algorithm.
@@ -14,6 +14,10 @@ public static class DoubleOperator
     // Of course, numbers too large will start failing again since we can't exactly compare significant digits (cheaply).
     static double Epsilon { get; } = 1E-12;
 
+    public static int ToInt(this double value)
+    {
+        return (int)Math.Round(value);
+    }
 
     public static bool ApproxEqualTo(this double value1, double value2)
     {

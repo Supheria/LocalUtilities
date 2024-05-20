@@ -15,6 +15,11 @@ public class FontData(string localName) : ISsSerializable
 
     public GraphicsUnit Unit { get; set; } = GraphicsUnit.Pixel;
 
+    public Font GetFont(int formHeight)
+    {
+        return new(FamilyName, ScaleFactorToHeight * formHeight, Style, Unit);
+    }
+
     public void Serialize(SsSerializer serializer)
     {
         serializer.WriteTag(nameof(FamilyName), FamilyName);

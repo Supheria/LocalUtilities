@@ -8,6 +8,16 @@ public class Edge(Coordinate starter, Coordinate ender)
 
     public Coordinate Ender { get; } = ender;
 
+    public double Length
+    {
+        get
+        {
+            _length ??= Math.Sqrt(Math.Pow(Ender.X - Starter.X, 2) + Math.Pow(Ender.Y - Starter.Y, 2));
+            return _length.Value;
+        }
+    }
+    double? _length = null;
+
     public override int GetHashCode()
     {
         return HashCode.Combine(Starter.GetHashCode(), Ender.GetHashCode());
