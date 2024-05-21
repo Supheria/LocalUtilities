@@ -104,6 +104,11 @@ internal class ParseTree
                         Name = new();
                         return this;
                     default:
+                        //
+                        // read as value
+                        //
+                        Tag = Name;
+                        Name = new();
                         Builder = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
                         Done();
                         return From;

@@ -58,7 +58,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     {
         return GeneralReadList<ElementScope, TItem>(name, (scope, list) =>
         {
-            var items = scope.Property.Values.SelectMany(x => x.Select(x => toItem(x.Name.Text))).ToList();
+            var items = scope.Property.Values.SelectMany(x => x.Select(x => toItem(x.Tag.Text))).ToList();
             list.AddRange(items);
         });
     }
