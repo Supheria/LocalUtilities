@@ -6,32 +6,15 @@ namespace LocalUtilities.TypeToolKit.Graph;
 
 public static class BitmapTool
 {
-    public static void DrawTemplateIntoRect(this Image image, Bitmap template, Rectangle toRect, bool ignoreTransparent)
+    public static Bitmap CopyToNewSize(this Bitmap source, Size toSize)
     {
-        DrawTemplateIntoRect((Bitmap)image, template, toRect, ignoreTransparent);
-    }
-
-    public static void DrawTemplateIntoRect(this Bitmap source, Bitmap template, Rectangle toRect, bool ignoreTransparent)
-    {
-        var dWidth = toRect.Width - template.Width;
-        var dHeight = toRect.Height - template.Height;
-        var startX = dWidth > 0 ? toRect.Left + dWidth / 2 : toRect.Left;
-        var startY = dHeight > 0 ? toRect.Top + dHeight / 2 : toRect.Top;
-        var pSource = new PointBitmap(source);
-        var pTemplate = new PointBitmap(template);
-        pSource.LockBits();
-        pTemplate.LockBits();
-        for (int x = dWidth < 0 ? Math.Abs(dWidth) / 2 : 0; x < Math.Min(template.Width, toRect.Width); x++)
-        {
-            for (int y = dHeight < 0 ? Math.Abs(dHeight) / 2 : 0; y < Math.Min(template.Height, toRect.Height); y++)
-            {
-                var pixel = pTemplate.GetPixel(x, y);
-                if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
-                    pSource.SetPixel(x + startX, y + startY, pixel);
-            }
-        }
-        pSource.UnlockBits();
-        pTemplate.UnlockBits();
+        var target = new Bitmap(toSize.Width, toSize.Height);
+        var g = Graphics.FromImage(target);
+        g.Clear(Color.White);
+        g.InterpolationMode = InterpolationMode.Bilinear;
+        g.DrawImage(source, 0, 0, toSize.Width, toSize.Height);
+        g.Flush(); g.Dispose();
+        return target;
     }
 
     public static Size ScaleToSizeOnRatio(this Bitmap source, Size toSize)
@@ -53,14 +36,51 @@ public static class BitmapTool
         return new(toWidth, toHeight);
     }
 
-    public static Bitmap CopyToNewSize(this Bitmap source, Size toSize)
+    public static void TemplateDrawIntoRect(this Bitmap template, Bitmap target, Rectangle toRect, bool ignoreTransparent)
     {
-        var target = new Bitmap(toSize.Width, toSize.Height);
-        var g = Graphics.FromImage(target);
-        g.Clear(Color.White);
-        g.InterpolationMode = InterpolationMode.Bilinear;
-        g.DrawImage(source, 0, 0, toSize.Width, toSize.Height);
-        g.Flush(); g.Dispose();
-        return target;
+        var dWidth = toRect.Width - template.Width;
+        var dHeight = toRect.Height - template.Height;
+        var startX = dWidth < 0 ? throw GraphicException.SizeOutRange(template.Size, toRect) : toRect.Left + dWidth / 2;
+        var startY = dHeight < 0 ? throw GraphicException.SizeOutRange(template.Size, toRect) : toRect.Top + dHeight / 2;
+        var pTemplate = new PointBitmap(template);
+        var pTarget = new PointBitmap(target);
+        pTemplate.LockBits();
+        pTarget.LockBits();
+        for (int x = 0; x < template.Width; x++)
+        {
+            for (int y = 0; y < template.Height; y++)
+            {
+                var pixel = pTemplate.GetPixel(x, y);
+                if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
+                    pTarget.SetPixel(x + startX, y + startY, pixel);
+            }
+        }
+        pTemplate.UnlockBits();
+        pTarget.UnlockBits();
+    }
+
+    public static void TemplateDrawPartOn(this Bitmap template, Bitmap source, Rectangle drawPart, bool ignoreTransparent)
+    {
+        if (source.Size != template.Size)
+            throw GraphicException.SizeMismatch();
+        PointBitmap pTemplate = new(template);
+        PointBitmap pTarget = new(source);
+        pTemplate.LockBits();
+        pTarget.LockBits();
+        var right = drawPart.Right;
+        var bottom = drawPart.Bottom;
+        for (var x = drawPart.X; x < right; x++)
+        {
+            for (var y = drawPart.Y; y < bottom; y++)
+            {
+                var pixel = pTemplate.GetPixel(x, y);
+                if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
+                {
+                    pTarget.SetPixel(x, y, pixel);
+                }
+            }
+        }
+        pTemplate.UnlockBits();
+        pTarget.UnlockBits();
     }
 }

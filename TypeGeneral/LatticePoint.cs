@@ -3,25 +3,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.TypeGeneral;
 
-public class LatticedPoint
+public class LatticePoint
 {
     public int Col { get; set; }
 
     public int Row { get; set; }
 
-    public LatticedPoint()
+    public LatticePoint()
     {
         Col = 0;
         Row = 0;
     }
 
-    public LatticedPoint(int col, int row)
+    public LatticePoint(int col, int row)
     {
         Col = col;
         Row = row;
     }
 
-    public static bool operator ==(LatticedPoint? latticedPoint, object? obj)
+    public static bool operator ==(LatticePoint? latticedPoint, object? obj)
     {
         if (latticedPoint is null)
         {
@@ -30,12 +30,12 @@ public class LatticedPoint
             else
                 return false;
         }
-        if (obj is not LatticedPoint other)
+        if (obj is not LatticePoint other)
             return false;
         return latticedPoint.Col == other.Col && latticedPoint.Row == other.Row;
     }
 
-    public static bool operator !=(LatticedPoint latticedPoint, object? obj)
+    public static bool operator !=(LatticePoint latticedPoint, object? obj)
     {
         return !(latticedPoint == obj);
     }
@@ -55,11 +55,11 @@ public class LatticedPoint
         return (Col, Row).ToArrayString();
     }
 
-    public static LatticedPoint Parse(string str)
+    public static LatticePoint Parse(string str)
     {
         var list = str.ToArray();
         if (list.Length is 2)
             return new(int.Parse(list[0]), int.Parse(list[1]));
-        throw TypeConvertException.CannotConvertStringTo<LatticedPoint>();
+        throw TypeConvertException.CannotConvertStringTo<LatticePoint>();
     }
 }
