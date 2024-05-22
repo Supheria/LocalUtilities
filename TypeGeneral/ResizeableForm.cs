@@ -25,21 +25,13 @@ public abstract class ResizeableForm : Form, ISsSerializable
 
     protected new int Padding { get; set; } = 12;
 
-    protected new int Left => ClientRectangle.Left;
-
-    protected new int Top => ClientRectangle.Top;
-
-    protected new int Width => ClientRectangle.Width;
-
-    protected new int Height => ClientRectangle.Height;
-
     protected virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData));
 
     protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { ScaleFactorToHeight = 0.05f };
 
-    protected virtual Font LabelFont => LabelFontData.GetFont(Height);
+    protected virtual Font LabelFont => LabelFontData.GetFont(ClientSize.Width);
 
-    protected virtual Font ContentFont => ContentFontData.GetFont(Height);
+    protected virtual Font ContentFont => ContentFontData.GetFont(ClientSize.Height);
 
     public ResizeableForm()
     {

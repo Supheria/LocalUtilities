@@ -17,25 +17,6 @@ public static class BitmapTool
         return target;
     }
 
-    public static Size ScaleToSizeOnRatio(this Bitmap source, Size toSize)
-    {
-        var toWidth = toSize.Width;
-        var toHeight = toSize.Height;
-        var toRatio = toSize.Width / (double)toSize.Height;
-        var sourceRatio = source.Width / (double)source.Height;
-        if (sourceRatio > toRatio)
-        {
-            toWidth = toSize.Width;
-            toHeight = (int)(toWidth / sourceRatio);
-        }
-        else if (sourceRatio < toRatio)
-        {
-            toHeight = toSize.Height;
-            toWidth = (int)(toHeight * sourceRatio);
-        }
-        return new(toWidth, toHeight);
-    }
-
     public static void TemplateDrawIntoRect(this Bitmap template, Bitmap target, Rectangle toRect, bool ignoreTransparent)
     {
         var dWidth = toRect.Width - template.Width;
