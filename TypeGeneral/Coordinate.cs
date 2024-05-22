@@ -4,7 +4,7 @@ namespace LocalUtilities.TypeGeneral;
 
 public class Coordinate(int x, int y)
 {
-    public int X { get; private set; } = x;
+    public int X { get; } = x;
 
     public int Y { get; } = y;
 
