@@ -1,9 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.TypeGeneral;
 
@@ -18,7 +13,7 @@ public abstract class Displayer : PictureBox, ISsSerializable
     public void SetRange(Size range)
     {
         SuspendLayout();
-        if (OnSetRange(range) && range != Image?.Size) 
+        if (OnSetRange(range) && range != Image?.Size)
         {
             Image?.Dispose();
             Image = new Bitmap(Width, Height);
