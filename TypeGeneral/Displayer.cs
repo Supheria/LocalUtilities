@@ -23,7 +23,6 @@ public abstract class Displayer : PictureBox, ISsSerializable
             Image?.Dispose();
             Image = new Bitmap(Width, Height);
             var g = Graphics.FromImage(Image);
-            g.Clear(Color.Transparent);
             g.Flush();
             g.Dispose();
             Relocate();
