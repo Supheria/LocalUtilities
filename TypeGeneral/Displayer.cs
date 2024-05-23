@@ -20,8 +20,8 @@ public abstract class Displayer : PictureBox, ISsSerializable
             var g = Graphics.FromImage(Image);
             g.Flush();
             g.Dispose();
-            Relocate();
         }
+        Relocate();
         ResumeLayout();
     }
 

@@ -7,8 +7,6 @@ public delegate void FormOnSaveing(SsSerializer serializer);
 
 public delegate void FormOnLoading(SsDeserializer deserializer);
 
-public delegate void FormOnRunninig();
-
 public abstract class ResizeableForm : Form, ISsSerializable
 {
     public abstract string LocalName { get; set; }
@@ -21,7 +19,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
 
     protected FormOnLoading? OnLoadForm { get; set; }
 
-    protected FormOnRunninig? OnDrawingClient { get; set; }
+    protected OnComponentRunning? OnDrawingClient { get; set; }
 
     protected new int Padding { get; set; } = 12;
 
