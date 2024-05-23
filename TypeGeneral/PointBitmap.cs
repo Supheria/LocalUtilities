@@ -5,12 +5,12 @@ namespace LocalUtilities.TypeGeneral;
 /// <summary>
 /// 指针法 Bitmap 颜色赋值，来源 https://www.cnblogs.com/ybqjymy/p/12897892.html
 /// </summary>
-public class PointBitmap
+public class PointBitmap(Bitmap source)
 {
     /// <summary>
     /// 指向的源图片
     /// </summary>
-    readonly Bitmap Source;
+    readonly Bitmap Source = source;
 
     /// <summary>
     /// 指针首地址
@@ -27,10 +27,7 @@ public class PointBitmap
     /// </summary>
     public int Depth { get; private set; }
 
-    public PointBitmap(Bitmap source)
-    {
-        Source = source;
-    }
+    public Size Size => Source.Size;
 
     /// <summary>
     /// 根据源图片大小和位深设置并调用 Bitmap.LockBits（只做了对 32、24、8 位的处理）
