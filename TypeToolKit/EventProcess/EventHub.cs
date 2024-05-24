@@ -1,29 +1,30 @@
 ﻿namespace LocalUtilities.TypeToolKit.EventProcess;
 
-public class EventHub
+public partial class EventHub
 {
-    Dictionary<int, List<IEventListener>> EventMap { get; } = [];
+    Dictionary<string, Delegate?> EventMap { get; } = [];
 
-    public void AddListener(int eventId, IEventListener listener)
+    private void OnAddingListener(string eventName, Delegate callback)
     {
-        if (EventMap.TryGetValue(eventId, out var list))
-            list.Add(listener);
-        else
-            EventMap[eventId] = [listener];
+        if (!EventMap.TryGetValue(eventName, out var exist))
+            EventMap.Add(eventName, null);
+        if (exist is not null && exist.GetType() != callback.GetType())
+            throw EventCallbackException.CallbackWrongType(eventName, exist.GetType(), callback.GetType());
     }
 
-    public void RemoveListener(int eventId, IEventListener listener)
+    private void OnRemovingListener(string eventName, Delegate callback)
     {
-        if (EventMap.TryGetValue(eventId, out var list))
-            list.Remove(listener);
+        if (!EventMap.TryGetValue(eventName, out var exist))
+            throw EventCallbackException.EventNotExisted(eventName);
+        if (exist is null)
+            throw EventCallbackException.CallbackEmpty(eventName);
+        if (exist.GetType() != callback.GetType())
+            throw EventCallbackException.CallbackWrongType(eventName, exist.GetType(), callback.GetType());
     }
 
-    public void Dispatch(int eventId, IEventArgument argument)
+    private void OnRemovedListener(string eventName)
     {
-        if (EventMap.TryGetValue(eventId, out var list)) 
-        {
-            foreach (var listener in list)
-                listener.HandleEvent(eventId, argument);
-        }
+        if (EventMap[eventName] is null)
+            EventMap.Remove(eventName);
     }
 }
