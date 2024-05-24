@@ -13,15 +13,15 @@ public abstract class Displayer : PictureBox, ISsSerializable
     public void SetRange(Size range)
     {
         SuspendLayout();
-        if (OnSetRange(range) && range != Image?.Size)
+        if (OnSetRange(range) && Size != Image?.Size)
         {
             Image?.Dispose();
             Image = new Bitmap(Width, Height);
             var g = Graphics.FromImage(Image);
             g.Flush();
             g.Dispose();
+            Relocate();
         }
-        Relocate();
         ResumeLayout();
     }
 

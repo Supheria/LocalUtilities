@@ -84,7 +84,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
                 _ = this.LoadFromSimpleScript();
             }
         }
-        DrawClient();
+        //DrawClient();
     }
 
     private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)

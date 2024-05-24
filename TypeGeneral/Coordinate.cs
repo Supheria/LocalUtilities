@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.TypeGeneral.Convert;
+using LocalUtilities.TypeToolKit.Mathematic;
 
 namespace LocalUtilities.TypeGeneral;
 
@@ -30,6 +31,11 @@ public class Coordinate(int x, int y)
     public static bool operator !=(Coordinate? coordinate, object? obj)
     {
         return !(coordinate == obj);
+    }
+
+    public static Coordinate operator/(Coordinate coordinate, double factor)
+    {
+        return new((coordinate.X / factor).ToInt(), (coordinate.Y / factor).ToInt());
     }
 
     public override int GetHashCode()
