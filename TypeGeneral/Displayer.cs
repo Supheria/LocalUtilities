@@ -1,33 +1,19 @@
 ﻿using LocalUtilities.SimpleScript.Serialization;
+using System;
 
 namespace LocalUtilities.TypeGeneral;
-
-public delegate void DisplayerOnRunning();
 
 public abstract class Displayer : PictureBox, ISsSerializable
 {
     public string LocalName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-    protected DisplayerOnRunning? OnRelocate;
-
-    public void SetRange(Size range)
+    public void Relocate()
     {
-        SuspendLayout();
-        if (OnSetRange(range) && Size != Image?.Size)
-        {
-            Image?.Dispose();
-            Image = new Bitmap(Width, Height);
-            var g = Graphics.FromImage(Image);
-            g.Flush();
-            g.Dispose();
-            Relocate();
-        }
-        ResumeLayout();
+        if (Size == Image?.Size || Size.Width is 0 || Size.Height is 0)
+            return;
+        Image?.Dispose();
+        Image = new Bitmap(Width, Height);
     }
-
-    protected abstract bool OnSetRange(Size range);
-
-    protected abstract void Relocate();
 
     public void Deserialize(SsDeserializer deserializer)
     {
