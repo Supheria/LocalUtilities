@@ -28,6 +28,11 @@ public partial class EventHub
             EventMap.Remove(eventType);
     }
 
+    public void ClearListener(Enum eventType)
+    {
+        EventMap.Remove(eventType);
+    }
+
     public List<KeyValuePair<Enum, Delegate?>> GetEventList()
     {
         return EventMap.ToList();

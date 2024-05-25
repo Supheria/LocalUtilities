@@ -4,7 +4,7 @@ namespace LocalUtilities.TypeGeneral;
 
 public abstract class Displayer : PictureBox, ISsSerializable
 {
-    public string LocalName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string LocalName => nameof(Displayer);
 
     public void Relocate()
     {

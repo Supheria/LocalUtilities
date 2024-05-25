@@ -8,7 +8,7 @@ public abstract class RosterItem<TSignature>(TSignature signature) : ISsSerializ
 
     public TSignature SetSignature { set => Signature = value; }
 
-    public abstract string LocalName { get; set; }
+    public abstract string LocalName { get; }
 
     public abstract void Deserialize(SsDeserializer deserializer);
 

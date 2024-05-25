@@ -6,7 +6,7 @@ public abstract class SerializableTagValues<TKey, TValue> : ISsSerializable wher
 {
     public Dictionary<TKey, TValue> Map { get; set; } = [];
 
-    public abstract string LocalName { get; set; }
+    public abstract string LocalName { get; }
 
     protected abstract Func<TKey, string> WriteTag { get; }
 

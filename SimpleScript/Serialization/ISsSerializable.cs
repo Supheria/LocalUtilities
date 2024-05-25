@@ -2,7 +2,7 @@
 
 public interface ISsSerializable
 {
-    public string LocalName { get; set; }
+    public string LocalName { get; }
 
     public void Serialize(SsSerializer serializer);
 

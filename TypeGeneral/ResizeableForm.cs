@@ -9,7 +9,7 @@ public delegate void FormOnLoading(SsDeserializer deserializer);
 
 public abstract class ResizeableForm : Form, ISsSerializable
 {
-    public abstract string LocalName { get; set; }
+    public abstract string LocalName { get; }
 
     public string? IniFilePath { get; set; }
 
@@ -37,8 +37,14 @@ public abstract class ResizeableForm : Form, ISsSerializable
         ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
         Load += ResizeableForm_Load;
+        //Shown += ResizeableForm_Shown;
         FormClosing += ResizeableForm_FormClosing;
         InitializeComponent();
+    }
+
+    private void ResizeableForm_Shown(object? sender, EventArgs e)
+    {
+        DrawClient();
     }
 
     protected abstract void InitializeComponent();
@@ -84,7 +90,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
                 _ = this.LoadFromSimpleScript();
             }
         }
-        //DrawClient();
+        DrawClient();
     }
 
     private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)

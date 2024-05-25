@@ -5,7 +5,7 @@ namespace LocalUtilities.TypeGeneral;
 
 public class FontData(string localName) : ISsSerializable
 {
-    public string LocalName { get; set; } = localName;
+    public string LocalName => localName;
 
     public string FamilyName { get; set; } = "黑体";
 

@@ -5,7 +5,7 @@ namespace LocalUtilities.TypeGeneral;
 
 public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection<TItem>, IEnumerable where TSignature : notnull where TItem : RosterItem<TSignature>, new()
 {
-    public abstract string LocalName { get; set; }
+    public abstract string LocalName { get; }
 
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 

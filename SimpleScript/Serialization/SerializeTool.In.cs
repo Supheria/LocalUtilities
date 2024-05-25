@@ -46,7 +46,7 @@ partial class SerializeTool
         }
         catch
         {
-            SaveToSimpleScript(obj, false);
+            SaveToSimpleScript(obj, true);
             return obj;
         }
     }
