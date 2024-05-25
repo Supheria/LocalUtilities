@@ -27,4 +27,9 @@ public partial class EventHub
         if (EventMap[eventType] is null)
             EventMap.Remove(eventType);
     }
+
+    public List<KeyValuePair<Enum, Delegate?>> GetEventList()
+    {
+        return EventMap.ToList();
+    }
 }
