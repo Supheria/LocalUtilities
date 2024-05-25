@@ -2,29 +2,29 @@
 
 public partial class EventHub
 {
-    Dictionary<string, Delegate?> EventMap { get; } = [];
+    Dictionary<Enum, Delegate?> EventMap { get; } = [];
 
-    private void OnAddingListener(string eventName, Delegate callback)
+    private void OnAddingListener(Enum eventType, Delegate callback)
     {
-        if (!EventMap.TryGetValue(eventName, out var exist))
-            EventMap.Add(eventName, null);
+        if (!EventMap.TryGetValue(eventType, out var exist))
+            EventMap.Add(eventType, null);
         if (exist is not null && exist.GetType() != callback.GetType())
-            throw EventCallbackException.CallbackWrongType(eventName, exist.GetType(), callback.GetType());
+            throw EventCallbackException.CallbackWrongType(eventType, exist.GetType(), callback.GetType());
     }
 
-    private void OnRemovingListener(string eventName, Delegate callback)
+    private void OnRemovingListener(Enum eventType, Delegate callback)
     {
-        if (!EventMap.TryGetValue(eventName, out var exist))
-            throw EventCallbackException.EventNotExisted(eventName);
+        if (!EventMap.TryGetValue(eventType, out var exist))
+            throw EventCallbackException.EventNotExisted(eventType);
         if (exist is null)
-            throw EventCallbackException.CallbackEmpty(eventName);
+            throw EventCallbackException.CallbackEmpty(eventType);
         if (exist.GetType() != callback.GetType())
-            throw EventCallbackException.CallbackWrongType(eventName, exist.GetType(), callback.GetType());
+            throw EventCallbackException.CallbackWrongType(eventType, exist.GetType(), callback.GetType());
     }
 
-    private void OnRemovedListener(string eventName)
+    private void OnRemovedListener(Enum eventType)
     {
-        if (EventMap[eventName] is null)
-            EventMap.Remove(eventName);
+        if (EventMap[eventType] is null)
+            EventMap.Remove(eventType);
     }
 }

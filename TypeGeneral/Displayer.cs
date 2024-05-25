@@ -1,5 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Serialization;
-using System;
 
 namespace LocalUtilities.TypeGeneral;
 

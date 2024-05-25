@@ -38,4 +38,9 @@ public static class EnumConvert
         }
         return map;
     }
+
+    public static string ToWholeString(this Enum @enum)
+    {
+        return $"{@enum.GetType().Name}.{@enum}";
+    }
 }

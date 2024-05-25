@@ -1,23 +1,25 @@
-﻿namespace LocalUtilities.TypeToolKit.EventProcess;
+﻿using LocalUtilities.TypeGeneral.Convert;
+
+namespace LocalUtilities.TypeToolKit.EventProcess;
 public class EventCallbackException(string message) : ArgumentException(message)
 {
-    public static EventCallbackException CallbackWrongType(string eventName, Type existType, Type argsType)
+    public static EventCallbackException CallbackWrongType(Enum eventType, Type existType, Type argsType)
     {
-        return new($"{argsType.Name} is wrong callback type for {eventName}, which should be {existType.Name}");
+        return new($"{argsType.Name} is wrong callback type for {eventType.ToWholeString}, which should be {existType.Name}");
     }
 
-    public static EventCallbackException CallbackWrongType<T>(string eventName)
+    public static EventCallbackException CallbackWrongType<T>(Enum eventType)
     {
-        return new($"{eventName} to invoke meets wrong callback type of {typeof(T).Name}");
+        return new($"{eventType.ToWholeString()} to invoke meets wrong callback type of {typeof(T).Name}");
     }
 
-    public static EventCallbackException CallbackEmpty(string eventName)
+    public static EventCallbackException CallbackEmpty(Enum eventType)
     {
-        return new($"callback for {eventName} is empty");
+        return new($"callback for {eventType.ToWholeString()} is empty");
     }
 
-    public static EventCallbackException EventNotExisted(string eventName)
+    public static EventCallbackException EventNotExisted(Enum eventType)
     {
-        return new($"{eventName} is not a existed event");
+        return new($"{eventType.ToWholeString()} is not a existed event");
     }
 }

@@ -33,7 +33,7 @@ public class Coordinate(int x, int y)
         return !(coordinate == obj);
     }
 
-    public static Coordinate operator/(Coordinate coordinate, double factor)
+    public static Coordinate operator /(Coordinate coordinate, double factor)
     {
         return new((coordinate.X / factor).ToInt(), (coordinate.Y / factor).ToInt());
     }

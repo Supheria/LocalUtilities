@@ -1,52 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LocalUtilities.TypeToolKit.EventProcess;
+﻿namespace LocalUtilities.TypeToolKit.EventProcess;
 
 partial class EventHub
 {
-    public void RemoveListener(string eventName, Callback callback)
+    public void RemoveListener(Enum eventType, Callback callback)
     {
-        OnRemovingListener(eventName, callback);
-        EventMap[eventName] = (EventMap[eventName] as Callback) - callback;
-        OnRemovedListener(eventName);
+        OnRemovingListener(eventType, callback);
+        EventMap[eventType] = (EventMap[eventType] as Callback) - callback;
+        OnRemovedListener(eventType);
     }
 
-    public void RemoveListener<T>(string eventName, Callback<T> callback)
+    public void RemoveListener<T>(Enum eventType, Callback<T> callback)
     {
-        OnRemovingListener(eventName, callback);
-        EventMap[eventName] = (EventMap[eventName] as Callback<T>) - callback;
-        OnRemovedListener(eventName);
+        OnRemovingListener(eventType, callback);
+        EventMap[eventType] = (EventMap[eventType] as Callback<T>) - callback;
+        OnRemovedListener(eventType);
     }
 
-    public void RemoveListener<T1, T2>(string eventName, Callback<T1, T2> callback)
+    public void RemoveListener<T1, T2>(Enum eventType, Callback<T1, T2> callback)
     {
-        OnRemovingListener(eventName, callback);
-        EventMap[eventName] = (EventMap[eventName] as Callback<T1, T2>) - callback;
-        OnRemovedListener(eventName);
+        OnRemovingListener(eventType, callback);
+        EventMap[eventType] = (EventMap[eventType] as Callback<T1, T2>) - callback;
+        OnRemovedListener(eventType);
     }
 
-    public void RemoveListener<T1, T2, T3>(string eventName, Callback<T1, T2, T3> callback)
+    public void RemoveListener<T1, T2, T3>(Enum eventType, Callback<T1, T2, T3> callback)
     {
-        OnRemovingListener(eventName, callback);
-        EventMap[eventName] = (EventMap[eventName] as Callback<T1, T2, T3>) - callback;
-        OnRemovedListener(eventName);
+        OnRemovingListener(eventType, callback);
+        EventMap[eventType] = (EventMap[eventType] as Callback<T1, T2, T3>) - callback;
+        OnRemovedListener(eventType);
     }
 
-    public void RemoveListener<T1, T2, T3, T4>(string eventName, Callback<T1, T2, T3, T4> callback)
+    public void RemoveListener<T1, T2, T3, T4>(Enum eventType, Callback<T1, T2, T3, T4> callback)
     {
-        OnRemovingListener(eventName, callback);
-        EventMap[eventName] = (EventMap[eventName] as Callback<T1, T2, T3, T4>) - callback;
-        OnRemovedListener(eventName);
+        OnRemovingListener(eventType, callback);
+        EventMap[eventType] = (EventMap[eventType] as Callback<T1, T2, T3, T4>) - callback;
+        OnRemovedListener(eventType);
     }
 
-    public void RemoveListener<T1, T2, T3, T4, T5>(string eventName, Callback<T1, T2, T3, T4, T5> callback)
+    public void RemoveListener<T1, T2, T3, T4, T5>(Enum eventType, Callback<T1, T2, T3, T4, T5> callback)
     {
-        OnRemovingListener(eventName, callback);
-        EventMap[eventName] = (EventMap[eventName] as Callback<T1, T2, T3, T4, T5>) - callback;
-        OnRemovedListener(eventName);
+        OnRemovingListener(eventType, callback);
+        EventMap[eventType] = (EventMap[eventType] as Callback<T1, T2, T3, T4, T5>) - callback;
+        OnRemovedListener(eventType);
     }
 }
