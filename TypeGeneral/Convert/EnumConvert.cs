@@ -14,29 +14,34 @@ public static class EnumConvert
     {
         if (str is null)
             return @default;
-        var map = GetEnumDescriptionList<T>();
+        var map = new Dictionary<string, string>();
+        var fieldinfos = typeof(T).GetFields();
+        foreach (FieldInfo field in fieldinfos)
+        {
+            var atts = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
+            if (atts is null || atts.Length is 0)
+                continue;
+            map[((DescriptionAttribute)atts[0]).Description] = field.Name;
+        }
         if (!map.TryGetValue(str, out var e))
             return @default;
         return e.ToEnum<T>();
     }
 
-    /// <summary>
-    /// 返回 <描述, 枚举项> 词典
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    private static Dictionary<string, string> GetEnumDescriptionList<T>() where T : Enum
+    public static string GetDescription<T>(this T @enum) where T : Enum
     {
-        var map = new Dictionary<string, string>();
+        var name = @enum.ToString();
         var fieldinfos = typeof(T).GetFields();
         foreach (FieldInfo field in fieldinfos)
         {
-            object[] atts = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
-            if (atts == null || atts.Length == 0) // 无描述
+            if (field.Name != name)
                 continue;
-            map.Add(((DescriptionAttribute)atts[0]).Description, field.Name);
+            var atts = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
+            if (atts is null || atts.Length is 0)
+                return "";
+            return ((DescriptionAttribute)atts[0]).Description;
         }
-        return map;
+        return "";
     }
 
     public static string ToWholeString(this Enum @enum)

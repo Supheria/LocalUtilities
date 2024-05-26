@@ -2,9 +2,14 @@
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class Displayer : PictureBox, ISsSerializable
+public abstract class Displayer : PictureBox
 {
-    public string LocalName => nameof(Displayer);
+    protected virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData))
+    {
+        Size = 17f,
+    };
+
+    protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData));
 
     public void Relocate()
     {
@@ -12,15 +17,5 @@ public abstract class Displayer : PictureBox, ISsSerializable
             return;
         Image?.Dispose();
         Image = new Bitmap(Width, Height);
-    }
-
-    public void Deserialize(SsDeserializer deserializer)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void Serialize(SsSerializer serializer)
-    {
-        throw new NotImplementedException();
     }
 }

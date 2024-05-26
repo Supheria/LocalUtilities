@@ -25,11 +25,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
 
     protected virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData));
 
-    protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { ScaleFactorToHeight = 0.05f };
-
-    protected virtual Font LabelFont => LabelFontData.GetFont(ClientSize.Width);
-
-    protected virtual Font ContentFont => ContentFontData.GetFont(ClientSize.Height);
+    protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { Size = 17f };
 
     public ResizeableForm()
     {
