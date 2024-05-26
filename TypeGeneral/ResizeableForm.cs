@@ -27,6 +27,14 @@ public abstract class ResizeableForm : Form, ISsSerializable
 
     protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { Size = 17f };
 
+    protected int ClientLeft => ClientRectangle.Left;
+
+    protected int ClientTop => ClientRectangle.Top;
+
+    protected int ClientWidth => ClientRectangle.Width;
+
+    protected int ClientHeight => ClientRectangle.Height;
+
     public ResizeableForm()
     {
         ResizeBegin += ResizeableForm_ResizeBegin;
