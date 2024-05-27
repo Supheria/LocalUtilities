@@ -38,6 +38,11 @@ public class Coordinate(int x, int y)
         return new((coordinate.X / factor).ToInt(), (coordinate.Y / factor).ToInt());
     }
 
+    public static Coordinate operator -(Coordinate left, Coordinate right)
+    {
+        return new(left.X - right.X, left.Y - right.Y);
+    }
+
     public override int GetHashCode()
     {
         return HashCode.Combine(X, Y);
