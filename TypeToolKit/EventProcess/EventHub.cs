@@ -9,7 +9,7 @@ public partial class EventHub
         if (!EventMap.TryGetValue(eventType, out var exist))
             EventMap.Add(eventType, null);
         if (exist is not null && exist.GetType() != callback.GetType())
-            throw EventCallbackException.CallbackWrongType(eventType, exist.GetType(), callback.GetType());
+            throw EventCallbackException.CallbackWrongType(eventType, exist, callback);
     }
 
     private void OnRemovingListener(Enum eventType, Delegate callback)
@@ -17,9 +17,9 @@ public partial class EventHub
         if (!EventMap.TryGetValue(eventType, out var exist))
             throw EventCallbackException.EventNotExisted(eventType);
         if (exist is null)
-            throw EventCallbackException.CallbackEmpty(eventType);
+            throw EventCallbackException.CallbackEmpty(eventType, callback);
         if (exist.GetType() != callback.GetType())
-            throw EventCallbackException.CallbackWrongType(eventType, exist.GetType(), callback.GetType());
+            throw EventCallbackException.CallbackWrongType(eventType, exist, callback);
     }
 
     private void OnRemovedListener(Enum eventType)

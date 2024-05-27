@@ -13,7 +13,7 @@ public static class SsFormatter
                 .Append(SignTable.Quote)
                 .ToString();
         var sb = new StringBuilder();
-        bool useQupte = false;
+        bool useQuote = false;
         foreach (var ch in str)
         {
             switch (ch)
@@ -22,7 +22,7 @@ public static class SsFormatter
                 case SignTable.Quote:
                     sb.Append(SignTable.Escape)
                         .Append(ch);
-                    useQupte = true;
+                    useQuote = true;
                     continue;
                 case SignTable.Tab:
                 case SignTable.Space:
@@ -32,7 +32,7 @@ public static class SsFormatter
                 case SignTable.Less:
                 case SignTable.OpenBrace:
                 case SignTable.CloseBrace:
-                    useQupte = true;
+                    useQuote = true;
                     sb.Append(ch);
                     continue;
                 case SignTable.Return:
@@ -43,7 +43,7 @@ public static class SsFormatter
                     continue;
             }
         }
-        if (useQupte)
+        if (useQuote)
             return new StringBuilder()
                 .Append(SignTable.Quote)
                 .Append(sb)

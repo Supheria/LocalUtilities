@@ -77,13 +77,13 @@ public static class GeometryTool
     /// <param name="bottom"></param>
     private static void SiteRectInRange(Rectangle target, Rectangle range, out int left, out int right, out int top, out int bottom)
     {
-        left = range.Left + (target.Left - range.Left) % range.Width;
+        left = range.Left + ((target.Left - range.Left) % range.Width);
         left = left < range.Left ? left + range.Width : left;
-        right = range.Right + (target.Right - range.Right) % range.Width;
+        right = range.Right + ((target.Right - range.Right) % range.Width);
         right = right > range.Right ? right - range.Width : right;
-        top = range.Top + (target.Top - range.Top) % range.Height;
+        top = range.Top + ((target.Top - range.Top) % range.Height);
         top = top < range.Top ? top + range.Height : top;
-        bottom = range.Bottom + (target.Bottom - range.Bottom) % range.Height;
+        bottom = range.Bottom + ((target.Bottom - range.Bottom) % range.Height);
         bottom = bottom > range.Bottom ? bottom - range.Height : bottom;
     }
 

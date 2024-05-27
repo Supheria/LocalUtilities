@@ -3,19 +3,19 @@
 namespace LocalUtilities.TypeToolKit.EventProcess;
 public class EventCallbackException(string message) : ArgumentException(message)
 {
-    public static EventCallbackException CallbackWrongType(Enum eventType, Type existType, Type argsType)
+    public static EventCallbackException CallbackWrongType(Enum eventType, Delegate exist, Delegate callback)
     {
-        return new($"{argsType.Name} is wrong callback type for {eventType.ToWholeString}, which should be {existType.Name}");
+        return new($"{callback.Target} callbacks of {callback.GetType()} is wrong type for event {eventType.ToWholeString()}, which type should be {exist.GetType} from {exist.GetType()}");
     }
 
-    public static EventCallbackException CallbackWrongType<T>(Enum eventType)
+    public static EventCallbackException CallbackWrongType(Enum eventType, Delegate? callback)
     {
-        return new($"{eventType.ToWholeString()} to invoke meets wrong callback type of {typeof(T).Name}");
+        return new($"{callback?.Target ?? "unknown_object"} callbacks of {callback?.GetType().Name ?? "unknown_object"} is wrong type for event {eventType.ToWholeString()}");
     }
 
-    public static EventCallbackException CallbackEmpty(Enum eventType)
+    public static EventCallbackException CallbackEmpty(Enum eventType, Delegate callback)
     {
-        return new($"callback for {eventType.ToWholeString()} is empty");
+        return new($"{callback.Target} callbacks for event {eventType.ToWholeString()} is empty");
     }
 
     public static EventCallbackException EventNotExisted(Enum eventType)
