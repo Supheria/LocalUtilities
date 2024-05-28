@@ -1,6 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
-
-namespace LocalUtilities.TypeGeneral;
+﻿namespace LocalUtilities.TypeGeneral;
 
 public abstract class Displayer : PictureBox
 {

@@ -37,6 +37,11 @@ public class Edge(Coordinate starter, Coordinate ender)
         return [Starter.ToString(), Ender.ToString()];
     }
 
+    public override string ToString()
+    {
+        return $"{Starter}=>{Ender})";
+    }
+
     public static Edge Parse(List<string> array)
     {
         return array.Count is 2

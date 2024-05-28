@@ -39,7 +39,7 @@ public static class BitmapTool
         pTarget.UnlockBits();
     }
 
-    public static void TemplateDrawPartOn(this Bitmap template, Bitmap source, Rectangle drawPart, bool ignoreTransparent)
+    public static void TemplateDrawPartsOn(this Bitmap template, Bitmap source, List<Rectangle> drawRects, bool ignoreTransparent)
     {
         if (source.Size != template.Size)
             throw GraphicException.SizeMismatch();
@@ -47,16 +47,17 @@ public static class BitmapTool
         PointBitmap pTarget = new(source);
         pTemplate.LockBits();
         pTarget.LockBits();
-        var right = drawPart.Right;
-        var bottom = drawPart.Bottom;
-        for (var x = drawPart.X; x < right; x++)
+        foreach (var rect in drawRects)
         {
-            for (var y = drawPart.Y; y < bottom; y++)
+            for (var x = rect.X; x < rect.Right; x++)
             {
-                var pixel = pTemplate.GetPixel(x, y);
-                if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
+                for (var y = rect.Y; y < rect.Bottom; y++)
                 {
-                    pTarget.SetPixel(x, y, pixel);
+                    var pixel = pTemplate.GetPixel(x, y);
+                    if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
+                    {
+                        pTarget.SetPixel(x, y, pixel);
+                    }
                 }
             }
         }
