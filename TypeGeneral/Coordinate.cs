@@ -72,4 +72,11 @@ public class Coordinate(int x, int y)
             return new();
         return new(coordinate.X, coordinate.Y);
     }
+
+    public static implicit operator Point(Coordinate? coordinate)
+    {
+        if (coordinate is null)
+            return new();
+        return new(coordinate.X, coordinate.Y);
+    }
 }
