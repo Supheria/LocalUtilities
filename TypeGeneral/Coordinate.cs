@@ -66,8 +66,10 @@ public class Coordinate(int x, int y)
         throw TypeConvertException.CannotConvertStringTo<Coordinate>();
     }
 
-    public static implicit operator PointF(Coordinate coordinate)
+    public static implicit operator PointF(Coordinate? coordinate)
     {
+        if (coordinate is null)
+            return new();
         return new(coordinate.X, coordinate.Y);
     }
 }
