@@ -5,12 +5,12 @@ namespace LocalUtilities.TypeToolKit.Graph;
 
 public static class BitmapTool
 {
-    public static Bitmap CopyToNewSize(this Bitmap source, Size toSize)
+    public static Bitmap CopyToNewSize(this Bitmap source, Size toSize, InterpolationMode mode)
     {
         var target = new Bitmap(toSize.Width, toSize.Height);
         var g = Graphics.FromImage(target);
         g.Clear(Color.White);
-        g.InterpolationMode = InterpolationMode.Bilinear;
+        g.InterpolationMode = mode;
         g.DrawImage(source, 0, 0, toSize.Width, toSize.Height);
         g.Flush(); g.Dispose();
         return target;
