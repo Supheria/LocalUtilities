@@ -14,7 +14,7 @@ public static class DoubleEx
     // Of course, numbers too large will start failing again since we can't exactly compare significant digits (cheaply).
     static double Epsilon { get; } = 1E-12;
 
-    public static int ToInt(this double value)
+    public static int ToRoundInt(this double value)
     {
         return (int)Math.Round(value);
     }

@@ -14,12 +14,12 @@ public static class GeometryTool
         if (sourceRatio > toRatio)
         {
             toWidth = toSize.Width;
-            toHeight = (toWidth / sourceRatio).ToInt();
+            toHeight = (toWidth / sourceRatio).ToRoundInt();
         }
         else if (sourceRatio < toRatio)
         {
             toHeight = toSize.Height;
-            toWidth = (toHeight * sourceRatio).ToInt();
+            toWidth = (toHeight * sourceRatio).ToRoundInt();
         }
         return new(toWidth, toHeight);
     }

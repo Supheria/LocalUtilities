@@ -35,7 +35,7 @@ public class Coordinate(int x, int y)
 
     public static Coordinate operator /(Coordinate coordinate, double factor)
     {
-        return new((coordinate.X / factor).ToInt(), (coordinate.Y / factor).ToInt());
+        return new((coordinate.X / factor).ToRoundInt(), (coordinate.Y / factor).ToRoundInt());
     }
 
     public static Coordinate operator +(Coordinate left, Coordinate right)
