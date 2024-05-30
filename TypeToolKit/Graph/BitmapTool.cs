@@ -1,14 +1,11 @@
 ﻿using LocalUtilities.TypeGeneral;
-using OpenCvSharp;
-using OpenCvSharp.Extensions;
-using System;
 using System.Drawing.Drawing2D;
 
 namespace LocalUtilities.TypeToolKit.Graph;
 
 public static class BitmapTool
 {
-    public static Bitmap CopyToNewSizeSharp(this Bitmap source, int width, int height, InterpolationMode mode)
+    public static Bitmap CopyToNewSize(this Bitmap source, int width, int height, InterpolationMode mode)
     {
         var target = new Bitmap(width, height);
         var g = Graphics.FromImage(target);
@@ -19,21 +16,6 @@ public static class BitmapTool
         source.Dispose();
         return target;
     }
-
-    public static Bitmap CopyToNewSize(this Bitmap source, int width, int height)
-    {
-        var target = new Mat();
-        Cv2.Resize(source.ToMat(), target, new(width, height), 0, 0, InterpolationFlags.LinearExact);
-        source.Dispose();
-        return target.ToBitmap();
-    }
-
-    //public static Bitmap Copy(this Bitmap source)
-    //{
-    //    var mat = new Mat();
-    //    Cv2.CopyTo(source.ToMat(), mat);
-    //    return mat.ToBitmap();
-    //}
 
     public static void TemplateDrawIntoRect(this Bitmap template, Bitmap target, Rectangle toRect, bool ignoreTransparent)
     {
@@ -58,7 +40,7 @@ public static class BitmapTool
         pTarget.UnlockBits();
     }
 
-    public static void TemplateDrawPartsOnSharp(this Bitmap template, Bitmap source, List<Rectangle> drawRects, bool ignoreTransparent)
+    public static void TemplateDrawPartsOn(this Bitmap template, Bitmap source, List<Rectangle> drawRects, bool ignoreTransparent)
     {
         if (source.Size != template.Size)
             throw GraphicException.SizeMismatch();
@@ -82,29 +64,5 @@ public static class BitmapTool
         }
         pTemplate.UnlockBits();
         pTarget.UnlockBits();
-    }
-
-    public static Bitmap TemplateDrawPartsOn(this Bitmap template, Bitmap source, List<Rectangle> drawRects, bool ignoreTransparent)
-    {
-        if (source.Size != template.Size)
-            throw GraphicException.SizeMismatch();
-        var templateIndexer = template.ToMat().GetGenericIndexer<Vec4b>();
-        var mSource = source.ToMat();
-        foreach (var rect in drawRects)
-        {
-            for (var y = rect.Y; y < rect.Bottom; y++)
-            {
-                for (var x = rect.X; x < rect.Right; x++)
-                {
-                    var color = templateIndexer[y, x]; // y, x
-                    // B, G, R, A
-                    if (!ignoreTransparent || color.Item0 != 0 || color.Item1 != 0 || color.Item2 != 0 || color.Item3 != 0)
-                        mSource.Set(y, x, color);
-                }
-            }
-            
-        }
-        source.Dispose();
-        return mSource.ToBitmap();
     }
 }
