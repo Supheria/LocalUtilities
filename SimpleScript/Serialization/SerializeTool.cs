@@ -16,7 +16,7 @@ public static partial class SerializeTool
         return serializer.Serialize();
     }
 
-    private static string FormatObjects<T>(string arrayName, List<T> items, bool writeIntoMultiLines) where T : ISsSerializable, new()
+    private static string FormatObjects<T>(string arrayName, ICollection<T> items, bool writeIntoMultiLines) where T : ISsSerializable, new()
     {
         var writer = new SsWriter(writeIntoMultiLines);
         var serializer = new SsSerializer(new T(), writer);
@@ -67,7 +67,7 @@ public static partial class SerializeTool
         return obj;
     }
 
-    private static List<T> ParseToArray<T>(string arrayName, byte[] buffer) where T : ISsSerializable, new()
+    private static ICollection<T> ParseToArray<T>(string arrayName, byte[] buffer) where T : ISsSerializable, new()
     {
         var list = new List<T>();
         var elements = new Tokenizer(buffer).Elements.Property[arrayName];

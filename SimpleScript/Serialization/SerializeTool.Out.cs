@@ -11,7 +11,7 @@ partial class SerializeTool
         {
             var deserializer = new SsSerializer(obj, new(writeIntoMultiLines));
             var text = FormatObject(obj, writeIntoMultiLines);
-            WriteUtf8File(text, deserializer.GetInitializationFilePath());
+            WriteUtf8File(text, deserializer.GetInitializeFilePath());
         }
         catch (Exception ex)
         {
@@ -32,7 +32,7 @@ partial class SerializeTool
         }
     }
 
-    public static void SaveToSimpleScript<T>(this List<T> items, string arrayName, bool writeIntoMultiLines, string filePath) where T : ISsSerializable, new()
+    public static void SaveToSimpleScript<T>(this ICollection<T> items, string arrayName, bool writeIntoMultiLines, string filePath) where T : ISsSerializable, new()
     {
         try
         {
@@ -57,7 +57,7 @@ partial class SerializeTool
         }
     }
 
-    public static string FormatToSsString<T>(this List<T> items, string arrayName) where T : ISsSerializable, new()
+    public static string FormatToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
     {
         try
         {

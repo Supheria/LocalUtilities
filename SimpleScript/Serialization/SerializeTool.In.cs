@@ -18,7 +18,7 @@ partial class SerializeTool
         }
     }
 
-    public static List<T> ParseSsString<T>(this string str, string arrayName) where T : ISsSerializable, new()
+    public static ICollection<T> ParseSsString<T>(this string str, string arrayName) where T : ISsSerializable, new()
     {
         try
         {
@@ -41,7 +41,7 @@ partial class SerializeTool
         try
         {
             var deserializer = new SsDeserializer(obj);
-            var buffer = ReadFileBuffer(deserializer.GetInitializationFilePath());
+            var buffer = ReadFileBuffer(deserializer.GetInitializeFilePath());
             return ParseToObject(obj, buffer);
         }
         catch
@@ -72,7 +72,7 @@ partial class SerializeTool
         }
     }
 
-    public static List<T> LoadFromSimpleScript<T>(string arrayName, string filePath) where T : ISsSerializable, new()
+    public static ICollection<T> LoadFromSimpleScript<T>(string arrayName, string filePath) where T : ISsSerializable, new()
     {
         try
         {

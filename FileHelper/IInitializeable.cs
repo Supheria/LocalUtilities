@@ -2,7 +2,7 @@
 
 public interface IInitializeable
 {
-    public string IniFileName { get; }
+    public string InitializeName { get; }
 
     public string IniFileExtension { get; }
 }
