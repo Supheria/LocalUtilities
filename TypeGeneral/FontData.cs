@@ -15,6 +15,11 @@ public class FontData(string localName) : ISsSerializable
 
     public GraphicsUnit Unit { get; set; } = GraphicsUnit.Pixel;
 
+    public FontData() : this(nameof(FontData))
+    {
+
+    }
+
     public static implicit operator Font(FontData data)
     {
         return new(data.FamilyName, data.Size, data.Style, data.Unit);
