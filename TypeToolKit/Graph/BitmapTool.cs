@@ -5,6 +5,13 @@ namespace LocalUtilities.TypeToolKit.Graph;
 
 public static class BitmapTool
 {
+    /// <summary>
+    /// <paramref name="source"/> will be called <see cref="Image.Dispose"/>
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="newSize"></param>
+    /// <param name="mode"></param>
+    /// <returns></returns>
     public static Bitmap CopyToNewSize(this Bitmap source, Size newSize, InterpolationMode mode)
     {
         var target = new Bitmap(newSize.Width, newSize.Height);
