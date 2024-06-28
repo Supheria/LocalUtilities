@@ -47,16 +47,18 @@ public class AsyncSendBufferManager(int bufferSize)
         return true;
     }
 
-    public bool ClearFirstPacket()
+    public void ClearFirstPacket()
     {
         if (SendPacketList.Count <= 0)
-            return false;
+            return;
         lock (Locker)
         {
+            if (SendPacketList.Count is 0)
+                return;
             DynamicBufferManager.RemoveData(SendPacketList[0].Count);
             SendPacketList.RemoveAt(0);
         }
-        return true;
+        return;
     }
 
     public void ClearPacket()

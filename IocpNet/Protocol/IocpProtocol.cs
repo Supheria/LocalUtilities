@@ -33,6 +33,11 @@ public abstract class IocpProtocol : IDisposable
 
     public event IocpEventHandler? OnClosed;
 
+    protected virtual void Connect()
+    {
+
+    }
+
     public void Close() => Dispose();
 
     public void Dispose()
@@ -66,10 +71,17 @@ public abstract class IocpProtocol : IDisposable
         var receiveArgs = new SocketAsyncEventArgs();
         receiveArgs.SetBuffer(new byte[ReceiveBuffer.TotolCount], 0, ReceiveBuffer.TotolCount);
         receiveArgs.Completed += (_, args) => ProcessReceive(args);
-        if (Socket is not null && !Socket.ReceiveAsync(receiveArgs))
+        try
         {
-            lock (Socket)
-                ProcessReceive(receiveArgs);
+            if (Socket is not null && !Socket.ReceiveAsync(receiveArgs))
+            {
+                lock (Socket)
+                    ProcessReceive(receiveArgs);
+            }
+        }
+        catch
+        {
+            Close();
         }
     }
 
@@ -118,27 +130,33 @@ public abstract class IocpProtocol : IDisposable
 
     protected abstract void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count);
 
-    public void SendAsync(byte[] buffer, int offset, int count)
+    public void SendAsync()
     {
-        if (Socket is null)
+        if (IsSendingAsync || Socket is null || !SendBuffer.GetFirstPacket(out var packetOffset, out var packetCount))
             return;
+        IsSendingAsync = true;
         var sendArgs = new SocketAsyncEventArgs();
-        sendArgs.SetBuffer(buffer, offset, count);
-        sendArgs.Completed += (_, _) => ProcessSend();
-        if (!Socket.SendAsync(sendArgs))
-            new Task(() => ProcessSend()).Start();
+        sendArgs.SetBuffer(SendBuffer.DynamicBufferManager.GetData(), packetOffset, packetCount);
+        sendArgs.Completed += (_, args) => ProcessSend(args);
+        try
+        {
+            if (!Socket.SendAsync(sendArgs))
+                new Task(() => ProcessSend(sendArgs)).Start();
+        }
+        catch
+        {
+            Close();
+        }
     }
 
-    private void ProcessSend()
+    private void ProcessSend(SocketAsyncEventArgs sendArgs)
     {
         SocketInfo.Active();
         IsSendingAsync = false;
+        if (sendArgs.SocketError is not SocketError.Success)
+            return;
         SendBuffer.ClearFirstPacket(); // 清除已发送的包
-        if (SendBuffer.GetFirstPacket(out var offset, out var count))
-        {
-            IsSendingAsync = true;
-            SendAsync(SendBuffer.DynamicBufferManager.GetData(), offset, count);
-        }
+        SendAsync();
     }
 
     public void SendCommand(CommandComposer commandComposer)
@@ -160,21 +178,7 @@ public abstract class IocpProtocol : IDisposable
         SendBuffer.DynamicBufferManager.WriteData(commandBuffer); // 写入命令内容
         SendBuffer.DynamicBufferManager.WriteData(buffer, offset, count); // 写入二进制数据
         SendBuffer.EndPacket();
-        if (IsSendingAsync)
-            return;
-        if (!SendBuffer.GetFirstPacket(out var packetOffset, out var packetCount))
-            return;
-        IsSendingAsync = true;
-        try
-        {
-            SendAsync(SendBuffer.DynamicBufferManager.GetData(), packetOffset, packetCount);
-        }
-        catch
-        {
-            Close();
-            IsSendingAsync = false;
-        }
-        return;
+        SendAsync();
     }
     public abstract void SendMessage(string message);
 }

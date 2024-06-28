@@ -14,8 +14,8 @@ public enum ProtocolCode
     UserHasLogined,
     FileNotExist,
     NotOpenFile,
-    FileIsInUse,
-    FileIsExpired,
+    FileInUse,
+    FileExpired,
     NotSameVersion,
     Disconnection,
 
@@ -26,4 +26,5 @@ public enum ProtocolCode
     FileSizeError,
     NotLogined,
     FileAlreadyExist,
+    NoConnection,
 }

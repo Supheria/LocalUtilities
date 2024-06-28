@@ -249,7 +249,7 @@ public class ServerProtocol : IocpProtocol
             }
             var buffer = new byte[packetSize];
             if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
-                throw new IocpException(ProtocolCode.FileIsExpired);
+                throw new IocpException(ProtocolCode.FileExpired);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
                 .AppendValue(ProtocolKey.FileLength, autoFile.Length)

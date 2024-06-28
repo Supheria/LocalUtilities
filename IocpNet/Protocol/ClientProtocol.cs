@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.FileHelper;
 using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeToolKit.Text;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -24,24 +25,47 @@ public class ClientProtocol : IocpProtocol
 
     public event IocpEventHandler<string>? OnMessage;
 
-    EndPoint? RemoteEndPoint { get; set; } = null;
+    AutoResetEvent ConnectDone { get; } = new(false);
 
     object ConnectLocker { get; } = new();
 
-    public void Connect(string host, int port)
+    bool IsConnect { get; set; } = false;
+
+    public void Login(string host, int port, string name, string password)
     {
-        IPAddress ipAddress;
-        if (Regex.Matches(host, "[a-zA-Z]").Count > 0)//支持域名解析
+        try
         {
-            var ipHostInfo = Dns.GetHostEntry(host);
-            ipAddress = ipHostInfo.AddressList[0];
+            //Close();
+            IPAddress ipAddress;
+            if (Regex.Matches(host, "[a-zA-Z]").Count > 0)//支持域名解析
+            {
+                var ipHostInfo = Dns.GetHostEntry(host);
+                ipAddress = ipHostInfo.AddressList[0];
+            }
+            else
+            {
+                ipAddress = IPAddress.Parse(host);
+            }
+            var remoteEndPoint = new IPEndPoint(ipAddress, port);
+            //IsConnect = false;
+            Connect(remoteEndPoint);
+            ConnectDone.WaitOne(1000);
+            if (!IsConnect)
+                throw new IocpException(ProtocolCode.NoConnection);
+            UserInfo = new(name, password);
+            var commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.Login)
+                .AppendValue(ProtocolKey.UserName, UserInfo.Name)
+                .AppendValue(ProtocolKey.Password, UserInfo.Password);
+            SendCommand(commandComposer);
         }
-        else
+        catch (Exception ex)
         {
-            ipAddress = IPAddress.Parse(host);
+            Close();
+            OnException?.InvokeAsync(this, ex);
+            // TODO: log fail
+            //Logger.Error("AsyncClientFullHandlerSocket.DoLogin" + "userID:" + userID + " password:" + password + " " + E.Message);
         }
-        RemoteEndPoint = new IPEndPoint(ipAddress, port);
-        Connect(RemoteEndPoint);
     }
 
     private void Connect(EndPoint? remoteEndPoint)
@@ -57,7 +81,7 @@ public class ClientProtocol : IocpProtocol
                     RemoteEndPoint = remoteEndPoint
                 };
                 connectArgs.Completed += (_, args) => ProcessConnect(args);
-                Socket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                Socket ??= new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 if (!Socket.ConnectAsync(connectArgs))
                     ProcessConnect(connectArgs);
             }
@@ -80,12 +104,16 @@ public class ClientProtocol : IocpProtocol
         ReceiveAsync();
         OnConnect?.InvokeAsync(this);
         SocketInfo.Connect(connectArgs.ConnectSocket);
+        IsConnect = true;
+        ConnectDone.Set();
     }
 
     public override void SendMessage(string message)
     {
         try
         {
+            if (!IsLogin)
+                throw new IocpException(ProtocolCode.NotLogined);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Message);
             var buffer = Encoding.UTF8.GetBytes(message);
@@ -107,6 +135,9 @@ public class ClientProtocol : IocpProtocol
         commandParser.GetValueAsCommandKey(out var commandKey);
         switch (commandKey)
         {
+            case ProtocolKey.Active:
+                DoConnect();
+                return;
             case ProtocolKey.Login:
                 DoLogin();
                 return;
@@ -124,6 +155,11 @@ public class ClientProtocol : IocpProtocol
         };
     }
 
+    private void DoConnect()
+    {
+        ConnectDone.Set();
+    }
+
     private void DoMessage(byte[] buffer, int offset, int count)
     {
         string message = Encoding.UTF8.GetString(buffer, offset, count);
@@ -135,8 +171,6 @@ public class ClientProtocol : IocpProtocol
 
     private void DoLogin()
     {
-        if (IsLogin)
-            return;
         IsLogin = true;
         OnMessage?.InvokeAsync(this, $"{UserInfo?.Name} logined");
     }
@@ -194,7 +228,7 @@ public class ClientProtocol : IocpProtocol
             OnUploading?.Invoke(this, autoFile.Position * 100f / autoFile.Length);
             var buffer = new byte[packetSize];
             if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
-                throw new IocpException(ProtocolCode.FileIsExpired);
+                throw new IocpException(ProtocolCode.FileExpired);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.WriteFile)
                 .AppendValue(ProtocolKey.FileLength, autoFile.Length)
@@ -210,29 +244,12 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    public void Login(string name, string password)
-    {
-        try
-        {
-            UserInfo = new(name, password);
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Login)
-                .AppendValue(ProtocolKey.UserName, UserInfo.Name)
-                .AppendValue(ProtocolKey.Password, UserInfo.Password);
-            SendCommand(commandComposer);
-        }
-        catch (Exception ex)
-        {
-            OnException?.InvokeAsync(this, ex);
-            // TODO: log fail
-            //Logger.Error("AsyncClientFullHandlerSocket.DoLogin" + "userID:" + userID + " password:" + password + " " + E.Message);
-        }
-    }
-
     public void Upload(string dirName, string fileName, bool canRename)
     {
         try
         {
+            if (!IsLogin)
+                throw new IocpException(ProtocolCode.NotLogined);
             var filePath = Path.Combine(RootDirectory, dirName, fileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
@@ -263,6 +280,8 @@ public class ClientProtocol : IocpProtocol
     {
         try
         {
+            if (!IsLogin)
+                throw new IocpException(ProtocolCode.NotLogined);
             var dir = Path.Combine(RootDirectory, dirName);
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
