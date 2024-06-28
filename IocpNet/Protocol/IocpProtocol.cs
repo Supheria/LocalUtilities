@@ -25,6 +25,8 @@ public abstract class IocpProtocol : IDisposable
 
     object CloseLocker { get; } = new();
 
+    protected string RootDirectory { get; set; } = "repo";
+
     protected Dictionary<string, AutoDisposeFileStream> FileReaders { get; } = [];
 
     protected Dictionary<string, AutoDisposeFileStream> FileWriters { get; } = [];
@@ -122,19 +124,13 @@ public abstract class IocpProtocol : IDisposable
             return;
         var sendArgs = new SocketAsyncEventArgs();
         sendArgs.SetBuffer(buffer, offset, count);
-        sendArgs.Completed += (_, args) => ProcessSend(args);
+        sendArgs.Completed += (_, _) => ProcessSend();
         if (!Socket.SendAsync(sendArgs))
-            new Task(() => ProcessSend(sendArgs)).Start();
+            new Task(() => ProcessSend()).Start();
     }
 
-    private void ProcessSend(SocketAsyncEventArgs sendArgs)
+    private void ProcessSend()
     {
-        SocketInfo.Active();
-        if (sendArgs.SocketError is not SocketError.Success)
-        {
-            Close();
-            return;
-        }
         SocketInfo.Active();
         IsSendingAsync = false;
         SendBuffer.ClearFirstPacket(); // 清除已发送的包

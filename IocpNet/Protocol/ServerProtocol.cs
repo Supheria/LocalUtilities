@@ -113,29 +113,27 @@ public class ServerProtocol : IocpProtocol
         SendCommand(commandComposer, buffer, offset, count);
     }
 
-    /// <summary>
-    /// 处理客户端文件上传
-    /// </summary>
-    /// <returns></returns>
     public void DoUpload(CommandParser commandParser)
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.TargetPath, out var targetPath) ||
+            if (!commandParser.GetValueAsString(ProtocolKey.DirName, out var dirName) ||
+                !commandParser.GetValueAsString(ProtocolKey.FileName, out var fileName) ||
                 !commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp) ||
                 !commandParser.GetValueAsLong(ProtocolKey.PacketSize, out var packetSize) ||
                 !commandParser.GetValueAsBool(ProtocolKey.CanRename, out var canRename))
                 throw new IocpException(ProtocolCode.ParameterError, "");
-            var dir = Path.GetDirectoryName(targetPath) ?? throw new IocpException(ProtocolCode.ParameterInvalid, targetPath);
+            var dir = Path.Combine(RootDirectory, dirName);
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-            if (File.Exists(targetPath))
+            var filePath = Path.Combine(dir, fileName);
+            if (File.Exists(filePath))
             {
                 if (!canRename)
-                    throw new IocpException(ProtocolCode.FileAlreadyExist, targetPath);
-                targetPath = targetPath.RenamePathByDateTime();
+                    throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
+                filePath = filePath.RenamePathByDateTime();
             }
-            var fileStream = new FileStream(targetPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
             autoFile.OnClosed += (file) => FileWriters.Remove(file.TimeStamp);
             FileWriters[autoFile.TimeStamp] = autoFile;
@@ -197,20 +195,18 @@ public class ServerProtocol : IocpProtocol
         }
     }
 
-    /// <summary>
-    /// 处理客户端文件下载
-    /// </summary>
-    /// <returns></returns>
     public void DoDownload(CommandParser commandParser)
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.TargetPath, out var targetPath) ||
+            if (!commandParser.GetValueAsString(ProtocolKey.DirName, out var dirName) ||
+                !commandParser.GetValueAsString(ProtocolKey.FileName, out var fileName) ||
                 !commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp))
                 throw new IocpException(ProtocolCode.ParameterError);
-            if (!File.Exists(targetPath))
-                throw new IocpException(ProtocolCode.FileNotExist, targetPath);
-            var fileStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var filePath = Path.Combine(RootDirectory, dirName, fileName);
+            if (!File.Exists(filePath))
+                throw new IocpException(ProtocolCode.FileNotExist, filePath);
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
             autoFile.OnClosed += (file) => FileReaders.Remove(file.TimeStamp);
             FileReaders[stamp] = autoFile;

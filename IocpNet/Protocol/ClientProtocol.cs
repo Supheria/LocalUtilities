@@ -1,4 +1,5 @@
-﻿using LocalUtilities.IocpNet.Common;
+﻿using LocalUtilities.FileHelper;
+using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -228,13 +229,14 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    public void Upload(string sourcePath, string targetPath, bool canRename)
+    public void Upload(string dirName, string fileName, bool canRename)
     {
         try
         {
-            if (!File.Exists(sourcePath))
-                throw new IocpException(ProtocolCode.FileNotExist, sourcePath);
-            var fileStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var filePath = Path.Combine(RootDirectory, dirName, fileName);
+            if (!File.Exists(filePath))
+                throw new IocpException(ProtocolCode.FileNotExist, filePath);
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
             autoFile.OnClosed += (file) => FileReaders.Remove(file.TimeStamp);
@@ -242,7 +244,8 @@ public class ClientProtocol : IocpProtocol
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
-                .AppendValue(ProtocolKey.TargetPath, targetPath)
+                .AppendValue(ProtocolKey.DirName, dirName)
+                .AppendValue(ProtocolKey .FileName, fileName)
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
                 .AppendValue(ProtocolKey.CanRename, canRename);
@@ -256,27 +259,29 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    public void Download(string localPath, string remotePath, bool canRename)
+    public void Download(string dirName, string fileName, bool canRename)
     {
         try
         {
-            var dir = Path.GetDirectoryName(localPath) ?? throw new IocpException(ProtocolCode.ParameterInvalid, localPath);
+            var dir = Path.Combine(RootDirectory, dirName);
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
-            if (File.Exists(localPath))
+            var filePath = Path.Combine(dir, fileName);
+            if (File.Exists(filePath))
             {
                 if (!canRename)
-                    throw new IocpException(ProtocolCode.FileAlreadyExist, localPath);
-                localPath = localPath.RenamePathByDateTime();
+                    throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
+                filePath = filePath.RenamePathByDateTime();
             }
-            var fileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
             autoFile.OnClosed += (file) => FileWriters.Remove(file.TimeStamp);
             FileWriters[stamp] = autoFile;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
-                .AppendValue(ProtocolKey.TargetPath, remotePath)
+                .AppendValue(ProtocolKey.DirName, dirName)
+                .AppendValue(ProtocolKey.FileName, fileName)
                 .AppendValue(ProtocolKey.Stamp, stamp);
             SendCommand(commandComposer);
         }
