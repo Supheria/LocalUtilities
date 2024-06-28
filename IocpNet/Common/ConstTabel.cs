@@ -15,7 +15,7 @@ public class ConstTabel
 
     public static int TransferBufferMax { get; } = 1024 * 1024;
 
-    public static int TimeoutMilliseconds { get; } = 30 * 1000;
+    public static int TimeoutMilliseconds { get; } = 60 * 1000;
 
-    public static int FileStreamExpireMilliseconds { get; } = 5 * 1000;
+    public static int FileStreamExpireMilliseconds { get; } = 30 * 1000;
 }
