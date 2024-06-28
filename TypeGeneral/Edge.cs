@@ -1,7 +1,4 @@
-﻿using LocalUtilities.TypeGeneral.Convert;
-using System.Collections.Generic;
-
-namespace LocalUtilities.TypeGeneral;
+﻿namespace LocalUtilities.TypeGeneral;
 
 public class Edge(Coordinate starter, Coordinate ender)
 {

@@ -1,11 +1,8 @@
-﻿using LocalUtilities.FileHelper;
-using LocalUtilities.IocpNet.Common;
+﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeToolKit.Text;
-using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
@@ -255,7 +252,7 @@ public class ClientProtocol : IocpProtocol
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
                 .AppendValue(ProtocolKey.DirName, dirName)
-                .AppendValue(ProtocolKey .FileName, fileName)
+                .AppendValue(ProtocolKey.FileName, fileName)
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
                 .AppendValue(ProtocolKey.CanRename, canRename);
