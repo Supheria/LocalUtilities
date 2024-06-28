@@ -9,10 +9,12 @@ public static class SizeConvert
 
     public static Size ToSize(this string? str)
     {
-        var list = str.ToArray();
-        if (list.Length is 2)
-            return new(int.Parse(list[0]), int.Parse(list[1]));
-        throw TypeConvertException.CannotConvertStringTo<Size>();
+        var array = str.ToArray();
+        if (array.Length is not 2 ||
+            !int.TryParse(array[0], out var width) ||
+            !int.TryParse(array[1], out var height))
+            return new();
+        return new(width, height);
     }
 
     public static string ToArrayString(this SizeF size)
@@ -22,9 +24,11 @@ public static class SizeConvert
 
     public static SizeF ToSizeF(this string? str)
     {
-        var list = str.ToArray();
-        if (list.Length is 2)
-            return new(float.Parse(list[0]), float.Parse(list[1]));
-        throw TypeConvertException.CannotConvertStringTo<SizeF>();
+        var array = str.ToArray();
+        if (array.Length is not 2 ||
+            !float.TryParse(array[0], out var width) ||
+            !float.TryParse(array[1], out var height))
+            return new();
+        return new(width, height);
     }
 }

@@ -35,21 +35,7 @@ public class ClientProtocol : IocpProtocol
     {
         try
         {
-            //Close();
-            IPAddress ipAddress;
-            if (Regex.Matches(host, "[a-zA-Z]").Count > 0)//支持域名解析
-            {
-                var ipHostInfo = Dns.GetHostEntry(host);
-                ipAddress = ipHostInfo.AddressList[0];
-            }
-            else
-            {
-                ipAddress = IPAddress.Parse(host);
-            }
-            var remoteEndPoint = new IPEndPoint(ipAddress, port);
-            //IsConnect = false;
-            Connect(remoteEndPoint);
-            ConnectDone.WaitOne(1000);
+            Connect(new IPEndPoint(IPAddress.Parse(host), port));
             if (!IsConnect)
                 throw new IocpException(ProtocolCode.NoConnection);
             UserInfo = new(name, password);
@@ -57,7 +43,8 @@ public class ClientProtocol : IocpProtocol
                 .AppendCommand(ProtocolKey.Login)
                 .AppendValue(ProtocolKey.UserName, UserInfo.Name)
                 .AppendValue(ProtocolKey.Password, UserInfo.Password);
-            SendCommand(commandComposer);
+            WriteCommand(commandComposer);
+            SendAsync();
         }
         catch (Exception ex)
         {
@@ -68,22 +55,25 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    private void Connect(EndPoint? remoteEndPoint)
+    private void Connect(IPEndPoint remoteEndPoint)
     {
         lock (ConnectLocker)
         {
             try
             {
-                if (Socket is not null)
+                if (Socket is not null && Socket.RemoteEndPoint?.ToString() == remoteEndPoint.ToString())
                     return;
+                Close();
+                IsConnect = false;
                 var connectArgs = new SocketAsyncEventArgs()
                 {
-                    RemoteEndPoint = remoteEndPoint
+                    RemoteEndPoint = remoteEndPoint,
                 };
                 connectArgs.Completed += (_, args) => ProcessConnect(args);
                 Socket ??= new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 if (!Socket.ConnectAsync(connectArgs))
                     ProcessConnect(connectArgs);
+                ConnectDone.WaitOne(1000);
             }
             catch (Exception ex)
             {
@@ -117,7 +107,8 @@ public class ClientProtocol : IocpProtocol
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Message);
             var buffer = Encoding.UTF8.GetBytes(message);
-            SendCommand(commandComposer, buffer, 0, buffer.Length);
+            WriteCommand(commandComposer, buffer, 0, buffer.Length);
+            SendAsync();
         }
         catch (Exception ex)
         {
@@ -200,7 +191,8 @@ public class ClientProtocol : IocpProtocol
                 .AppendCommand(ProtocolKey.SendFile)
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize);
-            SendCommand(commandComposer);
+            WriteCommand(commandComposer);
+            SendAsync();
         }
         catch (Exception ex)
         {
@@ -235,7 +227,8 @@ public class ClientProtocol : IocpProtocol
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
                 .AppendValue(ProtocolKey.Position, autoFile.Position);
-            SendCommand(commandComposer, buffer, 0, count);
+            WriteCommand(commandComposer, buffer, 0, count);
+            SendAsync();
         }
         catch (Exception ex)
         {
@@ -266,7 +259,8 @@ public class ClientProtocol : IocpProtocol
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
                 .AppendValue(ProtocolKey.CanRename, canRename);
-            SendCommand(commandComposer);
+            WriteCommand(commandComposer);
+            SendAsync();
         }
         catch (Exception ex)
         {
@@ -302,7 +296,8 @@ public class ClientProtocol : IocpProtocol
                 .AppendValue(ProtocolKey.DirName, dirName)
                 .AppendValue(ProtocolKey.FileName, fileName)
                 .AppendValue(ProtocolKey.Stamp, stamp);
-            SendCommand(commandComposer);
+            WriteCommand(commandComposer);
+            SendAsync();
         }
         catch (Exception ex)
         {

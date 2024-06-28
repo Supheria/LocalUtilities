@@ -9,9 +9,13 @@ public static class RectangleConvert
 
     public static Rectangle ToRectangle(this string str)
     {
-        var list = str.ToArray();
-        if (list.Length is 4)
-            return new(int.Parse(list[0]), int.Parse(list[1]), int.Parse(list[2]), int.Parse(list[3]));
-        throw TypeConvertException.CannotConvertStringTo<Rectangle>();
+        var array = str.ToArray();
+        if (array.Length is not 4 ||
+            !int.TryParse(array[0], out var x) ||
+            !int.TryParse(array[1], out var y) ||
+            !int.TryParse(array[2], out var width) ||
+            !int.TryParse(array[3], out var height))
+            return new();
+        return new(x, y, width, height);
     }
 }

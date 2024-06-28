@@ -65,10 +65,12 @@ public class Coordinate(int x, int y)
 
     public static Coordinate Parse(string str)
     {
-        var list = str.ToArray();
-        if (list.Length is 2)
-            return new(int.Parse(list[0]), int.Parse(list[1]));
-        throw TypeConvertException.CannotConvertStringTo<Coordinate>();
+        var array = str.ToArray();
+        if (array.Length is not 2 ||
+            !int.TryParse(array[0], out var x) ||
+            !int.TryParse(array[1], out var y))
+            return new();
+        return new(x, y);
     }
 
     public static implicit operator PointF(Coordinate? coordinate)

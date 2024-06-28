@@ -99,7 +99,8 @@ public class ServerProtocol : IocpProtocol
     private void CommandFail(ProtocolCode errorCode, string message, CommandComposer commandComposer)
     {
         commandComposer.AppendFailure(errorCode, message);
-        SendCommand(commandComposer);
+        WriteCommand(commandComposer);
+        SendAsync();
     }
 
     private void CommandSucceed(CommandComposer commandComposer)
@@ -110,7 +111,8 @@ public class ServerProtocol : IocpProtocol
     private void CommandSucceed(CommandComposer commandComposer, byte[] buffer, int offset, int count)
     {
         commandComposer.AppendSuccess();
-        SendCommand(commandComposer, buffer, offset, count);
+        WriteCommand(commandComposer, buffer, offset, count);
+        SendAsync();
     }
 
     public void DoUpload(CommandParser commandParser)
@@ -256,7 +258,8 @@ public class ServerProtocol : IocpProtocol
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
                 .AppendValue(ProtocolKey.Position, autoFile.Position);
-            SendCommand(commandComposer, buffer, 0, count);
+            WriteCommand(commandComposer, buffer, 0, count);
+            SendAsync();
         }
         catch (Exception ex)
         {

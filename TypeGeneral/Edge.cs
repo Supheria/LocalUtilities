@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.TypeGeneral.Convert;
+using System.Collections.Generic;
 
 namespace LocalUtilities.TypeGeneral;
 
@@ -44,8 +45,8 @@ public class Edge(Coordinate starter, Coordinate ender)
 
     public static Edge Parse(List<string> array)
     {
-        return array.Count is 2
-            ? new(Coordinate.Parse(array[0]), Coordinate.Parse(array[1]))
-            : throw TypeConvertException.CannotConvertStringArrayTo<Edge>();
+        if (array.Count is not 2)
+            return new(new(), new());
+        return new(Coordinate.Parse(array[0]), Coordinate.Parse(array[1]));
     }
 }

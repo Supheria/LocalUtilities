@@ -61,7 +61,7 @@ public class AsyncSendBufferManager(int bufferSize)
         return;
     }
 
-    public void ClearPacket()
+    public void ClearAllPacket()
     {
         lock (Locker)
         {

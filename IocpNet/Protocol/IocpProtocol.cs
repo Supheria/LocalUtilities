@@ -57,7 +57,7 @@ public abstract class IocpProtocol : IDisposable
             Socket.Close();
             Socket = null;
             ReceiveBuffer.Clear();
-            SendBuffer.ClearPacket();
+            SendBuffer.ClearAllPacket();
             IsSendingAsync = false;
             IsLogin = false;
             SocketInfo.Disconnect();
@@ -159,12 +159,12 @@ public abstract class IocpProtocol : IDisposable
         SendAsync();
     }
 
-    public void SendCommand(CommandComposer commandComposer)
+    protected void WriteCommand(CommandComposer commandComposer)
     {
-        SendCommand(commandComposer, [], 0, 0);
+        WriteCommand(commandComposer, [], 0, 0);
     }
 
-    protected void SendCommand(CommandComposer commandComposer, byte[] buffer, int offset, int count)
+    protected void WriteCommand(CommandComposer commandComposer, byte[] buffer, int offset, int count)
     {
         // 获取命令
         var command = commandComposer.GetCommand();
@@ -178,7 +178,7 @@ public abstract class IocpProtocol : IDisposable
         SendBuffer.DynamicBufferManager.WriteData(commandBuffer); // 写入命令内容
         SendBuffer.DynamicBufferManager.WriteData(buffer, offset, count); // 写入二进制数据
         SendBuffer.EndPacket();
-        SendAsync();
     }
+
     public abstract void SendMessage(string message);
 }

@@ -5,12 +5,18 @@ namespace LocalUtilities.TypeGeneral.Convert;
 
 public static class EnumConvert
 {
-    public static T ToEnum<T>(this string str) where T : Enum
+    public static T? ToEnum<T>(this string str) where T : Enum
     {
-        return (T)Enum.Parse(typeof(T), str);
+        try
+        {
+            if (Enum.TryParse(typeof(T), str, true, out var result))
+                return (T)result;
+        }
+        catch { }
+        return default;
     }
 
-    public static T DescriptionToEnum<T>(this string? str, T @default) where T : Enum
+    public static T? DescriptionToEnum<T>(this string? str, T @default) where T : Enum
     {
         if (str is null)
             return @default;
