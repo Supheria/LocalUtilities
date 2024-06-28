@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Common;
+﻿namespace LocalUtilities.TypeGeneral;
 
 internal class SignTable
 {
@@ -15,4 +15,6 @@ internal class SignTable
     internal const char Return = '\r';
     internal const char NewLine = '\n';
     internal const char Empty = '\0';
+    internal const char UnderLine = '_';
+    internal const char Dot = '.';
 }

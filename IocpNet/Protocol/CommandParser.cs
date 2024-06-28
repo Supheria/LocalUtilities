@@ -1,58 +1,76 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeGeneral.Convert;
 using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
 public class CommandParser
 {
-    Dictionary<string, string> Commands { get; } = [];
+    Dictionary<ProtocolKey, string> Commands { get; } = [];
 
     public static CommandParser Parse(string command)
     {
         var result = new CommandParser();
-        var lines = command.Split([ProtocolKey.ReturnWrap], StringSplitOptions.RemoveEmptyEntries);
+        var lines = command.Split(SignTable.NewLine, StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in lines)
         {
-            var pair = line.Split(ProtocolKey.EqualSign, StringSplitOptions.None);
+            var pair = line.Split(SignTable.Equal, StringSplitOptions.None);
             if (pair.Length < 2)
                 continue;
-            result.Commands[pair[0]] = pair[1];
+            var key = pair[0].ToEnum<ProtocolKey>();
+            result.Commands[key] = pair[1];
         }
         return result;
     }
 
-    public bool GetValueAsString(string key, [NotNullWhen(true)] out string? value)
+    public bool GetValueAsCommandKey(out ProtocolKey key)
     {
-        return Commands.TryGetValue(key, out value);
+        key = ProtocolKey.None;
+        if (!Commands.TryGetValue(ProtocolKey.Command, out var value))
+            return false;
+        key = value.ToEnum<ProtocolKey>();
+        return true;
     }
 
-    public bool GetValueAsShort(string key, out short value)
+    public bool GetValueAsString(ProtocolKey commandKey, [NotNullWhen(true)] out string? value)
     {
-        Commands.TryGetValue(key, out var str);
-        return short.TryParse(str, out value);
+        return Commands.TryGetValue(commandKey, out value);
     }
 
-    public bool GetValueAsInt(string key, out int value)
+    public bool GetValueAsShort(ProtocolKey commandKey, out short value)
     {
-        Commands.TryGetValue(key, out var str);
-        return int.TryParse(str, out value);
+        value = 0;
+        return Commands.TryGetValue(commandKey, out var str) && short.TryParse(str, out value);
     }
 
-    public bool GetValueAsLong(string key, out long value)
+    public bool GetValueAsInt(ProtocolKey commandKey, out int value)
     {
-        Commands.TryGetValue(key, out var str);
-        return long.TryParse(str, out value);
+        value = 0;
+        return Commands.TryGetValue(commandKey, out var str) && int.TryParse(str, out value);
     }
 
-    public bool GetValueAsFloat(string key, out float value)
+    public bool GetValueAsLong(ProtocolKey commandKey, out long value)
     {
-        Commands.TryGetValue(key, out var str);
-        return float.TryParse(str, out value);
+        value = 0;
+        return Commands.TryGetValue(commandKey, out var str) && long.TryParse(str, out value);
     }
 
-    public bool GetValueAsDouble(string key, out double value)
+    public bool GetValueAsFloat(ProtocolKey commandKey, out float value)
     {
-        Commands.TryGetValue(key, out var str);
-        return double.TryParse(str, out value);
+        value = 0f;
+        return Commands.TryGetValue(commandKey, out var str) && float.TryParse(str, out value);
+    }
+
+    public bool GetValueAsDouble(ProtocolKey commandKey, out double value)
+    {
+        value = 0d;
+        return Commands.TryGetValue(commandKey, out var str) && double.TryParse(str, out value);
+    }
+
+    public bool GetValueAsBool(ProtocolKey commandKey, out bool value)
+    {
+        value = false;
+        return Commands.TryGetValue(commandKey, out var str) && bool.TryParse(str, out value);
     }
 }

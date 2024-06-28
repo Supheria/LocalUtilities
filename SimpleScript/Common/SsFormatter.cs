@@ -1,4 +1,5 @@
-﻿using LocalUtilities.TypeToolKit.Text;
+﻿using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Common;

@@ -142,11 +142,11 @@ public class IocpServer
             return;
         }
         ProtocolList.Add(protocol);
-        OnParallelRemainChange?.Invoke(this, ProtocolPool.Count);
+        OnParallelRemainChange?.InvokeAsync(this, ProtocolPool.Count);
         try
         {
             protocol.ReceiveAsync();
-            OnClientNumberChange?.Invoke(protocol, ClientState.Connect);
+            OnClientNumberChange?.InvokeAsync(protocol, ClientState.Connect);
         }
         catch (Exception E)
         {

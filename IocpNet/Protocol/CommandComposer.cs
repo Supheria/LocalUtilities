@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeGeneral;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
@@ -17,58 +18,39 @@ public class CommandComposer
         return Commands.ToString();
     }
 
-    public CommandComposer AppendCommand(string commandKey)
+    private void AppendLine(ProtocolKey commandKey, string? value)
     {
         var str = new StringBuilder()
-            .Append(ProtocolKey.Command)
-            .Append(ProtocolKey.EqualSign)
-            .Append(commandKey)
+            .Append(commandKey.ToString())
+            .Append(SignTable.Equal)
+            .Append(value)
             .ToString();
         Commands.Append(str)
-            .Append(ProtocolKey.ReturnWrap);
+            .Append(SignTable.NewLine);
+    }
+
+    public CommandComposer AppendCommand(ProtocolKey commandKey)
+    {
+        AppendLine(ProtocolKey.Command, commandKey.ToString());
         return this;
     }
 
     public CommandComposer AppendSuccess()
     {
-        var str = new StringBuilder()
-            .Append(ProtocolKey.Code)
-            .Append(ProtocolKey.EqualSign)
-            .Append(ProtocolCode.Success)
-            .ToString();
-        Commands.Append(str)
-            .Append(ProtocolKey.ReturnWrap);
+        AppendLine(ProtocolKey.Code, ProtocolCode.Success.ToString());
         return this;
     }
 
-    public CommandComposer AppendFailure(int errorCode, string message)
+    public CommandComposer AppendFailure(ProtocolCode errorCode, string message)
     {
-        var str = new StringBuilder()
-            .Append(ProtocolKey.Code)
-            .Append(ProtocolKey.EqualSign)
-            .Append(errorCode)
-            .ToString();
-        Commands.Append(str)
-            .Append(ProtocolKey.ReturnWrap);
-        str = new StringBuilder()
-            .Append(ProtocolKey.Message)
-            .Append(ProtocolKey.EqualSign)
-            .Append(message)
-            .ToString();
-        Commands.Append(str)
-            .Append(ProtocolKey.ReturnWrap);
+        AppendLine(ProtocolKey.Code, errorCode.ToString());
+        AppendLine(ProtocolKey.Message, message);
         return this;
     }
 
-    public CommandComposer AppendValue(string key, object value)
+    public CommandComposer AppendValue(ProtocolKey commandKey, object value)
     {
-        var str = new StringBuilder()
-            .Append(key)
-            .Append(ProtocolKey.EqualSign)
-            .Append(value.ToString())
-            .ToString();
-        Commands.Append(str)
-            .Append(ProtocolKey.ReturnWrap);
+        AppendLine(commandKey, value.ToString());
         return this;
     }
 }

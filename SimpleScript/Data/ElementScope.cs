@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.SimpleScript.Common;
 using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 

@@ -25,4 +25,5 @@ public enum ProtocolCode
     DeleteFileFailed,
     FileSizeError,
     NotLogined,
+    FileAlreadyExist,
 }

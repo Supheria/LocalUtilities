@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeToolKit.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -8,24 +9,23 @@ namespace LocalUtilities.IocpNet.Protocol;
 
 public class ClientProtocol : IocpProtocol
 {
-    public IocpEventHandler? OnUploaded;
+    public event IocpEventHandler? OnConnect;
 
-    public IocpEventHandler? OnDownloaded;
+    public event IocpEventHandler? OnUploaded;
 
-    public IocpEventHandler<float>? OnUploading;
+    public event IocpEventHandler? OnDownloaded;
 
-    public IocpEventHandler<float>? OnDownloading;
+    public event IocpEventHandler<float>? OnUploading;
+
+    public event IocpEventHandler<float>? OnDownloading;
+
+    public event IocpEventHandler<Exception>? OnException;
+
+    public event IocpEventHandler<string>? OnMessage;
 
     EndPoint? RemoteEndPoint { get; set; } = null;
 
     object ConnectLocker { get; } = new();
-
-    public IocpEventHandler? OnConnect;
-
-    /// <summary>
-    /// 本地保存文件的路径,不含文件名
-    /// </summary>
-    public string RootDirectoryPath { get; set; } = "";
 
     public void Connect(string host, int port)
     {
@@ -62,6 +62,7 @@ public class ClientProtocol : IocpProtocol
             }
             catch (Exception ex)
             {
+                Close();
                 //Console.WriteLine(ex.ToString());
             }
         }
@@ -76,8 +77,7 @@ public class ClientProtocol : IocpProtocol
             return;
         }
         ReceiveAsync();
-        //ConnectDone.Set();
-        new Task(() => OnConnect?.Invoke(this)).Start();
+        OnConnect?.InvokeAsync(this);
         SocketInfo.Connect(connectArgs.ConnectSocket);
     }
 
@@ -92,7 +92,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.Invoke(this, ex);
+            OnException?.InvokeAsync(this, ex);
         }
     }
 
@@ -101,9 +101,10 @@ public class ClientProtocol : IocpProtocol
         commandParser.GetValueAsInt(ProtocolKey.Code, out var errorCode);
         if ((ProtocolCode)errorCode is not ProtocolCode.Success)
             // TODO: log fail
+            // TODO: handle error code
             return;
-        commandParser.GetValueAsString(ProtocolKey.Command, out var command);
-        switch (command)
+        commandParser.GetValueAsCommandKey(out var commandKey);
+        switch (commandKey)
         {
             case ProtocolKey.Login:
                 DoLogin();
@@ -127,14 +128,16 @@ public class ClientProtocol : IocpProtocol
         string message = Encoding.UTF8.GetString(buffer, offset, count);
         if (!string.IsNullOrWhiteSpace(message))
         {
-            OnMessage?.Invoke(this, message);
+            OnMessage?.InvokeAsync(this, message);
         }
     }
 
     private void DoLogin()
     {
+        if (IsLogin)
+            return;
         IsLogin = true;
-        OnMessage?.Invoke(this, $"{UserInfo?.Name} logined");
+        OnMessage?.InvokeAsync(this, $"{UserInfo?.Name} logined");
     }
 
     private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
@@ -149,14 +152,14 @@ public class ClientProtocol : IocpProtocol
             if (!FileWriters.TryGetValue(stamp, out var autoFile))
                 throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
             autoFile.Write(buffer, offset, count);
-            OnDownloading?.Invoke(this, autoFile.Position * 100f / fileLength);
+            OnDownloading?.InvokeAsync(this, autoFile.Position * 100f / fileLength);
             // simple validation
             if (autoFile.Position != position)
                 throw new IocpException(ProtocolCode.NotSameVersion);
             if (autoFile.Length >= fileLength)
             {
                 autoFile.Close();
-                OnDownloaded?.Invoke(this);
+                OnDownloaded?.InvokeAsync(this);
             }
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.SendFile)
@@ -166,7 +169,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException.Invoke(this, ex);
+            OnException?.InvokeAsync(this, ex);
             // TODO: log fail
         }
     }
@@ -184,14 +187,13 @@ public class ClientProtocol : IocpProtocol
             {
                 // TODO: log success
                 autoFile.Close();
-                OnUploaded?.Invoke(this);
+                OnUploaded?.InvokeAsync(this);
                 return;
             }
             OnUploading?.Invoke(this, autoFile.Position * 100f / autoFile.Length);
             var buffer = new byte[packetSize];
             if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
                 throw new IocpException(ProtocolCode.FileIsExpired);
-            //autoFile.Position += count;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.WriteFile)
                 .AppendValue(ProtocolKey.FileLength, autoFile.Length)
@@ -202,7 +204,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.Invoke(this, ex);
+            OnException?.InvokeAsync(this, ex);
             // TODO: log fail
         }
     }
@@ -220,19 +222,19 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.Invoke(this, ex);
+            OnException?.InvokeAsync(this, ex);
             // TODO: log fail
             //Logger.Error("AsyncClientFullHandlerSocket.DoLogin" + "userID:" + userID + " password:" + password + " " + E.Message);
         }
     }
 
-    public void Upload(string filePath, string remoteDir, string remoteName)
+    public void Upload(string sourcePath, string targetPath, bool canRename)
     {
         try
         {
-            if (!File.Exists(filePath))
-                throw new IocpException(ProtocolCode.FileNotExist, filePath);
-            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (!File.Exists(sourcePath))
+                throw new IocpException(ProtocolCode.FileNotExist, sourcePath);
+            var fileStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
             autoFile.OnClosed += (file) => FileReaders.Remove(file.TimeStamp);
@@ -240,49 +242,47 @@ public class ClientProtocol : IocpProtocol
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
-                .AppendValue(ProtocolKey.DirName, remoteDir)
-                .AppendValue(ProtocolKey.FileName, remoteName)
+                .AppendValue(ProtocolKey.TargetPath, targetPath)
                 .AppendValue(ProtocolKey.Stamp, stamp)
-                .AppendValue(ProtocolKey.PacketSize, packetSize);
+                .AppendValue(ProtocolKey.PacketSize, packetSize)
+                .AppendValue(ProtocolKey.CanRename, canRename);
             SendCommand(commandComposer);
         }
         catch (Exception ex)
         {
-            OnException?.Invoke(this, ex);
+            OnException?.InvokeAsync(this, ex);
             //记录日志
             //Logger.Error(e.Message);
         }
     }
 
-    public void Download(string dirName, string fileName, string pathLastLevel)
+    public void Download(string localPath, string remotePath, bool canRename)
     {
         try
         {
-            var filePath = Path.Combine(RootDirectoryPath + pathLastLevel, fileName);
-            if (File.Exists(filePath))
+            var dir = Path.GetDirectoryName(localPath) ?? throw new IocpException(ProtocolCode.ParameterInvalid, localPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            if (File.Exists(localPath))
             {
-                //Logger.Error("Start Upload file error, file is not exists: " + fileFullPath);
-                File.Delete(filePath);
+                if (!canRename)
+                    throw new IocpException(ProtocolCode.FileAlreadyExist, localPath);
+                localPath = localPath.RenamePathByDateTime();
             }
-            if (!Directory.Exists(dirName))
-                Directory.CreateDirectory(dirName);
-            //long fileSize = 0;
-            //FilePath = Path.Combine(RootDirectoryPath + pathLastLevel, fileName);
-            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+            var fileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
             autoFile.OnClosed += (file) => FileWriters.Remove(file.TimeStamp);
             FileWriters[stamp] = autoFile;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
-                .AppendValue(ProtocolKey.DirName, dirName)
-                .AppendValue(ProtocolKey.FileName, fileName)
+                .AppendValue(ProtocolKey.TargetPath, remotePath)
                 .AppendValue(ProtocolKey.Stamp, stamp);
             SendCommand(commandComposer);
         }
         catch (Exception ex)
         {
-            OnException?.Invoke(this, ex);
+            OnException?.InvokeAsync(this, ex);
             //记录日志
             //Logger.Error(E.Message);
         }

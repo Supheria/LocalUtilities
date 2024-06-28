@@ -10,24 +10,18 @@ public abstract class IocpProtocol : IDisposable
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
-    /// <summary>
-    /// 使用网络字节顺序
-    /// </summary>
+
+    protected bool IsLogin { get; set; } = false;
+
+    public UserInfo? UserInfo { get; protected set; } = new();
+
     public bool UseNetByteOrder { get; set; } = false;
 
     protected DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitBufferSize);
 
     protected AsyncSendBufferManager SendBuffer { get; } = new(ConstTabel.InitBufferSize);
 
-    public string FilePath { get; protected set; } = "";
-
-    protected FileStream? FileStream { get; set; } = null;
-
     protected bool IsSendingAsync { get; set; } = false;
-
-    protected bool IsLogin { get; set; } = false;
-
-    public UserInfo? UserInfo { get; protected set; } = new();
 
     object CloseLocker { get; } = new();
 
@@ -35,11 +29,7 @@ public abstract class IocpProtocol : IDisposable
 
     protected Dictionary<string, AutoDisposeFileStream> FileWriters { get; } = [];
 
-    public IocpEventHandler? OnClosed;
-
-    public IocpEventHandler<Exception>? OnException;
-
-    public IocpEventHandler<string>? OnMessage;
+    public event IocpEventHandler? OnClosed;
 
     public void Close() => Dispose();
 
@@ -61,13 +51,10 @@ public abstract class IocpProtocol : IDisposable
             Socket = null;
             ReceiveBuffer.Clear();
             SendBuffer.ClearPacket();
-            FilePath = "";
-            FileStream?.Close();
-            FileStream = null;
             IsSendingAsync = false;
             IsLogin = false;
             SocketInfo.Disconnect();
-            OnClosed?.Invoke(this);
+            OnClosed?.InvokeAsync(this);
             GC.SuppressFinalize(this);
         }
     }
