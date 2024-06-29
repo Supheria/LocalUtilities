@@ -23,9 +23,7 @@ public abstract class IocpProtocol : IDisposable
 
     protected bool IsSendingAsync { get; set; } = false;
 
-    object CloseLocker { get; } = new();
-
-    protected string RootDirectory { get; set; } = "repo";
+    protected string RepoPath { get; set; } = "repo";
 
     protected Dictionary<string, AutoDisposeFileStream> FileReaders { get; } = [];
 
@@ -33,37 +31,29 @@ public abstract class IocpProtocol : IDisposable
 
     public event IocpEventHandler? OnClosed;
 
-    protected virtual void Connect()
-    {
-
-    }
+    public event IocpEventHandler<Exception>? OnException;
 
     public void Close() => Dispose();
 
     public void Dispose()
     {
-        lock (CloseLocker)
+        try
         {
-            if (Socket is null)
-                return;
-            try
-            {
-                Socket.Shutdown(SocketShutdown.Both);
-            }
-            catch (Exception ex)
-            {
-                //Program.Logger.ErrorFormat("CloseClientSocket Disconnect client {0} error, message: {1}", socketInfo, ex.Message);
-            }
-            Socket.Close();
-            Socket = null;
-            ReceiveBuffer.Clear();
-            SendBuffer.ClearAllPacket();
-            IsSendingAsync = false;
-            IsLogin = false;
-            SocketInfo.Disconnect();
-            OnClosed?.InvokeAsync(this);
-            GC.SuppressFinalize(this);
+            Socket?.Shutdown(SocketShutdown.Both);
         }
+        catch (Exception ex)
+        {
+            //Program.Logger.ErrorFormat("CloseClientSocket Disconnect client {0} error, message: {1}", socketInfo, ex.Message);
+        }
+        Socket?.Close();
+        Socket = null;
+        ReceiveBuffer.Clear();
+        SendBuffer.ClearAllPacket();
+        IsSendingAsync = false;
+        IsLogin = false;
+        SocketInfo.Disconnect();
+        OnClosed?.InvokeAsync(this);
+        GC.SuppressFinalize(this);
     }
 
     public void ReceiveAsync()
@@ -181,4 +171,26 @@ public abstract class IocpProtocol : IDisposable
     }
 
     public abstract void SendMessage(string message);
+
+    public string GetFileRepoPath(string dirName, string fileName)
+    {
+        var dir = Path.Combine(RepoPath, dirName);
+        if (!Directory.Exists(dir))
+        {
+            try
+            {
+                Directory.CreateDirectory(dir);
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+            }
+        }
+        return Path.Combine(dir, fileName);
+    }
+
+    protected void HandleException(Exception ex)
+    {
+        OnException?.InvokeAsync(this, ex);
+    }
 }

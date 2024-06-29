@@ -3,9 +3,9 @@ using LocalUtilities.IocpNet.Protocol;
 using System.Net;
 using System.Net.Sockets;
 
-namespace LocalUtilities.IocpNet.Server;
+namespace LocalUtilities.IocpNet.Serve;
 
-public class IocpServer
+public class IocpHost
 {
     Socket? Socket { get; set; } = null;
 
@@ -15,9 +15,9 @@ public class IocpServer
 
     // TODO: use another way to limit paralle number
 
-    ServerProtocolPool ProtocolPool { get; }
+    HostProtocolPool ProtocolPool { get; }
 
-    public ServerProtocolList ProtocolList { get; } = [];
+    public HostProtocolList ProtocolList { get; } = [];
 
     private DaemonThread DaemonThread { get; }
 
@@ -33,14 +33,14 @@ public class IocpServer
 
     public event EventHandler<int>? OnParallelRemainChange;
 
-    public IocpServer(int parallelCountMax)
+    public IocpHost(int parallelCountMax)
     {
         ParallelCountMax = parallelCountMax;
         ProtocolPool = new(parallelCountMax);
         DaemonThread = new(ProcessDaemon);
         for (int i = 0; i < ParallelCountMax; i++) //按照连接数建立读写对象
         {
-            var protocol = new ServerProtocol();
+            var protocol = new HostProtocol();
             protocol.OnClosed += (_) =>
             {
                 ProtocolPool.Push(protocol);

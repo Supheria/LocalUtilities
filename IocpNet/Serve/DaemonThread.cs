@@ -1,6 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 
-namespace LocalUtilities.IocpNet.Server;
+namespace LocalUtilities.IocpNet.Serve;
 
 class DaemonThread
 {

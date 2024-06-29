@@ -15,6 +15,8 @@ public class SocketInfo
 
     public DateTime DisconnectTime { get; private set; } = DateTime.Now;
 
+    public bool IsConnect { get; private set; } = false;
+
     public void Connect(Socket socket)
     {
         RemoteEndPoint = socket.RemoteEndPoint;
@@ -22,15 +24,18 @@ public class SocketInfo
         ConnectTime = DateTime.Now;
         ActiveTime = DateTime.Now;
         DisconnectTime = DateTime.Now;
+        IsConnect = true;
     }
 
     public void Active()
     {
         ActiveTime = DateTime.Now;
+        IsConnect = true;
     }
 
     public void Disconnect()
     {
         DisconnectTime = DateTime.Now;
+        IsConnect = false;
     }
 }

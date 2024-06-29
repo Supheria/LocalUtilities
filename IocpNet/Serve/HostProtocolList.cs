@@ -1,17 +1,17 @@
 ﻿using LocalUtilities.IocpNet.Protocol;
 using System.Collections;
 
-namespace LocalUtilities.IocpNet.Server;
+namespace LocalUtilities.IocpNet.Serve;
 
-public class ServerProtocolList : IList<ServerProtocol>
+public class HostProtocolList : IList<HostProtocol>
 {
-    List<ServerProtocol> List { get; } = [];
+    List<HostProtocol> List { get; } = [];
 
     public int Count => List.Count;
 
     public bool IsReadOnly { get; } = false;
 
-    public ServerProtocol this[int index]
+    public HostProtocol this[int index]
     {
         get => List[index];
         set
@@ -21,28 +21,28 @@ public class ServerProtocolList : IList<ServerProtocol>
         }
     }
 
-    public void Add(ServerProtocol item)
+    public void Add(HostProtocol item)
     {
         lock (List)
             List.Add(item);
     }
 
-    public void Remove(ServerProtocol item)
+    public void Remove(HostProtocol item)
     {
         lock (List)
             List.Remove(item);
     }
 
-    public void CopyTo(out ServerProtocol[] array)
+    public void CopyTo(out HostProtocol[] array)
     {
         lock (List)
         {
-            array = new ServerProtocol[List.Count];
+            array = new HostProtocol[List.Count];
             List.CopyTo(array);
         }
     }
 
-    public void CopyTo(ServerProtocol[] array, int arrayIndex)
+    public void CopyTo(HostProtocol[] array, int arrayIndex)
     {
         lock (List)
             List.CopyTo(array, arrayIndex);
@@ -54,13 +54,13 @@ public class ServerProtocolList : IList<ServerProtocol>
             List.Clear();
     }
 
-    public int IndexOf(ServerProtocol item)
+    public int IndexOf(HostProtocol item)
     {
         lock (List)
             return List.IndexOf(item);
     }
 
-    public void Insert(int index, ServerProtocol item)
+    public void Insert(int index, HostProtocol item)
     {
         lock (List)
             List.Insert(index, item);
@@ -72,19 +72,19 @@ public class ServerProtocolList : IList<ServerProtocol>
             List.RemoveAt(index);
     }
 
-    public bool Contains(ServerProtocol item)
+    public bool Contains(HostProtocol item)
     {
         lock (List)
             return List.Contains(item);
     }
 
-    bool ICollection<ServerProtocol>.Remove(ServerProtocol item)
+    bool ICollection<HostProtocol>.Remove(HostProtocol item)
     {
         lock (List)
             return List.Remove(item);
     }
 
-    public IEnumerator<ServerProtocol> GetEnumerator()
+    public IEnumerator<HostProtocol> GetEnumerator()
     {
         lock (List)
             return List.GetEnumerator();

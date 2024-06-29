@@ -10,13 +10,11 @@ namespace LocalUtilities.IocpNet.Protocol;
 /// </summary>
 /// <param name="server"></param>
 /// <param name="userToken"></param>
-public class ServerProtocol : IocpProtocol
+public class HostProtocol : IocpProtocol
 {
     public event IocpEventHandler? OnFileReceived;
 
     public event IocpEventHandler? OnFileSent;
-
-    public event IocpEventHandler<Exception>? OnException;
 
     public event IocpEventHandler<string>? OnMessage;
 
@@ -125,10 +123,7 @@ public class ServerProtocol : IocpProtocol
                 !commandParser.GetValueAsLong(ProtocolKey.PacketSize, out var packetSize) ||
                 !commandParser.GetValueAsBool(ProtocolKey.CanRename, out var canRename))
                 throw new IocpException(ProtocolCode.ParameterError, "");
-            var dir = Path.Combine(RootDirectory, dirName);
-            if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-            var filePath = Path.Combine(dir, fileName);
+            var filePath = GetFileRepoPath(dirName, fileName);
             if (File.Exists(filePath))
             {
                 if (!canRename)
@@ -153,7 +148,7 @@ public class ServerProtocol : IocpProtocol
                 CommandFail(iocp.ErrorCode, iocp.Message);
             else
                 CommandFail(ProtocolCode.UnknowError, ex.Message);
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }
@@ -192,7 +187,7 @@ public class ServerProtocol : IocpProtocol
                 CommandFail(iocp.ErrorCode, iocp.Message);
             else
                 CommandFail(ProtocolCode.UnknowError, ex.Message);
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }
@@ -205,7 +200,7 @@ public class ServerProtocol : IocpProtocol
                 !commandParser.GetValueAsString(ProtocolKey.FileName, out var fileName) ||
                 !commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp))
                 throw new IocpException(ProtocolCode.ParameterError);
-            var filePath = Path.Combine(RootDirectory, dirName, fileName);
+            var filePath = GetFileRepoPath(dirName, fileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -228,7 +223,7 @@ public class ServerProtocol : IocpProtocol
                 CommandFail(iocp.ErrorCode, iocp.Message);
             else
                 CommandFail(ProtocolCode.UnknowError, ex.Message);
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }
@@ -267,7 +262,7 @@ public class ServerProtocol : IocpProtocol
                 CommandFail(iocp.ErrorCode, iocp.Message);
             else
                 CommandFail(ProtocolCode.UnknowError, ex.Message);
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }
@@ -306,7 +301,7 @@ public class ServerProtocol : IocpProtocol
                 CommandFail(iocp.ErrorCode, iocp.Message);
             else
                 CommandFail(ProtocolCode.UnknowError, ex.Message);
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }

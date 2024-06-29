@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeToolKit.Mathematic;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -8,17 +9,17 @@ namespace LocalUtilities.IocpNet.Protocol;
 
 public class ClientProtocol : IocpProtocol
 {
-    public event IocpEventHandler? OnConnect;
+    public event IocpEventHandler? OnConnected;
+
+    public event IocpEventHandler? OnLogined;
 
     public event IocpEventHandler? OnUploaded;
 
     public event IocpEventHandler? OnDownloaded;
 
-    public event IocpEventHandler<float>? OnUploading;
+    public event IocpEventHandler<string>? OnUploading;
 
-    public event IocpEventHandler<float>? OnDownloading;
-
-    public event IocpEventHandler<Exception>? OnException;
+    public event IocpEventHandler<string>? OnDownloading;
 
     public event IocpEventHandler<string>? OnMessage;
 
@@ -28,7 +29,7 @@ public class ClientProtocol : IocpProtocol
 
     bool IsConnect { get; set; } = false;
 
-    public void Login(string host, int port, string name, string password)
+    public void Connect(string host, int port, string name, string password)
     {
         try
         {
@@ -46,7 +47,7 @@ public class ClientProtocol : IocpProtocol
         catch (Exception ex)
         {
             Close();
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
             //Logger.Error("AsyncClientFullHandlerSocket.DoLogin" + "userID:" + userID + " password:" + password + " " + E.Message);
         }
@@ -89,7 +90,7 @@ public class ClientProtocol : IocpProtocol
             return;
         }
         ReceiveAsync();
-        OnConnect?.InvokeAsync(this);
+        OnConnected?.InvokeAsync(this);
         SocketInfo.Connect(connectArgs.ConnectSocket);
         IsConnect = true;
         ConnectDone.Set();
@@ -109,7 +110,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
         }
     }
 
@@ -160,7 +161,7 @@ public class ClientProtocol : IocpProtocol
     private void DoLogin()
     {
         IsLogin = true;
-        OnMessage?.InvokeAsync(this, $"{UserInfo?.Name} logined");
+        OnLogined?.Invoke(this);
     }
 
     private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
@@ -175,7 +176,7 @@ public class ClientProtocol : IocpProtocol
             if (!FileWriters.TryGetValue(stamp, out var autoFile))
                 throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
             autoFile.Write(buffer, offset, count);
-            OnDownloading?.InvokeAsync(this, autoFile.Position * 100f / fileLength);
+            OnDownloading?.InvokeAsync(this, (autoFile.Position / (double)fileLength).ToPercentString());
             // simple validation
             if (autoFile.Position != position)
                 throw new IocpException(ProtocolCode.NotSameVersion);
@@ -193,7 +194,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }
@@ -214,7 +215,7 @@ public class ClientProtocol : IocpProtocol
                 OnUploaded?.InvokeAsync(this);
                 return;
             }
-            OnUploading?.Invoke(this, autoFile.Position * 100f / autoFile.Length);
+            OnUploading?.Invoke(this, (autoFile.Position / (double)autoFile.Length).ToPercentString());
             var buffer = new byte[packetSize];
             if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
                 throw new IocpException(ProtocolCode.FileExpired);
@@ -229,7 +230,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             // TODO: log fail
         }
     }
@@ -240,7 +241,7 @@ public class ClientProtocol : IocpProtocol
         {
             if (!IsLogin)
                 throw new IocpException(ProtocolCode.NotLogined);
-            var filePath = Path.Combine(RootDirectory, dirName, fileName);
+            var filePath = GetFileRepoPath(dirName, fileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -261,7 +262,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             //记录日志
             //Logger.Error(e.Message);
         }
@@ -273,10 +274,7 @@ public class ClientProtocol : IocpProtocol
         {
             if (!IsLogin)
                 throw new IocpException(ProtocolCode.NotLogined);
-            var dir = Path.Combine(RootDirectory, dirName);
-            if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-            var filePath = Path.Combine(dir, fileName);
+            var filePath = GetFileRepoPath(dirName, fileName);
             if (File.Exists(filePath))
             {
                 if (!canRename)
@@ -298,7 +296,7 @@ public class ClientProtocol : IocpProtocol
         }
         catch (Exception ex)
         {
-            OnException?.InvokeAsync(this, ex);
+            HandleException(ex);
             //记录日志
             //Logger.Error(E.Message);
         }

@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.TypeGeneral;
+using System.Text;
 
 namespace LocalUtilities.TypeToolKit.Mathematic;
 
@@ -67,5 +68,13 @@ public static class DoubleEx
             OperatorType.GreaterThanOrEqualTo => value1.ApproxGreaterThanOrEqualTo(value2),
             _ => throw new InvalidOperationException(),
         };
+    }
+
+    public static string ToPercentString(this double value, int keepDigit = 2)
+    {
+        return new StringBuilder()
+            .Append(Math.Round(value * 100, keepDigit))
+            .Append(SignTable.Percent)
+            .ToString();
     }
 }
