@@ -31,6 +31,15 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         return list;
     }
 
+    public string ReadTag(string name)
+    {
+        if (!Elements.TryGetValue(name, out var elements) || elements.Count is 0)
+            throw SsParseExceptions.CannotFindEntry(name);
+        if (elements.Count > 1)
+            throw SsParseExceptions.MultiAssignment(name);
+        return elements.First().Tag.Text;
+    }
+
     /// <summary>
     /// read for element like: xyz = str
     /// </summary>

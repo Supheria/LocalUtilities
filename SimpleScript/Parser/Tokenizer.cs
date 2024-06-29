@@ -76,8 +76,9 @@ internal class Tokenizer
                 switch (ch)
                 {
                     case SignTable.Escape:
-                        Composing.Append(GetU8Char());
+                        //Composing.Append(GetU8Char());
                         State = States.Escape;
+                        GetU8Char();
                         return false;
                     case SignTable.Quote:
                         //Composing.Append(GetChar());

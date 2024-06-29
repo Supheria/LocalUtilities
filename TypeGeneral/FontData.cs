@@ -35,7 +35,7 @@ public class FontData(string localName) : ISsSerializable
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        FamilyName = deserializer.ReadTag(nameof(FamilyName), s => s);
+        FamilyName = deserializer.ReadTag(nameof(FamilyName));
         Size = deserializer.ReadTag(nameof(Size), float.Parse);
         Style = deserializer.ReadTag(nameof(Style), s => s.ToEnum<FontStyle>());
         Unit = deserializer.ReadTag(nameof(Unit), s => s.ToEnum<GraphicsUnit>());
