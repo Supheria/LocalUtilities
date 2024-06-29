@@ -1,12 +1,22 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeToolKit.Mathematic;
+using LocalUtilities.TypeToolKit.Text;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
-public abstract class IocpProtocol : IDisposable
+public abstract class Protocol : IDisposable
 {
+    public event LogHandler? OnLog;
+
+    public event IocpEventHandler? OnLogined;
+
+    public event IocpEventHandler? OnClosed;
+
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
@@ -25,13 +35,9 @@ public abstract class IocpProtocol : IDisposable
 
     protected string RepoPath { get; set; } = "repo";
 
-    protected Dictionary<string, AutoDisposeFileStream> FileReaders { get; } = [];
+    protected ConcurrentDictionary<string, AutoDisposeFileStream> FileReaders { get; } = [];
 
-    protected Dictionary<string, AutoDisposeFileStream> FileWriters { get; } = [];
-
-    public event IocpEventHandler? OnClosed;
-
-    public event IocpEventHandler<Exception>? OnException;
+    protected ConcurrentDictionary<string, AutoDisposeFileStream> FileWriters { get; } = [];
 
     public void Close() => Dispose();
 
@@ -52,7 +58,7 @@ public abstract class IocpProtocol : IDisposable
         IsSendingAsync = false;
         IsLogin = false;
         SocketInfo.Disconnect();
-        OnClosed?.InvokeAsync(this);
+        HandleClosed();
         GC.SuppressFinalize(this);
     }
 
@@ -189,8 +195,86 @@ public abstract class IocpProtocol : IDisposable
         return Path.Combine(dir, fileName);
     }
 
+    private void HandleLog(string message)
+    {
+        OnLog?.InvokeAsync(GetLog(message));
+    }
+
+    protected void HandleMessage(string message)
+    {
+        HandleLog(message);
+    }
+
     protected void HandleException(Exception ex)
     {
-        OnException?.InvokeAsync(this, ex);
+        HandleLog(ex.Message);
     }
+
+    protected void HandleLogined()
+    {
+        HandleLog("login");
+        OnLogined?.InvokeAsync();
+    }
+
+    protected void HandleUploadStart()
+    {
+        HandleLog("upload file start...");
+    }
+
+    protected void HandleDownloadStart()
+    {
+        HandleLog("download file start...");
+    }
+
+    protected void HandleUploading(long fileLength, long position)
+    {
+        var sb = new StringBuilder()
+            .Append("uploading")
+            .Append(Math.Round(position * 100d / fileLength, 2))
+            .Append(SignTable.Percent)
+            .ToString();
+        //HandleLog(sb);
+    }
+
+    protected void HandleDownloading(long fileLength, long position)
+    {
+        var sb = new StringBuilder()
+            .Append("downloading")
+            .Append(Math.Round(position * 100d / fileLength, 2))
+            .Append(SignTable.Percent)
+            .ToString();
+        //HandleLog(sb);
+    }
+
+    protected void HandleUploaded(TimeSpan time)
+    {
+        var message = new StringBuilder()
+            .Append("upload file success")
+            .Append(SignTable.Open)
+            .Append(time.TotalMilliseconds)
+            .Append("ms")
+            .Append(SignTable.Close)
+            .ToString();
+        HandleLog(message);
+    }
+
+    protected void HandleDownloaded(TimeSpan time)
+    {
+        var message = new StringBuilder()
+            .Append("download file success")
+            .Append(SignTable.Open)
+            .Append(time.TotalMilliseconds)
+            .Append("ms")
+            .Append(SignTable.Close)
+            .ToString();
+        HandleLog(message);
+    }
+
+    protected void HandleClosed()
+    {
+        HandleLog("close");
+        OnClosed?.InvokeAsync();
+    }
+
+    public abstract string GetLog(string message);
 }

@@ -69,12 +69,4 @@ public static class DoubleEx
             _ => throw new InvalidOperationException(),
         };
     }
-
-    public static string ToPercentString(this double value, int keepDigit = 2)
-    {
-        return new StringBuilder()
-            .Append(Math.Round(value * 100, keepDigit))
-            .Append(SignTable.Percent)
-            .ToString();
-    }
 }

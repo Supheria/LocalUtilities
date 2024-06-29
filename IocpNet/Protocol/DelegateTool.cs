@@ -1,28 +1,25 @@
 ﻿namespace LocalUtilities.IocpNet.Protocol;
 
-public delegate void IocpEventHandler(IocpProtocol protocol);
+public delegate void LogHandler(string log);
 
-public delegate void IocpEventHandler<TArgs>(IocpProtocol iocpProtocol, TArgs args);
+public delegate void IocpEventHandler();
+
+public delegate void IocpEventHandler<TArgs>(TArgs args);
 
 public static class DelegateTool
 {
-    public static void InvokeAsync(this IocpEventHandler onEvent, IocpProtocol protocol)
+    public static void InvokeAsync(this LogHandler onEvent, string log)
     {
-        new Task(() => onEvent?.Invoke(protocol)).Start();
+        new Task(() => onEvent?.Invoke(log)).Start();
     }
 
-    public static void InvokeAsync<TArgs>(this IocpEventHandler<TArgs> onEvent, IocpProtocol protocol, TArgs args)
+    public static void InvokeAsync(this IocpEventHandler onEvent)
     {
-        new Task(() => onEvent?.Invoke(protocol, args)).Start();
+        new Task(() => onEvent?.Invoke()).Start();
     }
 
-    public static void InvokeAsync(this EventHandler onEvent, object? obj, EventArgs args)
+    public static void InvokeAsync<TArgs>(this IocpEventHandler<TArgs> onEvent, TArgs args)
     {
-        new Task(() => onEvent?.Invoke(obj, args)).Start();
-    }
-
-    public static void InvokeAsync<TArgs>(this EventHandler<TArgs> onEvent, object obj, TArgs args)
-    {
-        new Task(() => onEvent?.Invoke(obj, args)).Start();
+        new Task(() => onEvent?.Invoke(args)).Start();
     }
 }

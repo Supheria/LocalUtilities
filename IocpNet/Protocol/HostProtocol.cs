@@ -1,23 +1,13 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net.Sockets;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
-/// <summary>
-/// 全功能处理协议
-/// </summary>
-/// <param name="server"></param>
-/// <param name="userToken"></param>
-public class HostProtocol : IocpProtocol
+public class HostProtocol : Protocol
 {
-    public event IocpEventHandler? OnFileReceived;
-
-    public event IocpEventHandler? OnFileSent;
-
-    public event IocpEventHandler<string>? OnMessage;
-
     object AcceptLocker { get; } = new();
 
     public bool ProcessAccept(Socket? acceptSocket)
@@ -132,8 +122,9 @@ public class HostProtocol : IocpProtocol
             }
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileWriters.Remove(file.TimeStamp);
-            FileWriters[autoFile.TimeStamp] = autoFile;
+            autoFile.OnClosed += (file) => FileWriters.TryRemove(file.TimeStamp, out _);
+            FileWriters.TryAdd(autoFile.TimeStamp, autoFile);
+            HandleUploadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
                 .AppendValue(ProtocolKey.Stamp, stamp)
@@ -172,14 +163,16 @@ public class HostProtocol : IocpProtocol
             {
                 // TODO: log success
                 autoFile.Close();
-                OnFileReceived?.InvokeAsync(this);
+                _ = DateTime.TryParse(stamp, out var start);
+                HandleUploaded(DateTime.Now - start);
             }
+            else
+                HandleUploading(fileLength, autoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize);
             CommandSucceed(commandComposer);
-            return;
         }
         catch (Exception ex)
         {
@@ -205,9 +198,10 @@ public class HostProtocol : IocpProtocol
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileReaders.Remove(file.TimeStamp);
-            FileReaders[stamp] = autoFile;
+            autoFile.OnClosed += (file) => FileReaders.TryRemove(file.TimeStamp, out _);
+            FileReaders.TryAdd(stamp, autoFile);
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
+            HandleDownloadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
                 .AppendValue(ProtocolKey.FileLength, fileStream.Length)
@@ -241,12 +235,14 @@ public class HostProtocol : IocpProtocol
             {
                 // TODO: log success
                 autoFile.Close();
-                OnFileSent?.InvokeAsync(this);
+                _ = DateTime.TryParse(stamp, out var start);
+                HandleUploaded(DateTime.Now - start);
                 return;
             }
             var buffer = new byte[packetSize];
             if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
                 throw new IocpException(ProtocolCode.FileExpired);
+            HandleDownloading(autoFile.Length, autoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
                 .AppendValue(ProtocolKey.FileLength, autoFile.Length)
@@ -270,10 +266,7 @@ public class HostProtocol : IocpProtocol
     private void DoMessage(byte[] buffer, int offset, int count)
     {
         var message = Encoding.UTF8.GetString(buffer, offset, count);
-        OnMessage?.InvokeAsync(this, message);
-        var commandComposer = new CommandComposer()
-            .AppendCommand(ProtocolKey.Message);
-        CommandSucceed(commandComposer);
+        HandleMessage(message);
     }
 
     private void DoLogin(CommandParser commandParser)
@@ -289,6 +282,7 @@ public class HostProtocol : IocpProtocol
             UserInfo = new(name, password);
             IsLogin = true;
             // TODO: log success
+            HandleLogined();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Login)
                 .AppendValue(ProtocolKey.UserId, UserInfo.Id)
@@ -304,6 +298,21 @@ public class HostProtocol : IocpProtocol
             HandleException(ex);
             // TODO: log fail
         }
+    }
+
+    public override string GetLog(string message)
+    {
+        return new StringBuilder()
+            .Append(SocketInfo.RemoteEndPoint)
+            .Append(SignTable.Open)
+            .Append(UserInfo?.Name)
+            .Append(SignTable.Close)
+            .Append(SignTable.Mark)
+            .Append(SignTable.Space)
+            .Append(message)
+            .Append(SignTable.At)
+            .Append(DateTime.Now.GetFormatString())
+            .ToString();
     }
 
     //private void DoDir(CommandParser commandParser)

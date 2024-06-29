@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Mathematic;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net;
@@ -7,22 +8,8 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
-public class ClientProtocol : IocpProtocol
+public class ClientProtocol : Protocol
 {
-    public event IocpEventHandler? OnConnected;
-
-    public event IocpEventHandler? OnLogined;
-
-    public event IocpEventHandler? OnUploaded;
-
-    public event IocpEventHandler? OnDownloaded;
-
-    public event IocpEventHandler<string>? OnUploading;
-
-    public event IocpEventHandler<string>? OnDownloading;
-
-    public event IocpEventHandler<string>? OnMessage;
-
     AutoResetEvent ConnectDone { get; } = new(false);
 
     object ConnectLocker { get; } = new();
@@ -90,7 +77,6 @@ public class ClientProtocol : IocpProtocol
             return;
         }
         ReceiveAsync();
-        OnConnected?.InvokeAsync(this);
         SocketInfo.Connect(connectArgs.ConnectSocket);
         IsConnect = true;
         ConnectDone.Set();
@@ -152,16 +138,13 @@ public class ClientProtocol : IocpProtocol
     private void DoMessage(byte[] buffer, int offset, int count)
     {
         string message = Encoding.UTF8.GetString(buffer, offset, count);
-        if (!string.IsNullOrWhiteSpace(message))
-        {
-            OnMessage?.InvokeAsync(this, message);
-        }
+        HandleMessage(message);
     }
 
     private void DoLogin()
     {
         IsLogin = true;
-        OnLogined?.Invoke(this);
+        HandleLogined();
     }
 
     private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
@@ -176,15 +159,18 @@ public class ClientProtocol : IocpProtocol
             if (!FileWriters.TryGetValue(stamp, out var autoFile))
                 throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
             autoFile.Write(buffer, offset, count);
-            OnDownloading?.InvokeAsync(this, (autoFile.Position / (double)fileLength).ToPercentString());
             // simple validation
             if (autoFile.Position != position)
                 throw new IocpException(ProtocolCode.NotSameVersion);
             if (autoFile.Length >= fileLength)
             {
+                // TODO: log success
                 autoFile.Close();
-                OnDownloaded?.InvokeAsync(this);
+                _ = DateTime.TryParse(stamp, out var start);
+                HandleUploaded(DateTime.Now - start);
             }
+            else
+                HandleDownloading(fileLength, autoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.SendFile)
                 .AppendValue(ProtocolKey.Stamp, stamp)
@@ -212,13 +198,14 @@ public class ClientProtocol : IocpProtocol
             {
                 // TODO: log success
                 autoFile.Close();
-                OnUploaded?.InvokeAsync(this);
+                _ = DateTime.TryParse(stamp, out var start);
+                HandleUploaded(DateTime.Now - start);
                 return;
             }
-            OnUploading?.Invoke(this, (autoFile.Position / (double)autoFile.Length).ToPercentString());
             var buffer = new byte[packetSize];
             if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
                 throw new IocpException(ProtocolCode.FileExpired);
+            HandleUploading(autoFile.Length, autoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.WriteFile)
                 .AppendValue(ProtocolKey.FileLength, autoFile.Length)
@@ -247,9 +234,10 @@ public class ClientProtocol : IocpProtocol
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileReaders.Remove(file.TimeStamp);
-            FileReaders[stamp] = autoFile;
+            autoFile.OnClosed += (file) => FileReaders.TryRemove(file.TimeStamp, out _);
+            FileReaders.TryAdd(stamp, autoFile);
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
+            HandleUploadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
                 .AppendValue(ProtocolKey.DirName, dirName)
@@ -284,8 +272,9 @@ public class ClientProtocol : IocpProtocol
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileWriters.Remove(file.TimeStamp);
-            FileWriters[stamp] = autoFile;
+            autoFile.OnClosed += (file) => FileWriters.TryRemove(file.TimeStamp, out _);
+            FileWriters.TryAdd(stamp, autoFile);
+            HandleDownloadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
                 .AppendValue(ProtocolKey.DirName, dirName)
@@ -300,5 +289,20 @@ public class ClientProtocol : IocpProtocol
             //记录日志
             //Logger.Error(E.Message);
         }
+    }
+
+    public override string GetLog(string message)
+    {
+        return new StringBuilder()
+            .Append(SocketInfo.LocalEndPoint)
+            .Append(SignTable.Open)
+            .Append(UserInfo?.Name)
+            .Append(SignTable.Close)
+            .Append(SignTable.Mark)
+            .Append(SignTable.Space)
+            .Append(message)
+            .Append(SignTable.At)
+            .Append(DateTime.Now.GetFormatString())
+            .ToString();
     }
 }

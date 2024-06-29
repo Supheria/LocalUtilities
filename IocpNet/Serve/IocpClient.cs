@@ -13,15 +13,11 @@ public class IocpClient
 {
     ClientProtocol Client { get; } = new();
 
-    public delegate void LogHandler(string log);
-
-    public delegate void EventHandler();
-
     public event LogHandler? OnLog;
 
-    public event EventHandler? OnConnected;
+    public event IocpEventHandler? OnConnected;
 
-    public event EventHandler? OnClosed;
+    public event IocpEventHandler? OnDisconnected;
 
     public bool IsConnect => Client.SocketInfo.IsConnect;
 
@@ -29,32 +25,9 @@ public class IocpClient
 
     public IocpClient()
     {
-        Client.OnUploaded += (p) => OnLog?.Invoke(GetLog(p, "upload file success"));
-        Client.OnDownloaded += (p) => OnLog?.Invoke(GetLog(p, "download file success"));
-        Client.OnUploading += (p, progress) => OnLog?.Invoke(GetLog(p, $"uploading {progress}"));
-        Client.OnDownloading += (p, progress) => OnLog?.Invoke(GetLog(p, $"downloading {progress}"));
-        Client.OnMessage += (p, m) => OnLog?.Invoke(GetLog(p, m));
-        Client.OnException += (p, ex) => OnLog?.Invoke(GetLog(p, ex.Message));
-        Client.OnConnected += (p) => OnLog?.Invoke(GetLog(p, "connect"));
-        Client.OnLogined += (p) => OnLog?.Invoke(GetLog(p, "login"));
-        Client.OnClosed += (p) => OnLog?.Invoke(GetLog(p, "close"));
-        Client.OnConnected += (_) => OnConnected?.Invoke();
-        Client.OnClosed += (_) => OnClosed?.Invoke();
-    }
-
-    private static string GetLog(IocpProtocol protocol, string message)
-    {
-        return new StringBuilder()
-            .Append(protocol.SocketInfo.LocalEndPoint)
-            .Append(SignTable.Open)
-            .Append(protocol.UserInfo?.Name)
-            .Append(SignTable.Close)
-            .Append(SignTable.Mark)
-            .Append(SignTable.Space)
-            .Append(message)
-            .Append(SignTable.At)
-            .Append(DateTime.Now.GetFormatString())
-            .ToString();
+        Client.OnLog += (s) => OnLog?.Invoke(s);
+        Client.OnLogined += () => OnConnected?.Invoke();
+        Client.OnClosed += () => OnDisconnected?.Invoke();
     }
 
     public void Connect(string host, int port, string useName, string password)

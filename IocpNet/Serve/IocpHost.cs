@@ -21,37 +21,25 @@ public class IocpHost
 
     private DaemonThread DaemonThread { get; }
 
-    public enum ClientState
-    {
-        Connect,
-        Disconnect,
-    }
+    public event LogHandler? OnLog;
 
-    public event IocpEventHandler<string>? OnMessage;
-
-    public event IocpEventHandler<ClientState>? OnClientNumberChange;
-
-    public event EventHandler<int>? OnParallelRemainChange;
+    public event IocpEventHandler<int>? OnParallelRemainChange;
 
     public IocpHost(int parallelCountMax)
     {
         ParallelCountMax = parallelCountMax;
         ProtocolPool = new(parallelCountMax);
         DaemonThread = new(ProcessDaemon);
-        for (int i = 0; i < ParallelCountMax; i++) //按照连接数建立读写对象
+        for (int i = 0; i < ParallelCountMax; i++)
         {
             var protocol = new HostProtocol();
-            protocol.OnClosed += (_) =>
+            protocol.OnLog += (s) => OnLog?.Invoke(s);
+            protocol.OnClosed += () =>
             {
                 ProtocolPool.Push(protocol);
                 ProtocolList.Remove(protocol);
-                OnClientNumberChange?.Invoke(protocol, ClientState.Disconnect);
-                OnParallelRemainChange?.Invoke(this, ProtocolPool.Count);
+                OnParallelRemainChange?.Invoke(ProtocolPool.Count);
             };
-            protocol.OnException += (p, ex) => OnMessage?.Invoke(p, ex.Message);
-            protocol.OnFileReceived += (p) => OnMessage?.Invoke(p, $"upload file success at {DateTime.Now}");
-            protocol.OnFileSent += (p) => OnMessage?.Invoke(p, $"download file success at {DateTime.Now}");
-            protocol.OnMessage += (p, m) => OnMessage?.Invoke(p, m);
             ProtocolPool.Push(protocol);
         }
     }
@@ -65,19 +53,11 @@ public class IocpHost
         var timeout = ConstTabel.TimeoutMilliseconds;
         foreach (var protocol in userTokens)
         {
-            try
+            var span = DateTime.Now - protocol.SocketInfo.ActiveTime;
+            if (span.TotalMilliseconds > timeout)
             {
-                var span = DateTime.Now - protocol.SocketInfo.ActiveTime;
-                if (span.TotalMilliseconds > timeout) //超时Socket断开
-                {
-                    lock (protocol)
-                        protocol.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                //ServerInstance.Logger.ErrorFormat("Daemon thread check timeout socket error, message: {0}", ex.Message);
-                //ServerInstance.Logger.Error(ex.StackTrace);
+                lock (protocol)
+                    protocol.Close();
             }
         }
     }
@@ -96,7 +76,7 @@ public class IocpHost
         Socket.Listen(ParallelCountMax);
         //ServerInstance.Logger.InfoFormat("Start listen socket {0} success", localEndPoint.ToString());
         //for (int i = 0; i < 64; i++) //不能循环投递多次AcceptAsync，会造成只接收8000连接后不接收连接了
-        StartAccept(null);
+        AcceptAsync(null);
         DaemonThread.Start();
         IsStart = true;
     }
@@ -118,7 +98,7 @@ public class IocpHost
         //ServerInstance.Logger.Info("Server is Stoped");
     }
 
-    public void StartAccept(SocketAsyncEventArgs? acceptArgs)
+    private void AcceptAsync(SocketAsyncEventArgs? acceptArgs)
     {
         if (acceptArgs == null)
         {
@@ -142,18 +122,9 @@ public class IocpHost
             return;
         }
         ProtocolList.Add(protocol);
-        OnParallelRemainChange?.InvokeAsync(this, ProtocolPool.Count);
-        try
-        {
-            protocol.ReceiveAsync();
-            OnClientNumberChange?.InvokeAsync(protocol, ClientState.Connect);
-        }
-        catch (Exception E)
-        {
-            //ServerInstance.Logger.ErrorFormat("Accept client {0} error, message: {1}", protocol.AcceptSocket, E.Message);
-            //ServerInstance.Logger.Error(E.StackTrace);
-        }
+        OnParallelRemainChange?.Invoke(ProtocolPool.Count);
+        protocol.ReceiveAsync();
         if (acceptArgs.SocketError is not SocketError.OperationAborted)
-            StartAccept(acceptArgs); //把当前异步事件释放，等待下次连接
+            AcceptAsync(acceptArgs); //把当前异步事件释放，等待下次连接
     }
 }

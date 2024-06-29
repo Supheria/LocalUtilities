@@ -43,7 +43,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
         Load += ResizeableForm_Load;
         //Shown += ResizeableForm_Shown;
         FormClosing += ResizeableForm_FormClosing;
-        InitializeComponent();
+        //InitializeComponent();
     }
 
     private void ResizeableForm_Shown(object? sender, EventArgs e)
@@ -51,7 +51,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
         DrawClient();
     }
 
-    protected abstract void InitializeComponent();
+    //protected abstract void InitializeComponent();
 
     private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
     {
