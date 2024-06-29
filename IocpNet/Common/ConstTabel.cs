@@ -12,9 +12,7 @@ public class ConstTabel
     /// </summary>
     public static int ReceiveBufferSize { get; } = 1024 * 4;
 
-
-    //public static int TransferBufferMax { get; } = 1024 * 1024;
-    public static int TransferBufferMax { get; } = 1024;
+    public static int TransferBufferMax { get; } = 1024 * 1024;
 
     public static int TimeoutMilliseconds { get; } = 60 * 1000;
 

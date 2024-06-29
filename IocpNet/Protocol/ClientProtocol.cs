@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Mathematic;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net;
@@ -8,7 +9,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
-public class ClientProtocol : Protocol
+public class ClientProtocol : IocpProtocol
 {
     AutoResetEvent ConnectDone { get; } = new(false);
 
@@ -42,29 +43,26 @@ public class ClientProtocol : Protocol
 
     private void Connect(IPEndPoint remoteEndPoint)
     {
-        lock (ConnectLocker)
+        try
         {
-            try
+            if (Socket is not null && Socket.RemoteEndPoint?.ToString() == remoteEndPoint.ToString())
+                return;
+            Close();
+            IsConnect = false;
+            var connectArgs = new SocketAsyncEventArgs()
             {
-                if (Socket is not null && Socket.RemoteEndPoint?.ToString() == remoteEndPoint.ToString())
-                    return;
-                Close();
-                IsConnect = false;
-                var connectArgs = new SocketAsyncEventArgs()
-                {
-                    RemoteEndPoint = remoteEndPoint,
-                };
-                connectArgs.Completed += (_, args) => ProcessConnect(args);
-                Socket ??= new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                if (!Socket.ConnectAsync(connectArgs))
-                    ProcessConnect(connectArgs);
-                ConnectDone.WaitOne(1000);
-            }
-            catch (Exception ex)
-            {
-                Close();
-                //Console.WriteLine(ex.ToString());
-            }
+                RemoteEndPoint = remoteEndPoint,
+            };
+            connectArgs.Completed += (_, args) => ProcessConnect(args);
+            Socket ??= new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            if (!Socket.ConnectAsync(connectArgs))
+                ProcessConnect(connectArgs);
+            ConnectDone.WaitOne(1000);
+        }
+        catch (Exception ex)
+        {
+            Close();
+            //Console.WriteLine(ex.ToString());
         }
     }
 
@@ -102,32 +100,44 @@ public class ClientProtocol : Protocol
 
     protected override void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
-        commandParser.GetValueAsInt(ProtocolKey.Code, out var errorCode);
-        if ((ProtocolCode)errorCode is not ProtocolCode.Success)
-            // TODO: log fail
-            // TODO: handle error code
-            return;
-        commandParser.GetValueAsCommandKey(out var commandKey);
-        switch (commandKey)
+        try
         {
-            case ProtocolKey.Active:
-                DoConnect();
-                return;
-            case ProtocolKey.Login:
-                DoLogin();
-                return;
-            case ProtocolKey.Message:
-                DoMessage(buffer, offset, count);
-                return;
-            case ProtocolKey.Upload:
-                DoUpload(commandParser);
-                return;
-            case ProtocolKey.Download:
-                DoDownload(commandParser, buffer, offset, count);
-                return;
-            default:
-                return;
-        };
+            if (!commandParser.GetValueAsString(ProtocolKey.Code, out var errorCode))
+                throw new IocpException(ProtocolCode.UnknowError);
+            var code = errorCode.ToEnum<ProtocolCode>();
+            if (code is not ProtocolCode.Success)
+            {
+                if (commandParser.GetValueAsString(ProtocolKey.Message, out var message))
+                    throw new IocpException(code, message);
+                else
+                    throw new IocpException(code);
+            }
+            commandParser.GetValueAsCommandKey(out var commandKey);
+            switch (commandKey)
+            {
+                case ProtocolKey.Active:
+                    DoConnect();
+                    return;
+                case ProtocolKey.Login:
+                    DoLogin();
+                    return;
+                case ProtocolKey.Message:
+                    DoMessage(buffer, offset, count);
+                    return;
+                case ProtocolKey.Upload:
+                    DoUpload(commandParser);
+                    return;
+                case ProtocolKey.Download:
+                    DoDownload(commandParser, buffer, offset, count);
+                    return;
+                default:
+                    return;
+            };
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void DoConnect()
@@ -156,21 +166,21 @@ public class ClientProtocol : Protocol
                 !commandParser.GetValueAsInt(ProtocolKey.PacketSize, out var packetSize) ||
                 !commandParser.GetValueAsLong(ProtocolKey.Position, out var position))
                 throw new IocpException(ProtocolCode.ParameterError);
-            if (!FileWriters.TryGetValue(stamp, out var autoFile))
-                throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
-            autoFile.Write(buffer, offset, count);
+            if (AutoFile.IsExpired) 
+                throw new IocpException(ProtocolCode.FileExpired, stamp);
+            AutoFile.Write(buffer, offset, count);
             // simple validation
-            if (autoFile.Position != position)
+            if (AutoFile.Position != position)
                 throw new IocpException(ProtocolCode.NotSameVersion);
-            if (autoFile.Length >= fileLength)
+            if (AutoFile.Length >= fileLength)
             {
                 // TODO: log success
-                autoFile.Close();
+                AutoFile.Close();
                 _ = DateTime.TryParse(stamp, out var start);
-                HandleUploaded(DateTime.Now - start);
+                HandleDownloaded(DateTime.Now - start);
             }
             else
-                HandleDownloading(fileLength, autoFile.Position);
+                HandleDownloading(fileLength, AutoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.SendFile)
                 .AppendValue(ProtocolKey.Stamp, stamp)
@@ -192,26 +202,26 @@ public class ClientProtocol : Protocol
             if (!commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp) ||
                 !commandParser.GetValueAsInt(ProtocolKey.PacketSize, out var packetSize))
                 throw new IocpException(ProtocolCode.ParameterError);
-            if (!FileReaders.TryGetValue(stamp, out var autoFile))
-                throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
-            if (autoFile.Position >= autoFile.Length)
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, stamp);
+            if (AutoFile.Position >= AutoFile.Length)
             {
                 // TODO: log success
-                autoFile.Close();
+                AutoFile.Close();
                 _ = DateTime.TryParse(stamp, out var start);
                 HandleUploaded(DateTime.Now - start);
                 return;
             }
             var buffer = new byte[packetSize];
-            if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
-                throw new IocpException(ProtocolCode.FileExpired);
-            HandleUploading(autoFile.Length, autoFile.Position);
+            if (!AutoFile.Read(buffer, 0, buffer.Length, out var count))
+                throw new IocpException(ProtocolCode.FileExpired, stamp);
+            HandleUploading(AutoFile.Length, AutoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.WriteFile)
-                .AppendValue(ProtocolKey.FileLength, autoFile.Length)
+                .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
-                .AppendValue(ProtocolKey.Position, autoFile.Position);
+                .AppendValue(ProtocolKey.Position, AutoFile.Position);
             WriteCommand(commandComposer, buffer, 0, count);
             SendAsync();
         }
@@ -233,9 +243,8 @@ public class ClientProtocol : Protocol
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var stamp = DateTime.Now.ToString();
-            var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileReaders.TryRemove(file.TimeStamp, out _);
-            FileReaders.TryAdd(stamp, autoFile);
+            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+                throw new IocpException(ProtocolCode.FileInProcess);
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
             HandleUploadStart();
             var commandComposer = new CommandComposer()
@@ -271,9 +280,8 @@ public class ClientProtocol : Protocol
             }
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var stamp = DateTime.Now.ToString();
-            var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileWriters.TryRemove(file.TimeStamp, out _);
-            FileWriters.TryAdd(stamp, autoFile);
+            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+                throw new IocpException(ProtocolCode.FileInProcess);
             HandleDownloadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
@@ -302,7 +310,7 @@ public class ClientProtocol : Protocol
             .Append(SignTable.Space)
             .Append(message)
             .Append(SignTable.At)
-            .Append(DateTime.Now.GetFormatString())
+            .Append(DateTime.Now.ToUiniformLook())
             .ToString();
     }
 }

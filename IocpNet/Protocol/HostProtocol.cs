@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
-public class HostProtocol : Protocol
+public class HostProtocol : IocpProtocol
 {
     object AcceptLocker { get; } = new();
 
@@ -121,9 +121,8 @@ public class HostProtocol : Protocol
                 filePath = filePath.RenamePathByDateTime();
             }
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileWriters.TryRemove(file.TimeStamp, out _);
-            FileWriters.TryAdd(autoFile.TimeStamp, autoFile);
+            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+                throw new IocpException(ProtocolCode.FileInProcess);
             HandleUploadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
@@ -153,21 +152,21 @@ public class HostProtocol : Protocol
                 !commandParser.GetValueAsInt(ProtocolKey.PacketSize, out var packetSize) ||
                 !commandParser.GetValueAsLong(ProtocolKey.Position, out var position))
                 throw new IocpException(ProtocolCode.ParameterError);
-            if (!FileWriters.TryGetValue(stamp, out var autoFile))
-                throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
-            autoFile.Write(buffer, offset, count);
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, stamp);
+            AutoFile.Write(buffer, offset, count);
             // simple validation
-            if (autoFile.Position != position)
+            if (AutoFile.Position != position)
                 throw new IocpException(ProtocolCode.NotSameVersion);
-            if (autoFile.Length >= fileLength)
+            if (AutoFile.Length >= fileLength)
             {
                 // TODO: log success
-                autoFile.Close();
+                AutoFile.Close();
                 _ = DateTime.TryParse(stamp, out var start);
                 HandleUploaded(DateTime.Now - start);
             }
             else
-                HandleUploading(fileLength, autoFile.Position);
+                HandleUploading(fileLength, AutoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
                 .AppendValue(ProtocolKey.Stamp, stamp)
@@ -197,9 +196,8 @@ public class HostProtocol : Protocol
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var autoFile = new AutoDisposeFileStream(stamp, fileStream, ConstTabel.FileStreamExpireMilliseconds);
-            autoFile.OnClosed += (file) => FileReaders.TryRemove(file.TimeStamp, out _);
-            FileReaders.TryAdd(stamp, autoFile);
+            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+                throw new IocpException(ProtocolCode.FileInProcess);
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
             HandleDownloadStart();
             var commandComposer = new CommandComposer()
@@ -229,28 +227,27 @@ public class HostProtocol : Protocol
             if (!commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp) ||
                 !commandParser.GetValueAsInt(ProtocolKey.PacketSize, out var packetSize))
                 throw new IocpException(ProtocolCode.ParameterError);
-            if (!FileReaders.TryGetValue(stamp, out var autoFile))
-                throw new IocpException(ProtocolCode.ParameterInvalid, "invalid file stamp");
-            if (autoFile.Position >= autoFile.Length)
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, stamp);
+            if (AutoFile.Position >= AutoFile.Length)
             {
                 // TODO: log success
-                autoFile.Close();
+                AutoFile.Close();
                 _ = DateTime.TryParse(stamp, out var start);
-                HandleUploaded(DateTime.Now - start);
+                HandleDownloaded(DateTime.Now - start);
                 return;
             }
             var buffer = new byte[packetSize];
-            if (!autoFile.Read(buffer, 0, buffer.Length, out var count))
-                throw new IocpException(ProtocolCode.FileExpired);
-            HandleDownloading(autoFile.Length, autoFile.Position);
+            if (!AutoFile.Read(buffer, 0, buffer.Length, out var count))
+                throw new IocpException(ProtocolCode.FileExpired, stamp);
+            HandleDownloading(AutoFile.Length, AutoFile.Position);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)
-                .AppendValue(ProtocolKey.FileLength, autoFile.Length)
+                .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
                 .AppendValue(ProtocolKey.Stamp, stamp)
                 .AppendValue(ProtocolKey.PacketSize, packetSize)
-                .AppendValue(ProtocolKey.Position, autoFile.Position);
-            WriteCommand(commandComposer, buffer, 0, count);
-            SendAsync();
+                .AppendValue(ProtocolKey.Position, AutoFile.Position);
+            CommandSucceed(commandComposer, buffer, 0, count);
         }
         catch (Exception ex)
         {
@@ -311,7 +308,7 @@ public class HostProtocol : Protocol
             .Append(SignTable.Space)
             .Append(message)
             .Append(SignTable.At)
-            .Append(DateTime.Now.GetFormatString())
+            .Append(DateTime.Now.ToUiniformLook())
             .ToString();
     }
 

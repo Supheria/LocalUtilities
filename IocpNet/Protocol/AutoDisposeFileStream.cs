@@ -2,47 +2,46 @@
 
 public class AutoDisposeFileStream
 {
-    public string TimeStamp { get; }
-
-    FileStream FileStream { get; set; }
+    FileStream? FileStream { get; set; } = null;
 
     System.Timers.Timer Timer { get; } = new();
 
-    public bool IsExpired { get; private set; } = false;
+    public bool IsExpired => FileStream is null;
 
-    public long Length => FileStream.Length;
+    public long Length => FileStream?.Length ?? 0;
 
     public long Position
     {
-        get => FileStream.Position;
-        set => FileStream.Position = value;
+        get => FileStream?.Position ?? 0;
+        set
+        {
+            if (FileStream is not null)
+                FileStream.Position = value;
+        }
     }
 
-    public delegate void HandleEvent(AutoDisposeFileStream autoFile);
-
-    public event HandleEvent? OnClosed;
-
-    public AutoDisposeFileStream(string timeStamp, FileStream fileStream, int expireMilliseconds)
+    public bool Relocate(FileStream fileStream, int expireMilliseconds)
     {
-        TimeStamp = timeStamp;
+        if (!IsExpired)
+            return false;
         FileStream = fileStream;
         Timer.Interval = expireMilliseconds;
         Timer.Elapsed += (_, _) => Close();
         Timer.Start();
+        return true;
     }
 
     public void Close()
     {
-        FileStream.Dispose();
-        Timer.Dispose();
-        IsExpired = true;
-        OnClosed?.Invoke(this);
+        FileStream?.Dispose();
+        FileStream = null;
+        Timer.Stop();
     }
 
     public bool Read(byte[] buffer, int offset, int count, out int readCount)
     {
         readCount = 0;
-        if (IsExpired)
+        if (FileStream is null)
             return false;
         Timer.Stop();
         readCount = FileStream.Read(buffer, offset, count);
@@ -52,7 +51,7 @@ public class AutoDisposeFileStream
 
     public bool Write(byte[] buffer, int offset, int count)
     {
-        if (IsExpired)
+        if (FileStream is null)
             return false;
         Timer.Stop();
         FileStream.Write(buffer, offset, count);

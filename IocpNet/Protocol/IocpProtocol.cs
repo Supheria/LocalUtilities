@@ -9,7 +9,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
-public abstract class Protocol : IDisposable
+public abstract class IocpProtocol : IDisposable
 {
     public event LogHandler? OnLog;
 
@@ -35,14 +35,14 @@ public abstract class Protocol : IDisposable
 
     protected string RepoPath { get; set; } = "repo";
 
-    protected ConcurrentDictionary<string, AutoDisposeFileStream> FileReaders { get; } = [];
-
-    protected ConcurrentDictionary<string, AutoDisposeFileStream> FileWriters { get; } = [];
+    protected AutoDisposeFileStream AutoFile { get; } = new();
 
     public void Close() => Dispose();
 
     public void Dispose()
     {
+        //if (Socket is null)
+        //    return;
         try
         {
             Socket?.Shutdown(SocketShutdown.Both);
@@ -57,6 +57,7 @@ public abstract class Protocol : IDisposable
         SendBuffer.ClearAllPacket();
         IsSendingAsync = false;
         IsLogin = false;
+        AutoFile.Close();
         SocketInfo.Disconnect();
         HandleClosed();
         GC.SuppressFinalize(this);

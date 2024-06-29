@@ -14,7 +14,7 @@ public static class PathTool
         name = new StringBuilder()
             .Append(name)
             .Append(SignTable.UnderLine)
-            .Append(DateTime.Now.GetFormatString())
+            .Append(DateTime.Now.ToFileName())
             .Append(SignTable.Dot)
             .Append(Path.GetExtension(path))
             .ToString();
