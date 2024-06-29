@@ -9,17 +9,17 @@ public delegate void FormOnLoading(SsDeserializer deserializer);
 
 public abstract class ResizeableForm : Form, ISsSerializable
 {
+    protected event FormOnSaveing? OnSaveForm;
+
+    protected event FormOnLoading? OnLoadForm;
+
+    protected event OnComponentRunning? OnDrawClient;
+
     public abstract string LocalName { get; }
 
     public string? IniFilePath { get; set; }
 
     bool Resizing { get; set; } = false;
-
-    protected FormOnSaveing? OnSaveForm { get; set; }
-
-    protected FormOnLoading? OnLoadForm { get; set; }
-
-    protected OnComponentRunning? OnDrawingClient { get; set; }
 
     protected new int Padding { get; set; } = 12;
 
@@ -75,7 +75,7 @@ public abstract class ResizeableForm : Form, ISsSerializable
         if (WindowState is FormWindowState.Minimized)
             return;
         SuspendLayout();
-        OnDrawingClient?.Invoke();
+        OnDrawClient?.Invoke();
         ResumeLayout();
     }
 

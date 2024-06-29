@@ -17,4 +17,12 @@ internal class SignTable
     internal const char Empty = '\0';
     internal const char UnderLine = '_';
     internal const char Dot = '.';
+    internal const char OpenBracket = '[';
+    internal const char CloseBracket = ']';
+    internal const char At = '@';
+    internal const char Percent = '%';
+    // TODO: rename
+    internal const char Mark = ':';
+    internal const char Open = '(';
+    internal const char Close = ')';
 }
