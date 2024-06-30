@@ -1,5 +1,4 @@
 ﻿using LocalUtilities.TypeGeneral;
-using System.Text;
 
 namespace LocalUtilities.TypeToolKit.Mathematic;
 

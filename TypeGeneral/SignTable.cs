@@ -21,8 +21,8 @@ internal class SignTable
     internal const char CloseBracket = ']';
     internal const char At = '@';
     internal const char Percent = '%';
-    // TODO: rename
-    internal const char Mark = ':';
-    internal const char Open = '(';
-    internal const char Close = ')';
+    internal const char Colon = ':';
+    internal const char OpenParenthesis = '(';
+    internal const char CloseParenthesis = ')';
+    internal const char Slash = '/';
 }

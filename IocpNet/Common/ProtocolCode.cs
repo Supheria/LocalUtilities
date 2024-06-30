@@ -3,7 +3,7 @@
 public enum ProtocolCode
 {
     Success,
-    NotExistCommand,
+    UnknownCommand,
     PacketLengthError,
     PacketFormatError,
     UnknowError,
@@ -28,4 +28,5 @@ public enum ProtocolCode
     NotLogined,
     FileAlreadyExist,
     NoConnection,
+    EmptyUserInfo
 }

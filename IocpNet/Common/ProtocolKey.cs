@@ -20,7 +20,7 @@ public enum ProtocolKey
     DirName,
     TextSeperator,
     FileLength,
-    PacketSize,
+    PacketLength,
 
     FileExists,
     OpenFile,
@@ -59,8 +59,10 @@ public enum ProtocolKey
     SourcePath,
     TargetPath,
     WriteFile,
-    Stamp,
+    StartTime,
+    LastTime,
     CheckConnection,
     CanRename,
+    HeartBeats,
 }
 

@@ -1,7 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
-using LocalUtilities.TypeToolKit.Mathematic;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -23,9 +22,11 @@ public class ClientProtocol : IocpProtocol
     {
         try
         {
+            if (userInfo is null)
+                throw new IocpException(ProtocolCode.EmptyUserInfo);
             if (IsLogin && SocketInfo.RemoteEndPoint?.ToString() == host?.ToString())
                 return;
-            Connect(host);
+            Connect();
             if (!IsConnect)
                 throw new IocpException(ProtocolCode.NoConnection);
             UserInfo = userInfo;
@@ -42,30 +43,20 @@ public class ClientProtocol : IocpProtocol
             Close();
             HandleException(ex);
             // TODO: log fail
-            //Logger.Error("AsyncClientFullHandlerSocket.DoLogin" + "userID:" + userID + " password:" + password + " " + E.Message);
         }
-    }
-
-    private void Connect(IPEndPoint? remoteEndPoint)
-    {
-        try
+        void Connect()
         {
             Close();
             IsConnect = false;
             var connectArgs = new SocketAsyncEventArgs()
             {
-                RemoteEndPoint = remoteEndPoint,
+                RemoteEndPoint = host,
             };
             connectArgs.Completed += (_, args) => ProcessConnect(args);
             Socket ??= new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             if (!Socket.ConnectAsync(connectArgs))
                 ProcessConnect(connectArgs);
             ConnectDone.WaitOne(ResetSpan);
-        }
-        catch (Exception ex)
-        {
-            Close();
-            //Console.WriteLine(ex.ToString());
         }
     }
 
@@ -83,12 +74,18 @@ public class ClientProtocol : IocpProtocol
         ConnectDone.Set();
     }
 
+    public void HeartBeats()
+    {
+        var commandComposer = new CommandComposer()
+            .AppendCommand(ProtocolKey.HeartBeats);
+        WriteCommand(commandComposer);
+        SendAsync();
+    }
+
     public override void SendMessage(string message)
     {
         try
         {
-            if (!IsLogin)
-                throw new IocpException(ProtocolCode.NotLogined);
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Message);
             var buffer = Encoding.UTF8.GetBytes(message);
@@ -115,43 +112,33 @@ public class ClientProtocol : IocpProtocol
                 else
                     throw new IocpException(code);
             }
-            commandParser.GetValueAsCommandKey(out var commandKey);
-            switch (commandKey)
-            {
-                case ProtocolKey.Active:
-                    DoConnect();
-                    return;
-                case ProtocolKey.Login:
-                    DoLogin();
-                    return;
-                case ProtocolKey.Message:
-                    DoMessage(buffer, offset, count);
-                    return;
-                case ProtocolKey.Upload:
-                    DoUpload(commandParser);
-                    return;
-                case ProtocolKey.Download:
-                    DoDownload(commandParser, buffer, offset, count);
-                    return;
-                default:
-                    return;
-            };
         }
         catch (Exception ex)
         {
             HandleException(ex);
+            // TODO: log fail
         }
-    }
-
-    private void DoConnect()
-    {
-        ConnectDone.Set();
-    }
-
-    private void DoMessage(byte[] buffer, int offset, int count)
-    {
-        string message = Encoding.UTF8.GetString(buffer, offset, count);
-        HandleMessage(message);
+        commandParser.GetValueAsCommandKey(out var commandKey);
+        switch (commandKey)
+        {
+            case ProtocolKey.Login:
+                DoLogin();
+                return;
+            case ProtocolKey.HeartBeats:
+                DoHeartBeats();
+                return;
+            case ProtocolKey.Message:
+                DoMessage(buffer, offset, count);
+                return;
+            case ProtocolKey.Upload:
+                DoUpload(commandParser);
+                return;
+            case ProtocolKey.Download:
+                DoDownload(commandParser, buffer, offset, count);
+                return;
+            default:
+                return;
+        };
     }
 
     private void DoLogin()
@@ -161,36 +148,12 @@ public class ClientProtocol : IocpProtocol
         HandleLogined();
     }
 
-    private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
+    private void DoHeartBeats()
     {
         try
         {
-            if (!commandParser.GetValueAsLong(ProtocolKey.FileLength, out var fileLength) ||
-                !commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp) ||
-                !commandParser.GetValueAsInt(ProtocolKey.PacketSize, out var packetSize) ||
-                !commandParser.GetValueAsLong(ProtocolKey.Position, out var position))
-                throw new IocpException(ProtocolCode.ParameterError);
-            if (AutoFile.IsExpired) 
-                throw new IocpException(ProtocolCode.FileExpired, stamp);
-            AutoFile.Write(buffer, offset, count);
-            // simple validation
-            if (AutoFile.Position != position)
-                throw new IocpException(ProtocolCode.NotSameVersion);
-            if (AutoFile.Length >= fileLength)
-            {
-                // TODO: log success
-                AutoFile.Close();
-                _ = DateTime.TryParse(stamp, out var start);
-                HandleDownloaded(DateTime.Now - start);
-            }
-            else
-                HandleDownloading(fileLength, AutoFile.Position);
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.SendFile)
-                .AppendValue(ProtocolKey.Stamp, stamp)
-                .AppendValue(ProtocolKey.PacketSize, packetSize);
-            WriteCommand(commandComposer);
-            SendAsync();
+            Thread.Sleep(ConstTabel.HeartBeatsInterval);
+            HeartBeats();
         }
         catch (Exception ex)
         {
@@ -199,35 +162,12 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    private void DoUpload(CommandParser commandParser)
+    private void DoMessage(byte[] buffer, int offset, int count)
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.Stamp, out var stamp) ||
-                !commandParser.GetValueAsInt(ProtocolKey.PacketSize, out var packetSize))
-                throw new IocpException(ProtocolCode.ParameterError);
-            if (AutoFile.IsExpired)
-                throw new IocpException(ProtocolCode.FileExpired, stamp);
-            if (AutoFile.Position >= AutoFile.Length)
-            {
-                // TODO: log success
-                AutoFile.Close();
-                _ = DateTime.TryParse(stamp, out var start);
-                HandleUploaded(DateTime.Now - start);
-                return;
-            }
-            var buffer = new byte[packetSize];
-            if (!AutoFile.Read(buffer, 0, buffer.Length, out var count))
-                throw new IocpException(ProtocolCode.FileExpired, stamp);
-            HandleUploading(AutoFile.Length, AutoFile.Position);
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.WriteFile)
-                .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
-                .AppendValue(ProtocolKey.Stamp, stamp)
-                .AppendValue(ProtocolKey.PacketSize, packetSize)
-                .AppendValue(ProtocolKey.Position, AutoFile.Position);
-            WriteCommand(commandComposer, buffer, 0, count);
-            SendAsync();
+            string message = Encoding.UTF8.GetString(buffer, offset, count);
+            HandleMessage(message);
         }
         catch (Exception ex)
         {
@@ -246,17 +186,16 @@ public class ClientProtocol : IocpProtocol
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var stamp = DateTime.Now.ToString();
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
                 throw new IocpException(ProtocolCode.ProcessingFile);
-            var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
+            var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
             HandleUploadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
                 .AppendValue(ProtocolKey.DirName, dirName)
                 .AppendValue(ProtocolKey.FileName, fileName)
-                .AppendValue(ProtocolKey.Stamp, stamp)
-                .AppendValue(ProtocolKey.PacketSize, packetSize)
+                .AppendValue(ProtocolKey.StartTime, DateTime.Now.ToString(DateTimeFormat.Data))
+                .AppendValue(ProtocolKey.PacketLength, packetLength)
                 .AppendValue(ProtocolKey.CanRename, canRename);
             WriteCommand(commandComposer);
             SendAsync();
@@ -264,8 +203,43 @@ public class ClientProtocol : IocpProtocol
         catch (Exception ex)
         {
             HandleException(ex);
-            //记录日志
-            //Logger.Error(e.Message);
+            // TODO: log fail
+        }
+    }
+
+    private void DoUpload(CommandParser commandParser)
+    {
+        try
+        {
+            if (!commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
+                !commandParser.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength))
+                throw new IocpException(ProtocolCode.ParameterError);
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, startTime);
+            if (AutoFile.Position >= AutoFile.Length)
+            {
+                // TODO: log success
+                AutoFile.Close();
+                HandleUploaded(startTime);
+                return;
+            }
+            var buffer = new byte[packetLength];
+            if (!AutoFile.Read(buffer, 0, buffer.Length, out var count))
+                throw new IocpException(ProtocolCode.FileExpired, startTime);
+            HandleUploading(AutoFile.Length, AutoFile.Position);
+            var commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.WriteFile)
+                .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
+                .AppendValue(ProtocolKey.StartTime, startTime)
+                .AppendValue(ProtocolKey.PacketLength, packetLength)
+                .AppendValue(ProtocolKey.Position, AutoFile.Position);
+            WriteCommand(commandComposer, buffer, 0, count);
+            SendAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+            // TODO: log fail
         }
     }
 
@@ -283,7 +257,6 @@ public class ClientProtocol : IocpProtocol
                 filePath = filePath.RenamePathByDateTime();
             }
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            var stamp = DateTime.Now.ToString();
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
                 throw new IocpException(ProtocolCode.ProcessingFile);
             HandleDownloadStart();
@@ -291,15 +264,51 @@ public class ClientProtocol : IocpProtocol
                 .AppendCommand(ProtocolKey.Download)
                 .AppendValue(ProtocolKey.DirName, dirName)
                 .AppendValue(ProtocolKey.FileName, fileName)
-                .AppendValue(ProtocolKey.Stamp, stamp);
+                .AppendValue(ProtocolKey.StartTime, DateTime.Now.ToString(DateTimeFormat.Data));
             WriteCommand(commandComposer);
             SendAsync();
         }
         catch (Exception ex)
         {
             HandleException(ex);
-            //记录日志
-            //Logger.Error(E.Message);
+            // TODO: log fail
+        }
+    }
+
+    private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
+    {
+        try
+        {
+            if (!commandParser.GetValueAsLong(ProtocolKey.FileLength, out var fileLength) ||
+                !commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
+                !commandParser.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength) ||
+                !commandParser.GetValueAsLong(ProtocolKey.Position, out var position))
+                throw new IocpException(ProtocolCode.ParameterError);
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, startTime);
+            AutoFile.Write(buffer, offset, count);
+            // simple validation
+            if (AutoFile.Position != position)
+                throw new IocpException(ProtocolCode.NotSameVersion);
+            if (AutoFile.Length >= fileLength)
+            {
+                // TODO: log success
+                AutoFile.Close();
+                HandleDownloaded(startTime);
+            }
+            else
+                HandleDownloading(fileLength, AutoFile.Position);
+            var commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.SendFile)
+                .AppendValue(ProtocolKey.StartTime, startTime)
+                .AppendValue(ProtocolKey.PacketLength, packetLength);
+            WriteCommand(commandComposer);
+            SendAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+            // TODO: log fail
         }
     }
 
@@ -307,14 +316,14 @@ public class ClientProtocol : IocpProtocol
     {
         return new StringBuilder()
             .Append(SocketInfo.LocalEndPoint)
-            .Append(SignTable.Open)
+            .Append(SignTable.OpenParenthesis)
             .Append(UserInfo?.Name)
-            .Append(SignTable.Close)
-            .Append(SignTable.Mark)
+            .Append(SignTable.CloseParenthesis)
+            .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(message)
             .Append(SignTable.At)
-            .Append(DateTime.Now.ToUiniformLook())
+            .Append(DateTime.Now.ToString(DateTimeFormat.Outlook))
             .ToString();
     }
 }

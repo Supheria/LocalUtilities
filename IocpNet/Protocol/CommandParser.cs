@@ -9,7 +9,12 @@ public class CommandParser
 {
     Dictionary<ProtocolKey, string> Commands { get; } = [];
 
-    public static CommandParser Parse(string command)
+    private CommandParser()
+    {
+
+    }
+
+    public static CommandParser Parse(string command, int bytesTransferred)
     {
         var result = new CommandParser();
         var lines = command.Split(SignTable.NewLine, StringSplitOptions.RemoveEmptyEntries);

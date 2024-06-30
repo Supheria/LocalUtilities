@@ -27,7 +27,7 @@ public class DynamicBufferManager(int bufferSize)
     {
         var data = new byte[DataCount];
         Array.Copy(Buffer, 0, data, 0, data.Length);
-        return Buffer;
+        return data;
     }
 
     public void Clear()

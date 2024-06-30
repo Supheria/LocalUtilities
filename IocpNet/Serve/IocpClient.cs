@@ -1,29 +1,26 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Text;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Serve;
 
 public class IocpClient
 {
-    ClientProtocol MessageManager { get; } = new();
-
-    ClientProtocol UploadManager { get; } = new();
-
-    ClientProtocol DownloadManager { get; } = new();
-
     public event LogHandler? OnLog;
 
     public event IocpEventHandler? OnConnected;
 
     public event IocpEventHandler? OnDisconnected;
+
+    public event IocpEventHandler<string>? OnProcessing;
+
+    ClientProtocol HeartBeatsManager { get; } = new();
+
+    ClientProtocol MessageManager { get; } = new();
+
+    ClientProtocol UploadManager { get; } = new();
+
+    ClientProtocol DownloadManager { get; } = new();
 
     public bool IsConnect => Host is not null;
 
@@ -33,26 +30,43 @@ public class IocpClient
 
     public IocpClient()
     {
+        HeartBeatsManager.OnLog += (s) => OnLog?.Invoke(s);
+        HeartBeatsManager.OnLogined += () => OnConnected?.Invoke();
+        HeartBeatsManager.OnClosed += () => OnDisconnected?.Invoke();
         MessageManager.OnLog += (s) => OnLog?.Invoke(s);
         UploadManager.OnLog += (s) => OnLog?.Invoke(s);
         DownloadManager.OnLog += (s) => OnLog?.Invoke(s);
+        UploadManager.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
+        DownloadManager.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
     }
 
     public void Connect(string address, int port, string name, string password)
     {
         Host = new(IPAddress.Parse(address), port);
         UserInfo = new(name, password);
-        OnConnected?.Invoke();
+        HeartBeatsManager.Connect(Host, UserInfo);
+        HeartBeatsManager.HeartBeats();
     }
 
     public void Disconnected()
     {
+        HeartBeatsManager.Close();
         MessageManager.Close();
         UploadManager.Close();
         DownloadManager.Close();
         Host = null;
         UserInfo = null;
         OnDisconnected?.Invoke();
+    }
+
+    public void Close()
+    {
+        HeartBeatsManager.Dispose();
+        MessageManager.Dispose();
+        UploadManager.Dispose();
+        DownloadManager.Dispose();
+        Host = null;
+        UserInfo = null;
     }
 
     public void SendMessage(string message)

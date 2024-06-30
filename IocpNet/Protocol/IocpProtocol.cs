@@ -1,8 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Mathematic;
 using LocalUtilities.TypeToolKit.Text;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,6 +15,8 @@ public abstract class IocpProtocol : IDisposable
 
     public event IocpEventHandler? OnClosed;
 
+    public event IocpEventHandler<string>? OnProcessing;
+
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
@@ -27,9 +27,9 @@ public abstract class IocpProtocol : IDisposable
 
     public bool UseNetByteOrder { get; set; } = false;
 
-    protected DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitBufferSize);
+    protected DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
-    protected AsyncSendBufferManager SendBuffer { get; } = new(ConstTabel.InitBufferSize);
+    protected AsyncSendBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
     protected bool IsSendingAsync { get; set; } = false;
 
@@ -37,7 +37,11 @@ public abstract class IocpProtocol : IDisposable
 
     protected AutoDisposeFileStream AutoFile { get; } = new();
 
-    public void Close() => Dispose();
+    public void Close()
+    {
+        HandleClosed();
+        Dispose();
+    }
 
     public void Dispose()
     {
@@ -59,7 +63,6 @@ public abstract class IocpProtocol : IDisposable
         IsLogin = false;
         AutoFile.Close();
         SocketInfo.Disconnect();
-        HandleClosed();
         GC.SuppressFinalize(this);
     }
 
@@ -104,14 +107,14 @@ public abstract class IocpProtocol : IDisposable
             var offset = sizeof(int); // totol length
             var commandLength = BitConverter.ToInt32(buffer, offset); //取出命令长度
             offset += sizeof(int); // command length
-            var bufferMax = ConstTabel.TransferBufferMax + commandLength + offset;
-            if (packetLength > bufferMax || ReceiveBuffer.DataCount > bufferMax)
+            var bytesMax = ConstTabel.DataBytesTransferredMax + commandLength + offset;
+            if (packetLength > bytesMax || ReceiveBuffer.DataCount > bytesMax)
                 goto CLOSE;
             // 收到的数据没有达到包长度，继续接收
             if (ReceiveBuffer.DataCount < packetLength)
                 goto RECEIVE;
             var command = Encoding.UTF8.GetString(buffer, offset, commandLength);
-            var commandParser = CommandParser.Parse(command);
+            var commandParser = CommandParser.Parse(command, receiveArgs.BytesTransferred);
             offset += commandLength;
             // 处理命令,offset + sizeof(int) + commandLen后面的为数据，数据的长度为count - sizeof(int) - sizeof(int) - length，注意是包的总长度－包长度所占的字节（sizeof(int)）－ 命令长度所占的字节（sizeof(int)） - 命令的长度
             ProcessCommand(commandParser, buffer, offset, packetLength - offset);
@@ -198,7 +201,7 @@ public abstract class IocpProtocol : IDisposable
 
     private void HandleLog(string message)
     {
-        OnLog?.InvokeAsync(GetLog(message));
+        OnLog?.Invoke(GetLog(message));
     }
 
     protected void HandleMessage(string message)
@@ -214,7 +217,7 @@ public abstract class IocpProtocol : IDisposable
     protected void HandleLogined()
     {
         HandleLog("login");
-        OnLogined?.InvokeAsync();
+        OnLogined?.Invoke();
     }
 
     protected void HandleUploadStart()
@@ -229,53 +232,79 @@ public abstract class IocpProtocol : IDisposable
 
     protected void HandleUploading(long fileLength, long position)
     {
-        var sb = new StringBuilder()
+        var message = new StringBuilder()
             .Append("uploading")
             .Append(Math.Round(position * 100d / fileLength, 2))
             .Append(SignTable.Percent)
             .ToString();
-        //HandleLog(sb);
+        OnProcessing?.Invoke(message);
     }
 
     protected void HandleDownloading(long fileLength, long position)
     {
-        var sb = new StringBuilder()
+        var message = new StringBuilder()
             .Append("downloading")
             .Append(Math.Round(position * 100d / fileLength, 2))
             .Append(SignTable.Percent)
             .ToString();
-        //HandleLog(sb);
+        OnProcessing?.Invoke(message);
     }
 
-    protected void HandleUploaded(TimeSpan time)
+    protected void HandleUploaded(string startTime)
     {
+        var span = DateTime.Now - startTime.ToDateTime(DateTimeFormat.Data);
         var message = new StringBuilder()
             .Append("upload file success")
-            .Append(SignTable.Open)
-            .Append(time.TotalMilliseconds)
+            .Append(SignTable.OpenParenthesis)
+            .Append(span.TotalMilliseconds)
             .Append("ms")
-            .Append(SignTable.Close)
+            .Append(SignTable.CloseParenthesis)
             .ToString();
         HandleLog(message);
+        OnProcessing?.Invoke(message);
     }
 
-    protected void HandleDownloaded(TimeSpan time)
+    protected void HandleDownloaded(string startTime)
     {
+        var span = DateTime.Now - startTime.ToDateTime(DateTimeFormat.Data);
         var message = new StringBuilder()
             .Append("download file success")
-            .Append(SignTable.Open)
-            .Append(time.TotalMilliseconds)
+            .Append(SignTable.OpenParenthesis)
+            .Append(span.TotalMilliseconds)
             .Append("ms")
-            .Append(SignTable.Close)
+            .Append(SignTable.CloseParenthesis)
             .ToString();
         HandleLog(message);
+        OnProcessing?.Invoke(message);
     }
 
     protected void HandleClosed()
     {
         HandleLog("close");
-        OnClosed?.InvokeAsync();
+        OnClosed?.Invoke();
     }
 
     public abstract string GetLog(string message);
+
+    //protected void HandleTestTransferSpeed(int bytesTransferred, TimeSpan span)
+    //{
+    //    var speed = bytesTransferred * 1000 / span.TotalMilliseconds;
+    //    var sb = new StringBuilder();
+    //    if (speed > ConstTabel.OneMB)
+    //    {
+    //        sb.Append(Math.Round(speed / ConstTabel.OneMB, 2))
+    //            .Append("MB/s");
+    //    }
+    //    else if (speed > ConstTabel.OneKB)
+    //    {
+    //        sb.Append(Math.Round(speed / ConstTabel.OneKB, 2))
+    //            .Append("KB/s");
+    //    }
+    //    else
+    //    {
+    //        sb.Append(Math.Round(speed, 2))
+    //            .Append("KB/s");
+    //    }
+    //    OnTestTransferSpeed?.InvokeAsync(sb.ToString());
+    //}
 }
