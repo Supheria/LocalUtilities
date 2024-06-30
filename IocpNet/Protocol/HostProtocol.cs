@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
 using System.Net.Sockets;
 using System.Text;
@@ -8,18 +9,33 @@ namespace LocalUtilities.IocpNet.Protocol;
 
 public class HostProtocol : IocpProtocol
 {
-    object AcceptLocker { get; } = new();
+    public IocpProtocolTypes Type { get; private set; } = IocpProtocolTypes.None;
 
-    public bool ProcessAccept(Socket? acceptSocket)
+    public string TimeStamp { get; } = DateTime.Now.ToString(DateTimeFormat.Data);
+
+    protected override DaemonThread DaemonThread { get; }
+
+    public HostProtocol()
     {
-        lock (AcceptLocker)
-        {
-            if (acceptSocket is null || Socket is not null)
-                return false;
-            Socket = acceptSocket;
-            SocketInfo.Connect(acceptSocket);
-            return true;
-        }
+        DaemonThread = new(1000, CheckTimeout);
+    }
+
+    private void CheckTimeout()
+    {
+        var span = DateTime.Now - SocketInfo.ActiveTime;
+        if (span.TotalMilliseconds < ConstTabel.TimeoutMilliseconds)
+            return;
+        Close();
+    }
+
+    public void ProcessAccept(Socket acceptSocket)
+    {
+        if (Socket is not null)
+            return;
+        Socket = acceptSocket;
+        SocketInfo.Connect(acceptSocket);
+        DaemonThread.Start();
+        ReceiveAsync();
     }
 
     private void CommandFail(Exception ex)
@@ -121,11 +137,16 @@ public class HostProtocol : IocpProtocol
         try
         {
             if (!commandParser.GetValueAsString(ProtocolKey.UserName, out var name) ||
-                !commandParser.GetValueAsString(ProtocolKey.Password, out var password))
+                !commandParser.GetValueAsString(ProtocolKey.Password, out var password) ||
+                !commandParser.GetValueAsString(ProtocolKey.ProtocolType, out var t))
                 throw new IocpException(ProtocolCode.ParameterError);
-            var success = name == "admin" && password == "password".ToMd5HashString();
-            if (!success)
-                throw new IocpException(ProtocolCode.UserOrPasswordError);
+            var type = t.ToEnum<IocpProtocolTypes>();
+            if (type is IocpProtocolTypes.None || (Type is not IocpProtocolTypes.None && Type != type))
+                throw new IocpException(ProtocolCode.WrongProtocolType);
+            Type = type;
+            //var success = name == "admin" && password == "password".ToMd5HashString();
+            //if (!success)
+            //    throw new IocpException(ProtocolCode.UserOrPasswordError);
             UserInfo = new(name, password);
             IsLogin = true;
             // TODO: log success
@@ -148,9 +169,8 @@ public class HostProtocol : IocpProtocol
     {
         try
         {
-            Thread.Sleep(ConstTabel.HeartBeatsInterval);
             var commandComposer = new CommandComposer()
-                    .AppendCommand(ProtocolKey.HeartBeats);
+                .AppendCommand(ProtocolKey.HeartBeats);
             CommandSucceed(commandComposer);
         }
         catch (Exception ex)

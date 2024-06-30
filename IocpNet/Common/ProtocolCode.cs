@@ -28,5 +28,8 @@ public enum ProtocolCode
     NotLogined,
     FileAlreadyExist,
     NoConnection,
-    EmptyUserInfo
+    EmptyUserInfo,
+    WrongProtocolType,
+    HostHasStarted,
+    HostNotStartYet,
 }

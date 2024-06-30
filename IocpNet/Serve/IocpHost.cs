@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
@@ -7,95 +8,76 @@ namespace LocalUtilities.IocpNet.Serve;
 
 public class IocpHost
 {
+    public event LogHandler? OnLog;
+
+    public event IocpEventHandler<int>? OnConnectionCountChange;
+
     Socket? Socket { get; set; } = null;
 
     public bool IsStart { get; private set; } = false;
 
-    int ParallelCountMax { get; }
-
-    // TODO: use another way to limit paralle number
-
-    HostProtocolPool ProtocolPool { get; }
-
-    public HostProtocolList ProtocolList { get; } = [];
+    ConcurrentDictionary<string, ConcurrentDictionary<IocpProtocolTypes, HostProtocol>> UserMap { get; } = [];
 
     private DaemonThread DaemonThread { get; }
 
-    public event LogHandler? OnLog;
-
-    public event IocpEventHandler<int>? OnParallelRemainChange;
-
-    public IocpHost(int parallelCountMax)
+    public IocpHost()
     {
-        ParallelCountMax = parallelCountMax;
-        ProtocolPool = new(parallelCountMax);
-        DaemonThread = new(ProcessDaemon);
-        for (int i = 0; i < ParallelCountMax; i++)
-        {
-            var protocol = new HostProtocol();
-            protocol.OnLog += (s) => OnLog?.Invoke(s);
-            protocol.OnClosed += () =>
-            {
-                ProtocolPool.Push(protocol);
-                ProtocolList.Remove(protocol);
-                OnParallelRemainChange?.Invoke(ProtocolPool.Count);
-            };
-            ProtocolPool.Push(protocol);
-        }
+        DaemonThread = new(ConstTabel.TimeoutMilliseconds, ClearBadUser);
     }
 
-    /// <summary>
-    /// 守护线程
-    /// </summary>
-    private void ProcessDaemon()
+    private void ClearBadUser()
     {
-        ProtocolList.CopyTo(out var userTokens);
-        var timeout = ConstTabel.TimeoutMilliseconds;
-        foreach (var protocol in userTokens)
+        if (!UserMap.TryGetValue("", out var badGroup))
+            return;
+        foreach (var protocol in badGroup.Values)
         {
-            var span = DateTime.Now - protocol.SocketInfo.ActiveTime;
-            if (span.TotalMilliseconds > timeout)
-            {
-                lock (protocol)
-                    protocol.Close();
-            }
+            lock (protocol)
+                protocol.Close();
         }
     }
 
     public void Start(int port)
     {
-        if (IsStart)
+        try
         {
-            //Program.Logger.InfoFormat("server {0} has started ", localEndPoint.ToString());
-            return;
+            if (IsStart)
+                throw new IocpException(ProtocolCode.HostHasStarted);
+            // 使用0.0.0.0作为绑定IP，则本机所有的IPv4地址都将绑定
+            var localEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), port);
+            Socket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket.Bind(localEndPoint);
+            Socket.Listen();
+            AcceptAsync(null);
+            DaemonThread.Start();
+            IsStart = true;
+            HandleLog("host start");
         }
-        // 使用0.0.0.0作为绑定IP，则本机所有的IPv4地址都将绑定
-        var localEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), port);
-        Socket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        Socket.Bind(localEndPoint);
-        Socket.Listen(ParallelCountMax);
-        //ServerInstance.Logger.InfoFormat("Start listen socket {0} success", localEndPoint.ToString());
-        //for (int i = 0; i < 64; i++) //不能循环投递多次AcceptAsync，会造成只接收8000连接后不接收连接了
-        AcceptAsync(null);
-        DaemonThread.Start();
-        IsStart = true;
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
-    public void Stop()
+    public void Close()
     {
-        if (!IsStart)
+        try
         {
-            //ServerInstance.Logger.Info("server {0} has not started yet", localEndPoint.ToString());
-            return;
+            if (!IsStart)
+                throw new IocpException(ProtocolCode.HostNotStartYet);
+            foreach (var group in UserMap.Values)
+            {
+                foreach (var protocol in group.Values)
+                    protocol.Close();
+            }
+            Socket?.Close();
+            DaemonThread.Stop();
+            IsStart = false;
+            HandleLog("host close");
         }
-        ProtocolList.CopyTo(out var userTokens);
-        foreach (var protocol in userTokens)//双向关闭已存在的连接
-            protocol.Close();
-        ProtocolList.Clear();
-        Socket?.Close();
-        DaemonThread.Stop();
-        IsStart = false;
-        //ServerInstance.Logger.Info("Server is Stoped");
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void AcceptAsync(SocketAsyncEventArgs? acceptArgs)
@@ -115,16 +97,54 @@ public class IocpHost
 
     private void ProcessAccept(SocketAsyncEventArgs acceptArgs)
     {
-        var protocol = ProtocolPool.Pop();
-        if (!protocol.ProcessAccept(acceptArgs.AcceptSocket))
+        if (acceptArgs.AcceptSocket is null)
+            goto ACCEPT;
+        var protocol = new HostProtocol();
+        protocol.OnLog += (s) => OnLog?.Invoke(s);
+        protocol.OnLogined += () =>
         {
-            ProtocolPool.Push(protocol);
-            return;
-        }
-        ProtocolList.Add(protocol);
-        OnParallelRemainChange?.Invoke(ProtocolPool.Count);
-        protocol.ReceiveAsync();
+            var name = protocol.UserInfo?.Name ?? "";
+            if (UserMap.TryGetValue(name, out var group))
+            {
+                if (group.TryGetValue(protocol.Type, out var toCheck) && toCheck.TimeStamp != protocol.TimeStamp)
+                    protocol.Close();
+                else
+                    group.TryAdd(protocol.Type, protocol);
+            }
+            else
+            {
+                group = new();
+                if (!group.TryAdd(protocol.Type, protocol) || !UserMap.TryAdd(name, group))
+                    protocol.Close();
+            }
+            OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
+        };
+        protocol.OnClosed += () =>
+        {
+            var name = protocol.UserInfo?.Name ?? "";
+            if (!UserMap.TryGetValue(name, out var group))
+                return;
+            if (group.TryGetValue(protocol.Type, out var toCheck) && toCheck.TimeStamp == protocol.TimeStamp)
+                group.TryRemove(protocol.Type, out _);
+            if (group.Count is 0)
+                UserMap.TryRemove(name, out _);
+            OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
+        };
+        protocol.ProcessAccept(acceptArgs.AcceptSocket);
+    ACCEPT:
         if (acceptArgs.SocketError is not SocketError.OperationAborted)
-            AcceptAsync(acceptArgs); //把当前异步事件释放，等待下次连接
+            AcceptAsync(acceptArgs);
+    }
+
+    private void HandleLog(string message)
+    {
+        // TODO:
+        OnLog?.Invoke(message);
+    }
+
+    private void HandleException(Exception ex)
+    {
+        // TODO:
+        HandleLog(ex.Message);
     }
 }

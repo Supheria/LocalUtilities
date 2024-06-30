@@ -10,6 +10,8 @@ namespace LocalUtilities.IocpNet.Protocol;
 
 public class ClientProtocol : IocpProtocol
 {
+    public IocpProtocolTypes Type { get; }
+
     AutoResetEvent ConnectDone { get; } = new(false);
 
     AutoResetEvent LoginDone { get; } = new(false);
@@ -17,6 +19,14 @@ public class ClientProtocol : IocpProtocol
     static int ResetSpan { get; } = 1000;
 
     bool IsConnect { get; set; } = false;
+
+    protected override DaemonThread DaemonThread { get; }
+
+    public ClientProtocol(IocpProtocolTypes type)
+    {
+        Type = type;
+        DaemonThread = new(ConstTabel.HeartBeatsInterval, DoHeartBeats);
+    }
 
     public void Connect(IPEndPoint? host, UserInfo? userInfo)
     {
@@ -26,17 +36,20 @@ public class ClientProtocol : IocpProtocol
                 throw new IocpException(ProtocolCode.EmptyUserInfo);
             if (IsLogin && SocketInfo.RemoteEndPoint?.ToString() == host?.ToString())
                 return;
-            Connect();
+            connect();
             if (!IsConnect)
                 throw new IocpException(ProtocolCode.NoConnection);
             UserInfo = userInfo;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Login)
                 .AppendValue(ProtocolKey.UserName, UserInfo.Name)
-                .AppendValue(ProtocolKey.Password, UserInfo.Password);
+                .AppendValue(ProtocolKey.Password, UserInfo.Password)
+                .AppendValue(ProtocolKey.ProtocolType, Type);
             WriteCommand(commandComposer);
             SendAsync();
             LoginDone?.WaitOne(ResetSpan);
+            if (Type is IocpProtocolTypes.HeartBeats)
+                DaemonThread.Start();
         }
         catch (Exception ex)
         {
@@ -44,7 +57,7 @@ public class ClientProtocol : IocpProtocol
             HandleException(ex);
             // TODO: log fail
         }
-        void Connect()
+        void connect()
         {
             Close();
             IsConnect = false;
@@ -72,14 +85,6 @@ public class ClientProtocol : IocpProtocol
         SocketInfo.Connect(connectArgs.ConnectSocket);
         IsConnect = true;
         ConnectDone.Set();
-    }
-
-    public void HeartBeats()
-    {
-        var commandComposer = new CommandComposer()
-            .AppendCommand(ProtocolKey.HeartBeats);
-        WriteCommand(commandComposer);
-        SendAsync();
     }
 
     public override void SendMessage(string message)
@@ -152,8 +157,10 @@ public class ClientProtocol : IocpProtocol
     {
         try
         {
-            Thread.Sleep(ConstTabel.HeartBeatsInterval);
-            HeartBeats();
+            var commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.HeartBeats);
+            WriteCommand(commandComposer);
+            SendAsync();
         }
         catch (Exception ex)
         {

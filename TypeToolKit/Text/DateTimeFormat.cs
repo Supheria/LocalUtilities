@@ -4,9 +4,9 @@ namespace LocalUtilities.TypeToolKit.Text;
 
 public static class DateTimeFormat
 {
-    public static string Data { get; } = "yyyyMMddHHmmssff";
+    public const string Data = "yyyyMMddHHmmssff";
 
-    public static string Outlook { get; } = "yyyy.MM.dd HH:mm:ss.ffffff";
+    public const string Outlook = "yyyy.MM.dd HH:mm:ss.ffffff";
 
     public static DateTime ToDateTime(this string str, string format)
     {

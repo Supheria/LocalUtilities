@@ -106,6 +106,14 @@ public abstract class ResizeableForm : Form, ISsSerializable
             this.SaveToSimpleScript(true, IniFilePath);
     }
 
+    protected void InvokeAsync(Action process)
+    {
+        if (InvokeRequired)
+            BeginInvoke(process);
+        else
+            Invoke(process);
+    }
+
     public void Serialize(SsSerializer serializer)
     {
         serializer.WriteTag(nameof(MinimumSize), MinimumSize.ToArrayString());

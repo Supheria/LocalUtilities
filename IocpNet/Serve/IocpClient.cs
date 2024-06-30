@@ -14,13 +14,13 @@ public class IocpClient
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    ClientProtocol HeartBeatsManager { get; } = new();
+    ClientProtocol HeartBeatsManager { get; } = new(IocpProtocolTypes.HeartBeats);
 
-    ClientProtocol MessageManager { get; } = new();
+    ClientProtocol MessageManager { get; } = new(IocpProtocolTypes.Message);
 
-    ClientProtocol UploadManager { get; } = new();
+    ClientProtocol UploadManager { get; } = new(IocpProtocolTypes.Upload);
 
-    ClientProtocol DownloadManager { get; } = new();
+    ClientProtocol DownloadManager { get; } = new(IocpProtocolTypes.Download);
 
     public bool IsConnect => Host is not null;
 
@@ -45,10 +45,9 @@ public class IocpClient
         Host = new(IPAddress.Parse(address), port);
         UserInfo = new(name, password);
         HeartBeatsManager.Connect(Host, UserInfo);
-        HeartBeatsManager.HeartBeats();
     }
 
-    public void Disconnected()
+    public void Disconnect()
     {
         HeartBeatsManager.Close();
         MessageManager.Close();

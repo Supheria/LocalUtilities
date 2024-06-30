@@ -37,6 +37,8 @@ public abstract class IocpProtocol : IDisposable
 
     protected AutoDisposeFileStream AutoFile { get; } = new();
 
+    protected abstract DaemonThread DaemonThread { get; }
+
     public void Close()
     {
         HandleClosed();
@@ -45,16 +47,11 @@ public abstract class IocpProtocol : IDisposable
 
     public void Dispose()
     {
-        //if (Socket is null)
-        //    return;
         try
         {
             Socket?.Shutdown(SocketShutdown.Both);
         }
-        catch (Exception ex)
-        {
-            //Program.Logger.ErrorFormat("CloseClientSocket Disconnect client {0} error, message: {1}", socketInfo, ex.Message);
-        }
+        catch { }
         Socket?.Close();
         Socket = null;
         ReceiveBuffer.Clear();
@@ -63,10 +60,11 @@ public abstract class IocpProtocol : IDisposable
         IsLogin = false;
         AutoFile.Close();
         SocketInfo.Disconnect();
+        DaemonThread.Stop();
         GC.SuppressFinalize(this);
     }
 
-    public void ReceiveAsync()
+    protected void ReceiveAsync()
     {
         var receiveArgs = new SocketAsyncEventArgs();
         receiveArgs.SetBuffer(new byte[ReceiveBuffer.TotolCount], 0, ReceiveBuffer.TotolCount);
@@ -199,6 +197,8 @@ public abstract class IocpProtocol : IDisposable
         return Path.Combine(dir, fileName);
     }
 
+    public abstract string GetLog(string message);
+
     private void HandleLog(string message)
     {
         OnLog?.Invoke(GetLog(message));
@@ -256,7 +256,7 @@ public abstract class IocpProtocol : IDisposable
         var message = new StringBuilder()
             .Append("upload file success")
             .Append(SignTable.OpenParenthesis)
-            .Append(span.TotalMilliseconds)
+            .Append(Math.Round(span.TotalMilliseconds, 2))
             .Append("ms")
             .Append(SignTable.CloseParenthesis)
             .ToString();
@@ -270,7 +270,7 @@ public abstract class IocpProtocol : IDisposable
         var message = new StringBuilder()
             .Append("download file success")
             .Append(SignTable.OpenParenthesis)
-            .Append(span.TotalMilliseconds)
+            .Append(Math.Round(span.TotalMilliseconds, 2))
             .Append("ms")
             .Append(SignTable.CloseParenthesis)
             .ToString();
@@ -283,8 +283,6 @@ public abstract class IocpProtocol : IDisposable
         HandleLog("close");
         OnClosed?.Invoke();
     }
-
-    public abstract string GetLog(string message);
 
     //protected void HandleTestTransferSpeed(int bytesTransferred, TimeSpan span)
     //{

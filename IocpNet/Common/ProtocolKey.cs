@@ -64,5 +64,6 @@ public enum ProtocolKey
     CheckConnection,
     CanRename,
     HeartBeats,
+    ProtocolType,
 }
 
