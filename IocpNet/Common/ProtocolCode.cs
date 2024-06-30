@@ -18,7 +18,7 @@ public enum ProtocolCode
     FileExpired,
     NotSameVersion,
     Disconnection,
-    FileInProcess,
+    ProcessingFile,
 
     DirNotExist,
     CreateDirError,

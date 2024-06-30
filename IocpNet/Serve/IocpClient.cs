@@ -1,9 +1,11 @@
-﻿using LocalUtilities.IocpNet.Protocol;
+﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,7 +13,11 @@ namespace LocalUtilities.IocpNet.Serve;
 
 public class IocpClient
 {
-    ClientProtocol Client { get; } = new();
+    ClientProtocol MessageManager { get; } = new();
+
+    ClientProtocol UploadManager { get; } = new();
+
+    ClientProtocol DownloadManager { get; } = new();
 
     public event LogHandler? OnLog;
 
@@ -19,36 +25,47 @@ public class IocpClient
 
     public event IocpEventHandler? OnDisconnected;
 
-    public bool IsConnect => Client.SocketInfo.IsConnect;
+    public bool IsConnect => Host is not null;
 
-    public AutoResetEvent SwitchDone { get; } = new(false);
+    IPEndPoint? Host { get; set; } = null;
+
+    UserInfo? UserInfo { get; set; } = null;
 
     public IocpClient()
     {
-        Client.OnLog += (s) => OnLog?.Invoke(s);
-        Client.OnLogined += () => OnConnected?.Invoke();
-        Client.OnClosed += () => OnDisconnected?.Invoke();
+        MessageManager.OnLog += (s) => OnLog?.Invoke(s);
+        UploadManager.OnLog += (s) => OnLog?.Invoke(s);
+        DownloadManager.OnLog += (s) => OnLog?.Invoke(s);
     }
 
-    public void Connect(string host, int port, string useName, string password)
+    public void Connect(string address, int port, string name, string password)
     {
-        Client.Connect(host, port, useName, password);
+        Host = new(IPAddress.Parse(address), port);
+        UserInfo = new(name, password);
+        OnConnected?.Invoke();
     }
 
-    public void Disconnect()
+    public void Disconnected()
     {
-        Client.Close();
+        MessageManager.Close();
+        UploadManager.Close();
+        DownloadManager.Close();
+        Host = null;
+        UserInfo = null;
+        OnDisconnected?.Invoke();
     }
 
     public void SendMessage(string message)
     {
-        Client.SendMessage(message);
+        MessageManager.Connect(Host, UserInfo);
+        MessageManager.SendMessage(message);
     }
 
     public void Upload(string dirName, string filePath)
     {
+        UploadManager.Connect(Host, UserInfo);
         var fileName = Path.GetFileName(filePath);
-        var localPath = Client.GetFileRepoPath(dirName, fileName);
+        var localPath = UploadManager.GetFileRepoPath(dirName, fileName);
         if (!File.Exists(localPath))
         {
             try
@@ -57,11 +74,12 @@ public class IocpClient
             }
             catch { }
         }
-        Client.Upload(dirName, fileName, true);
+        UploadManager.Upload(dirName, fileName, true);
     }
 
     public void Download(string dirName, string filePath)
     {
-        Client.Download(dirName, Path.GetFileName(filePath), true);
+        DownloadManager.Connect(Host, UserInfo);
+        DownloadManager.Download(dirName, Path.GetFileName(filePath), true);
     }
 }

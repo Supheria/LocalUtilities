@@ -13,24 +13,29 @@ public class ClientProtocol : IocpProtocol
 {
     AutoResetEvent ConnectDone { get; } = new(false);
 
-    object ConnectLocker { get; } = new();
+    AutoResetEvent LoginDone { get; } = new(false);
+
+    static int ResetSpan { get; } = 1000;
 
     bool IsConnect { get; set; } = false;
 
-    public void Connect(string host, int port, string name, string password)
+    public void Connect(IPEndPoint? host, UserInfo? userInfo)
     {
         try
         {
-            Connect(new IPEndPoint(IPAddress.Parse(host), port));
+            if (IsLogin && SocketInfo.RemoteEndPoint?.ToString() == host?.ToString())
+                return;
+            Connect(host);
             if (!IsConnect)
                 throw new IocpException(ProtocolCode.NoConnection);
-            UserInfo = new(name, password);
+            UserInfo = userInfo;
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Login)
                 .AppendValue(ProtocolKey.UserName, UserInfo.Name)
                 .AppendValue(ProtocolKey.Password, UserInfo.Password);
             WriteCommand(commandComposer);
             SendAsync();
+            LoginDone?.WaitOne(ResetSpan);
         }
         catch (Exception ex)
         {
@@ -41,12 +46,10 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    private void Connect(IPEndPoint remoteEndPoint)
+    private void Connect(IPEndPoint? remoteEndPoint)
     {
         try
         {
-            if (Socket is not null && Socket.RemoteEndPoint?.ToString() == remoteEndPoint.ToString())
-                return;
             Close();
             IsConnect = false;
             var connectArgs = new SocketAsyncEventArgs()
@@ -57,7 +60,7 @@ public class ClientProtocol : IocpProtocol
             Socket ??= new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             if (!Socket.ConnectAsync(connectArgs))
                 ProcessConnect(connectArgs);
-            ConnectDone.WaitOne(1000);
+            ConnectDone.WaitOne(ResetSpan);
         }
         catch (Exception ex)
         {
@@ -154,6 +157,7 @@ public class ClientProtocol : IocpProtocol
     private void DoLogin()
     {
         IsLogin = true;
+        LoginDone.Set();
         HandleLogined();
     }
 
@@ -244,7 +248,7 @@ public class ClientProtocol : IocpProtocol
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-                throw new IocpException(ProtocolCode.FileInProcess);
+                throw new IocpException(ProtocolCode.ProcessingFile);
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
             HandleUploadStart();
             var commandComposer = new CommandComposer()
@@ -281,7 +285,7 @@ public class ClientProtocol : IocpProtocol
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             var stamp = DateTime.Now.ToString();
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-                throw new IocpException(ProtocolCode.FileInProcess);
+                throw new IocpException(ProtocolCode.ProcessingFile);
             HandleDownloadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Download)

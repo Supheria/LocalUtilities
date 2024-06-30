@@ -122,7 +122,7 @@ public class HostProtocol : IocpProtocol
             }
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-                throw new IocpException(ProtocolCode.FileInProcess);
+                throw new IocpException(ProtocolCode.ProcessingFile);
             HandleUploadStart();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Upload)
@@ -197,7 +197,7 @@ public class HostProtocol : IocpProtocol
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-                throw new IocpException(ProtocolCode.FileInProcess);
+                throw new IocpException(ProtocolCode.ProcessingFile);
             var packetSize = fileStream.Length > ConstTabel.TransferBufferMax ? ConstTabel.TransferBufferMax : fileStream.Length;
             HandleDownloadStart();
             var commandComposer = new CommandComposer()
