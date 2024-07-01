@@ -45,7 +45,7 @@ partial class SerializeTool
         }
     }
 
-    public static string FormatToSsString<T>(this T obj) where T : ISsSerializable
+    public static string ToSsString<T>(this T obj) where T : ISsSerializable
     {
         try
         {
@@ -57,7 +57,7 @@ partial class SerializeTool
         }
     }
 
-    public static string FormatToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
+    public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
     {
         try
         {

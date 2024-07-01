@@ -34,7 +34,7 @@ public static class ArrayString
         return array.ToArrayString();
     }
 
-    public static string ToArrayString<T>(this ICollection<T?> array)
+    public static string ToArrayString<T>(this ICollection<T> array)
     {
         return new StringBuilder()
             .AppendJoin(Splitter, array.Select(x => x?.ToString() ?? ""))

@@ -4,7 +4,7 @@ public enum IocpProtocolTypes
 {
     None,
     HeartBeats,
-    Message,
+    Operator,
     Upload,
     Download
 }

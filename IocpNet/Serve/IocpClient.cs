@@ -14,13 +14,13 @@ public class IocpClient
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    ClientProtocol HeartBeatsManager { get; } = new(IocpProtocolTypes.HeartBeats);
+    ClientProtocol HeartBeats { get; } = new(IocpProtocolTypes.HeartBeats);
 
-    ClientProtocol MessageManager { get; } = new(IocpProtocolTypes.Message);
+    ClientProtocol Operator { get; } = new(IocpProtocolTypes.Operator);
 
-    ClientProtocol UploadManager { get; } = new(IocpProtocolTypes.Upload);
+    ClientProtocol Upload { get; } = new(IocpProtocolTypes.Upload);
 
-    ClientProtocol DownloadManager { get; } = new(IocpProtocolTypes.Download);
+    ClientProtocol Download { get; } = new(IocpProtocolTypes.Download);
 
     public bool IsConnect => Host is not null;
 
@@ -30,55 +30,57 @@ public class IocpClient
 
     public IocpClient()
     {
-        HeartBeatsManager.OnLog += (s) => OnLog?.Invoke(s);
-        HeartBeatsManager.OnLogined += () => OnConnected?.Invoke();
-        HeartBeatsManager.OnClosed += () => OnDisconnected?.Invoke();
-        MessageManager.OnLog += (s) => OnLog?.Invoke(s);
-        UploadManager.OnLog += (s) => OnLog?.Invoke(s);
-        DownloadManager.OnLog += (s) => OnLog?.Invoke(s);
-        UploadManager.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
-        DownloadManager.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
+        HeartBeats.OnLog += (s) => OnLog?.Invoke(s);
+        HeartBeats.OnLogined += () => OnConnected?.Invoke();
+        HeartBeats.OnClosed += () => OnDisconnected?.Invoke();
+        Operator.OnLog += (s) => OnLog?.Invoke(s);
+        Operator.OnOperate += ProcessOperate;
+        Upload.OnLog += (s) => OnLog?.Invoke(s);
+        Download.OnLog += (s) => OnLog?.Invoke(s);
+        Upload.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
+        Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
     }
 
     public void Connect(string address, int port, string name, string password)
     {
         Host = new(IPAddress.Parse(address), port);
         UserInfo = new(name, password);
-        HeartBeatsManager.Connect(Host, UserInfo);
+        HeartBeats.Connect(Host, UserInfo);
+        Operator.Connect(Host, UserInfo);
+        Upload.Connect(Host, UserInfo);
+        Download.Connect(Host, UserInfo);
     }
 
     public void Disconnect()
     {
-        HeartBeatsManager.Close();
-        MessageManager.Close();
-        UploadManager.Close();
-        DownloadManager.Close();
         Host = null;
         UserInfo = null;
+        HeartBeats.Close();
+        Operator.Close();
+        Upload.Close();
+        Download.Close();
         OnDisconnected?.Invoke();
     }
 
     public void Close()
     {
-        HeartBeatsManager.Dispose();
-        MessageManager.Dispose();
-        UploadManager.Dispose();
-        DownloadManager.Dispose();
+        HeartBeats.Dispose();
+        Operator.Dispose();
+        Upload.Dispose();
+        Download.Dispose();
         Host = null;
         UserInfo = null;
     }
 
     public void SendMessage(string message)
     {
-        MessageManager.Connect(Host, UserInfo);
-        MessageManager.SendMessage(message);
+        Operator.Operate(OperateTypes.Message, message);
     }
 
-    public void Upload(string dirName, string filePath)
+    public void UploadFile(string dirName, string filePath)
     {
-        UploadManager.Connect(Host, UserInfo);
         var fileName = Path.GetFileName(filePath);
-        var localPath = UploadManager.GetFileRepoPath(dirName, fileName);
+        var localPath = Upload.GetFileRepoPath(dirName, fileName);
         if (!File.Exists(localPath))
         {
             try
@@ -87,12 +89,21 @@ public class IocpClient
             }
             catch { }
         }
-        UploadManager.Upload(dirName, fileName, true);
+        Upload.Upload(dirName, fileName, true);
     }
 
-    public void Download(string dirName, string filePath)
+    public void DownloadFile(string dirName, string filePath)
     {
-        DownloadManager.Connect(Host, UserInfo);
-        DownloadManager.Download(dirName, Path.GetFileName(filePath), true);
+        Download.Download(dirName, Path.GetFileName(filePath), true);
+    }
+
+    private void ProcessOperate(OperateArgs args)
+    {
+        switch (args.Type)
+        {
+            case OperateTypes.Message:
+                OnLog?.Invoke(args.Args);
+                return;
+        }
     }
 }

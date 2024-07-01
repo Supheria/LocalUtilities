@@ -51,6 +51,7 @@ public class HostProtocol : IocpProtocol
             commandComposer.AppendFailure(ProtocolCode.UnknowError, ex.Message);
         WriteCommand(commandComposer);
         SendAsync();
+        HandleException(ex);
     }
 
     private void CommandSucceed(CommandComposer commandComposer)
@@ -65,64 +66,66 @@ public class HostProtocol : IocpProtocol
         SendAsync();
     }
 
-    public override void SendMessage(string message)
+    public void Operate(OperateTypes operate, string args)
     {
         try
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Message);
-            var buffer = Encoding.UTF8.GetBytes(message);
-            CommandSucceed(commandComposer, buffer, 0, buffer.Length);
+                .AppendCommand(ProtocolKey.Operate)
+                .AppendValue(ProtocolKey.OperateType, operate);
+            var count = WriteU8Buffer(args, out var buffer);
+            CommandSucceed(commandComposer, buffer, 0, count);
         }
         catch (Exception ex)
         {
-            HandleException(ex);
+            CommandFail(ex);
         }
     }
 
     protected override void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
-        var commandKey = ProtocolKey.None;
         try
         {
+            var commandKey = ProtocolKey.None;
             if (!commandParser.GetValueAsCommandKey(out commandKey))
                 throw new IocpException(ProtocolCode.UnknownCommand);
             if (!CheckLogin(commandKey)) //检测登录
                 throw new IocpException(ProtocolCode.NotLogined);
+            switch (commandKey)
+            {
+                case ProtocolKey.Login:
+                    DoLogin(commandParser);
+                    return;
+                case ProtocolKey.HeartBeats:
+                    DoHeartBeats();
+                    return;
+                case ProtocolKey.Operate:
+                    DoOperate(commandParser, buffer, offset, count);
+                    return;
+                case ProtocolKey.Upload:
+                    DoUpload(commandParser);
+                    return;
+                case ProtocolKey.WriteFile:
+                    DoWriteFile(commandParser, buffer, offset, count);
+                    return;
+                case ProtocolKey.Download:
+                    DoDownload(commandParser);
+                    return;
+                case ProtocolKey.SendFile:
+                    DoSendFile(commandParser);
+                    return;
+                default:
+                    throw new IocpException(ProtocolCode.UnknownCommand);
+            }
+
         }
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
-        }
-        switch (commandKey)
-        {
-            case ProtocolKey.Login:
-                DoLogin(commandParser);
-                return;
-            case ProtocolKey.HeartBeats:
-                DoHeartBeats();
-                return;
-            case ProtocolKey.Message:
-                DoMessage(buffer, offset, count);
-                return;
-            case ProtocolKey.Upload:
-                DoUpload(commandParser);
-                return;
-            case ProtocolKey.WriteFile:
-                DoWriteFile(commandParser, buffer, offset, count);
-                return;
-            case ProtocolKey.Download:
-                DoDownload(commandParser);
-                return;
-            case ProtocolKey.SendFile:
-                DoSendFile(commandParser);
-                return;
-            default:
-                return;
         }
     }
+
+    protected
 
     private bool CheckLogin(ProtocolKey commandKey)
     {
@@ -141,15 +144,14 @@ public class HostProtocol : IocpProtocol
                 !commandParser.GetValueAsString(ProtocolKey.ProtocolType, out var t))
                 throw new IocpException(ProtocolCode.ParameterError);
             var type = t.ToEnum<IocpProtocolTypes>();
-            if (type is IocpProtocolTypes.None || (Type is not IocpProtocolTypes.None && Type != type))
+            if (type is IocpProtocolTypes.None || Type is not IocpProtocolTypes.None && Type != type)
                 throw new IocpException(ProtocolCode.WrongProtocolType);
             Type = type;
-            //var success = name == "admin" && password == "password".ToMd5HashString();
-            //if (!success)
-            //    throw new IocpException(ProtocolCode.UserOrPasswordError);
+            if (type is not IocpProtocolTypes.HeartBeats)
+                DaemonThread.Stop();
+            // TODO: validate userinfo
             UserInfo = new(name, password);
             IsLogin = true;
-            // TODO: log success
             HandleLogined();
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Login)
@@ -160,8 +162,6 @@ public class HostProtocol : IocpProtocol
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
     }
 
@@ -176,23 +176,21 @@ public class HostProtocol : IocpProtocol
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
     }
 
-    private void DoMessage(byte[] buffer, int offset, int count)
+    private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
-            var message = Encoding.UTF8.GetString(buffer, offset, count);
-            HandleMessage(message);
+            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate))
+                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
+            var args = ReadU8Buffer(buffer, offset, count);
+            HandleOperate(new(operate.ToEnum<OperateTypes>(), args));
         }
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
     }
 
@@ -227,8 +225,6 @@ public class HostProtocol : IocpProtocol
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
 
     }
@@ -265,8 +261,6 @@ public class HostProtocol : IocpProtocol
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
     }
 
@@ -297,8 +291,6 @@ public class HostProtocol : IocpProtocol
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
     }
 
@@ -333,14 +325,15 @@ public class HostProtocol : IocpProtocol
         catch (Exception ex)
         {
             CommandFail(ex);
-            HandleException(ex);
-            // TODO: log fail
         }
     }
 
     public override string GetLog(string message)
     {
         return new StringBuilder()
+            .Append(SignTable.OpenParenthesis)
+            .Append("host")
+            .Append(SignTable.CloseParenthesis)
             .Append(SocketInfo.RemoteEndPoint)
             .Append(SignTable.OpenParenthesis)
             .Append(UserInfo?.Name)

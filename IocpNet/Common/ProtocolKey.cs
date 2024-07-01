@@ -65,5 +65,7 @@ public enum ProtocolKey
     CanRename,
     HeartBeats,
     ProtocolType,
+    Operate,
+    OperateType,
 }
 

@@ -3,6 +3,8 @@ using LocalUtilities.IocpNet.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using LocalUtilities.SimpleScript.Serialization;
+using LocalUtilities.TypeGeneral;
 
 namespace LocalUtilities.IocpNet.Serve;
 
@@ -16,25 +18,7 @@ public class IocpHost
 
     public bool IsStart { get; private set; } = false;
 
-    ConcurrentDictionary<string, ConcurrentDictionary<IocpProtocolTypes, HostProtocol>> UserMap { get; } = [];
-
-    private DaemonThread DaemonThread { get; }
-
-    public IocpHost()
-    {
-        DaemonThread = new(ConstTabel.TimeoutMilliseconds, ClearBadUser);
-    }
-
-    private void ClearBadUser()
-    {
-        if (!UserMap.TryGetValue("", out var badGroup))
-            return;
-        foreach (var protocol in badGroup.Values)
-        {
-            lock (protocol)
-                protocol.Close();
-        }
-    }
+    ConcurrentDictionary<string, UserHost> UserMap { get; } = [];
 
     public void Start(int port)
     {
@@ -48,7 +32,6 @@ public class IocpHost
             Socket.Bind(localEndPoint);
             Socket.Listen();
             AcceptAsync(null);
-            DaemonThread.Start();
             IsStart = true;
             HandleLog("host start");
         }
@@ -64,13 +47,9 @@ public class IocpHost
         {
             if (!IsStart)
                 throw new IocpException(ProtocolCode.HostNotStartYet);
-            foreach (var group in UserMap.Values)
-            {
-                foreach (var protocol in group.Values)
-                    protocol.Close();
-            }
+            foreach (var user in UserMap.Values)
+                user.CloseAll();
             Socket?.Close();
-            DaemonThread.Stop();
             IsStart = false;
             HandleLog("host close");
         }
@@ -100,39 +79,37 @@ public class IocpHost
         if (acceptArgs.AcceptSocket is null)
             goto ACCEPT;
         var protocol = new HostProtocol();
-        protocol.OnLog += (s) => OnLog?.Invoke(s);
         protocol.OnLogined += () =>
         {
-            var name = protocol.UserInfo?.Name ?? "";
-            if (UserMap.TryGetValue(name, out var group))
+            if (protocol.UserInfo?.Name is null || protocol.UserInfo.Name is "")
             {
-                if (group.TryGetValue(protocol.Type, out var toCheck) && toCheck.TimeStamp != protocol.TimeStamp)
-                    protocol.Close();
-                else
-                    group.TryAdd(protocol.Type, protocol);
+                protocol.Close();
+                return;
             }
+            if (UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
+                user.Add(protocol);
             else
             {
-                group = new();
-                if (!group.TryAdd(protocol.Type, protocol) || !UserMap.TryAdd(name, group))
+                user = new();
+                user.OnLog += (s) => OnLog?.Invoke(s);
+                user.OnClearUp += () => UserMap.TryRemove(user.Name, out _);
+                if (!user.Add(protocol))
+                    return;
+                if (!UserMap.TryAdd(user.Name, user))
                     protocol.Close();
             }
-            OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
+            OnConnectionCountChange?.Invoke(UserMap.Sum(u => u.Value.Count));
         };
         protocol.OnClosed += () =>
         {
-            var name = protocol.UserInfo?.Name ?? "";
-            if (!UserMap.TryGetValue(name, out var group))
+            if (protocol.UserInfo?.Name is null || protocol.UserInfo.Name is "" || !UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
                 return;
-            if (group.TryGetValue(protocol.Type, out var toCheck) && toCheck.TimeStamp == protocol.TimeStamp)
-                group.TryRemove(protocol.Type, out _);
-            if (group.Count is 0)
-                UserMap.TryRemove(name, out _);
+            user.Remove(protocol);
             OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
         };
         protocol.ProcessAccept(acceptArgs.AcceptSocket);
     ACCEPT:
-        if (acceptArgs.SocketError is not SocketError.OperationAborted)
+        if (acceptArgs.SocketError is SocketError.Success)
             AcceptAsync(acceptArgs);
     }
 
@@ -146,5 +123,11 @@ public class IocpHost
     {
         // TODO:
         HandleLog(ex.Message);
+    }
+
+    public void BroadcastMessage(string message)
+    {
+        foreach(var user in  UserMap.Values)
+            user.SendMessage(message);
     }
 }

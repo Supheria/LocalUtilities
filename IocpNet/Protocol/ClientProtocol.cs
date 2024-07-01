@@ -87,14 +87,15 @@ public class ClientProtocol : IocpProtocol
         ConnectDone.Set();
     }
 
-    public override void SendMessage(string message)
+    public void Operate(OperateTypes operate, string args)
     {
         try
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Message);
-            var buffer = Encoding.UTF8.GetBytes(message);
-            WriteCommand(commandComposer, buffer, 0, buffer.Length);
+                .AppendCommand(ProtocolKey.Operate)
+                .AppendValue(ProtocolKey.OperateType, operate);
+            var count = WriteU8Buffer(args, out var buffer);
+            WriteCommand(commandComposer, buffer, 0, count);
             SendAsync();
         }
         catch (Exception ex)
@@ -117,33 +118,33 @@ public class ClientProtocol : IocpProtocol
                 else
                     throw new IocpException(code);
             }
+            commandParser.GetValueAsCommandKey(out var commandKey);
+            switch (commandKey)
+            {
+                case ProtocolKey.Login:
+                    DoLogin();
+                    return;
+                case ProtocolKey.HeartBeats:
+                    DoHeartBeats();
+                    return;
+                case ProtocolKey.Operate:
+                    DoOperate(commandParser, buffer, offset, count);
+                    return;
+                case ProtocolKey.Upload:
+                    DoUpload(commandParser);
+                    return;
+                case ProtocolKey.Download:
+                    DoDownload(commandParser, buffer, offset, count);
+                    return;
+                default:
+                    throw new IocpException(ProtocolCode.UnknownCommand);
+            };
         }
         catch (Exception ex)
         {
             HandleException(ex);
             // TODO: log fail
         }
-        commandParser.GetValueAsCommandKey(out var commandKey);
-        switch (commandKey)
-        {
-            case ProtocolKey.Login:
-                DoLogin();
-                return;
-            case ProtocolKey.HeartBeats:
-                DoHeartBeats();
-                return;
-            case ProtocolKey.Message:
-                DoMessage(buffer, offset, count);
-                return;
-            case ProtocolKey.Upload:
-                DoUpload(commandParser);
-                return;
-            case ProtocolKey.Download:
-                DoDownload(commandParser, buffer, offset, count);
-                return;
-            default:
-                return;
-        };
     }
 
     private void DoLogin()
@@ -169,12 +170,14 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    private void DoMessage(byte[] buffer, int offset, int count)
+    private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
-            string message = Encoding.UTF8.GetString(buffer, offset, count);
-            HandleMessage(message);
+            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate))
+                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
+            var args = ReadU8Buffer(buffer, offset, count);
+            HandleOperate(new(operate.ToEnum<OperateTypes>(), args));
         }
         catch (Exception ex)
         {
@@ -220,7 +223,7 @@ public class ClientProtocol : IocpProtocol
         {
             if (!commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
                 !commandParser.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength))
-                throw new IocpException(ProtocolCode.ParameterError);
+                throw new IocpException(ProtocolCode.ParameterError, nameof(DoUpload));
             if (AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
             if (AutoFile.Position >= AutoFile.Length)
@@ -290,7 +293,7 @@ public class ClientProtocol : IocpProtocol
                 !commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
                 !commandParser.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength) ||
                 !commandParser.GetValueAsLong(ProtocolKey.Position, out var position))
-                throw new IocpException(ProtocolCode.ParameterError);
+                throw new IocpException(ProtocolCode.ParameterError, nameof(DoDownload));
             if (AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
             AutoFile.Write(buffer, offset, count);
@@ -322,6 +325,9 @@ public class ClientProtocol : IocpProtocol
     public override string GetLog(string message)
     {
         return new StringBuilder()
+            .Append(SignTable.OpenParenthesis)
+            .Append("client")
+            .Append(SignTable.CloseParenthesis)
             .Append(SocketInfo.LocalEndPoint)
             .Append(SignTable.OpenParenthesis)
             .Append(UserInfo?.Name)

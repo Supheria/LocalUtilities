@@ -1,9 +1,11 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Windows.Forms;
 
 namespace LocalUtilities.IocpNet.Protocol;
 
@@ -16,6 +18,8 @@ public abstract class IocpProtocol : IDisposable
     public event IocpEventHandler? OnClosed;
 
     public event IocpEventHandler<string>? OnProcessing;
+
+    public event IocpEventHandler<OperateArgs>? OnOperate;
 
     protected Socket? Socket { get; set; } = null;
 
@@ -167,18 +171,44 @@ public abstract class IocpProtocol : IDisposable
         // 获取命令
         var command = commandComposer.GetCommand();
         // 获取命令的字节数组
-        var commandBuffer = Encoding.UTF8.GetBytes(command);
+        var commandLength = WriteU8Buffer(command, out var commandBuffer);
         // 获取总大小(4个字节的包总长度+4个字节的命令长度+命令字节数组的长度+数据的字节数组长度)
-        int totalLength = sizeof(int) + sizeof(int) + commandBuffer.Length + count;
+        int totalLength = sizeof(int) + sizeof(int) + commandLength + count;
         SendBuffer.StartPacket();
         SendBuffer.DynamicBufferManager.WriteValue(totalLength, false); // 写入总大小
-        SendBuffer.DynamicBufferManager.WriteValue(commandBuffer.Length, false); // 写入命令大小
+        SendBuffer.DynamicBufferManager.WriteValue(commandLength, false); // 写入命令大小
         SendBuffer.DynamicBufferManager.WriteData(commandBuffer); // 写入命令内容
         SendBuffer.DynamicBufferManager.WriteData(buffer, offset, count); // 写入二进制数据
         SendBuffer.EndPacket();
     }
 
-    public abstract void SendMessage(string message);
+    protected static int WriteU8Buffer(string? str, [NotNullWhen(true)] out byte[] buffer)
+    {
+        buffer = [];
+        try
+        {
+            if (str is null)
+                return 0;
+            buffer = Encoding.UTF8.GetBytes(str);
+            return buffer.Length;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    protected static string ReadU8Buffer(byte[] buffer, int offset, int count)
+    {
+        try
+        {
+            return Encoding.UTF8.GetString(buffer, offset, count);
+        }
+        catch
+        {
+            return "";
+        }
+    }
 
     public string GetFileRepoPath(string dirName, string fileName)
     {
@@ -282,6 +312,11 @@ public abstract class IocpProtocol : IDisposable
     {
         HandleLog("close");
         OnClosed?.Invoke();
+    }
+
+    protected void HandleOperate(OperateArgs args)
+    {
+        OnOperate?.Invoke(args);
     }
 
     //protected void HandleTestTransferSpeed(int bytesTransferred, TimeSpan span)

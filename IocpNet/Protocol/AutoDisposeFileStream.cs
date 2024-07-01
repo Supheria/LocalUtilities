@@ -44,8 +44,14 @@ public class AutoDisposeFileStream
         if (FileStream is null)
             return false;
         Timer.Stop();
-        readCount = FileStream.Read(buffer, offset, count);
-        Timer.Start();
+        try
+        {
+            readCount = FileStream.Read(buffer, offset, count);
+        }
+        finally
+        {
+            Timer.Start();
+        }
         return true;
     }
 
@@ -54,7 +60,14 @@ public class AutoDisposeFileStream
         if (FileStream is null)
             return false;
         Timer.Stop();
-        FileStream.Write(buffer, offset, count);
+        try
+        {
+            FileStream.Write(buffer, offset, count);
+        }
+        finally
+        {
+            Timer.Start();
+        }
         Timer.Start();
         return true;
     }
