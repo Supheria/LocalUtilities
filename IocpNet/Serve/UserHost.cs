@@ -39,12 +39,12 @@ public class UserHost
         return false;
     }
 
-    private void ProcessOperate(OperateArgs args)
+    private void ProcessOperate(OperateReceiveArgs args)
     {
         switch (args.Type)
         {
             case OperateTypes.Message:
-                OnLog?.Invoke(args.Args);
+                OnLog?.Invoke(args.Arg);
                 return;
         }
     }

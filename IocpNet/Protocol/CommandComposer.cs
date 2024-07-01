@@ -37,20 +37,20 @@ public class CommandComposer
 
     public CommandComposer AppendSuccess()
     {
-        AppendLine(ProtocolKey.Code, ProtocolCode.Success.ToString());
+        AppendLine(ProtocolKey.CallbackCode, ProtocolCode.Success.ToString());
         return this;
     }
 
-    public CommandComposer AppendFailure(ProtocolCode errorCode, string message)
+    public CommandComposer AppendFailure(ProtocolCode errorCode, string errorMessage)
     {
-        AppendLine(ProtocolKey.Code, errorCode.ToString());
-        AppendLine(ProtocolKey.Message, message);
+        AppendLine(ProtocolKey.CallbackCode, errorCode.ToString());
+        AppendLine(ProtocolKey.ErrorMessage, errorMessage);
         return this;
     }
 
-    public CommandComposer AppendValue(ProtocolKey commandKey, object value)
+    public CommandComposer AppendValue(ProtocolKey commandKey, object? value)
     {
-        AppendLine(commandKey, value.ToString());
+        AppendLine(commandKey, value?.ToString());
         return this;
     }
 }

@@ -8,8 +8,8 @@ public enum ProtocolKey
     LeftBrackets,
     RightBrackets,
     Command,
-    Code,
-    Message,
+    CallbackCode,
+    ErrorMessage,
     UserName,
     Password,
     Organization,
@@ -67,5 +67,7 @@ public enum ProtocolKey
     ProtocolType,
     Operate,
     OperateType,
+    TimeStamp,
+    OperateCallback,
 }
 

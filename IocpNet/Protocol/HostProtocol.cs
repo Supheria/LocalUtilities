@@ -23,7 +23,7 @@ public class HostProtocol : IocpProtocol
     private void CheckTimeout()
     {
         var span = DateTime.Now - SocketInfo.ActiveTime;
-        if (span.TotalMilliseconds < ConstTabel.TimeoutMilliseconds)
+        if (span.TotalMilliseconds < ConstTabel.SocketTimeoutMilliseconds)
             return;
         Close();
     }
@@ -181,17 +181,33 @@ public class HostProtocol : IocpProtocol
 
     private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
+        CommandComposer commandComposer;
+        string? timeStamp = null;
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate))
+            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate) ||
+                !commandParser.GetValueAsString(ProtocolKey.TimeStamp, out timeStamp))
                 throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
-            var args = ReadU8Buffer(buffer, offset, count);
-            HandleOperate(new(operate.ToEnum<OperateTypes>(), args));
+            var arg = ReadU8Buffer(buffer, offset, count);
+            HandleOperate(new(operate.ToEnum<OperateTypes>(), arg));
+            commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.OperateCallback)
+                .AppendValue(ProtocolKey.TimeStamp, timeStamp)
+                .AppendSuccess();
         }
         catch (Exception ex)
         {
-            CommandFail(ex);
+            HandleException(ex);
+            commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.OperateCallback)
+                .AppendValue(ProtocolKey.TimeStamp, timeStamp);
+            if (ex is IocpException iocp)
+                commandComposer.AppendFailure(iocp.ErrorCode, iocp.Message);
+            else
+                commandComposer.AppendFailure(ProtocolCode.UnknowError, ex.Message);
         }
+        WriteCommand(commandComposer);
+        SendAsync();
     }
 
     public void DoUpload(CommandParser commandParser)

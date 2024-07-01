@@ -2,6 +2,7 @@
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -87,14 +88,15 @@ public class ClientProtocol : IocpProtocol
         ConnectDone.Set();
     }
 
-    public void Operate(OperateTypes operate, string args)
+    public void Operate(OperateSendArgs operateArgs)
     {
         try
         {
             var commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.Operate)
-                .AppendValue(ProtocolKey.OperateType, operate);
-            var count = WriteU8Buffer(args, out var buffer);
+                .AppendValue(ProtocolKey.OperateType, operateArgs.Type)
+                .AppendValue(ProtocolKey.TimeStamp, operateArgs.TimeStamp);
+            var count = WriteU8Buffer(operateArgs.Args, out var buffer);
             WriteCommand(commandComposer, buffer, 0, count);
             SendAsync();
         }
@@ -108,16 +110,16 @@ public class ClientProtocol : IocpProtocol
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.Code, out var errorCode))
-                throw new IocpException(ProtocolCode.UnknowError);
-            var code = errorCode.ToEnum<ProtocolCode>();
-            if (code is not ProtocolCode.Success)
-            {
-                if (commandParser.GetValueAsString(ProtocolKey.Message, out var message))
-                    throw new IocpException(code, message);
-                else
-                    throw new IocpException(code);
-            }
+            //if (!commandParser.GetValueAsString(ProtocolKey.Code, out var errorCode))
+            //    throw new IocpException(ProtocolCode.UnknowError);
+            //var code = errorCode.ToEnum<ProtocolCode>();
+            //if (code is not ProtocolCode.Success)
+            //{
+            //    if (commandParser.GetValueAsString(ProtocolKey.Message, out var message))
+            //        throw new IocpException(code, message);
+            //    else
+            //        throw new IocpException(code);
+            //}
             commandParser.GetValueAsCommandKey(out var commandKey);
             switch (commandKey)
             {
@@ -129,6 +131,9 @@ public class ClientProtocol : IocpProtocol
                     return;
                 case ProtocolKey.Operate:
                     DoOperate(commandParser, buffer, offset, count);
+                    return;
+                case ProtocolKey.OperateCallback:
+                    DoOperateCallback(commandParser);
                     return;
                 case ProtocolKey.Upload:
                     DoUpload(commandParser);
@@ -176,13 +181,28 @@ public class ClientProtocol : IocpProtocol
         {
             if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate))
                 throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
-            var args = ReadU8Buffer(buffer, offset, count);
-            HandleOperate(new(operate.ToEnum<OperateTypes>(), args));
+            var arg = ReadU8Buffer(buffer, offset, count);
+            HandleOperate(new(operate.ToEnum<OperateTypes>(), arg));
         }
         catch (Exception ex)
         {
             HandleException(ex);
-            // TODO: log fail
+        }
+    }
+
+    private void DoOperateCallback(CommandParser commandParser)
+    {
+        try
+        {
+            if (!commandParser.GetValueAsString(ProtocolKey.TimeStamp, out var timeStamp) ||
+                !commandParser.GetValueAsString(ProtocolKey.CallbackCode, out var callbackCode))
+                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperateCallback));
+            commandParser.GetValueAsString(ProtocolKey.ErrorMessage, out var errorMessage);
+            HandleOperateCallback(new(timeStamp, callbackCode.ToEnum<ProtocolCode>(), errorMessage));
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
         }
     }
 

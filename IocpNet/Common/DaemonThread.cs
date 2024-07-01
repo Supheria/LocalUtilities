@@ -26,6 +26,7 @@ public class DaemonThread
 
     public void Dispose()
     {
+        Timer.Stop();
         Timer.Dispose();
     }
 }

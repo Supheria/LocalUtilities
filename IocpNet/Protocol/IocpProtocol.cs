@@ -19,7 +19,9 @@ public abstract class IocpProtocol : IDisposable
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    public event IocpEventHandler<OperateArgs>? OnOperate;
+    public event IocpEventHandler<OperateReceiveArgs>? OnOperate;
+
+    public event IocpEventHandler<OperateCallbackArgs>? OnOperateCallback;
 
     protected Socket? Socket { get; set; } = null;
 
@@ -314,9 +316,14 @@ public abstract class IocpProtocol : IDisposable
         OnClosed?.Invoke();
     }
 
-    protected void HandleOperate(OperateArgs args)
+    protected void HandleOperate(OperateReceiveArgs args)
     {
         OnOperate?.Invoke(args);
+    }
+
+    protected void HandleOperateCallback(OperateCallbackArgs args)
+    {
+        OnOperateCallback?.Invoke(args);
     }
 
     //protected void HandleTestTransferSpeed(int bytesTransferred, TimeSpan span)
