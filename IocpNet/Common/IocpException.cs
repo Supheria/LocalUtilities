@@ -18,4 +18,9 @@ public class IocpException(ProtocolCode errorCode, string message) : Exception(m
     {
 
     }
+
+    public static IocpException ArgumentNull(string name)
+    {
+        return new(ProtocolCode.ArgumentNull, name);
+    }
 }

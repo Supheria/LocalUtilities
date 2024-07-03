@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.IocpNet.Common;
+﻿namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
 public sealed class OperateReceiveArgs(OperateTypes type, string arg)
 {

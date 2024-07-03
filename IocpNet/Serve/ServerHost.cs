@@ -1,6 +1,8 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using System.Collections.Concurrent;
 using System.Text;
@@ -57,8 +59,30 @@ public class ServerHost : Host
 
     protected override void DoOperate(OperateSendArgs sendArgs)
     {
-        if (!Protocols.TryGetValue(ProtocolTypes.Operator, out var protocol))
-            return;
-        protocol.Operate(sendArgs);
+        try
+        {
+            if (!Protocols.TryGetValue(ProtocolTypes.Operator, out var protocol))
+                throw IocpException.ArgumentNull(nameof(ProtocolTypes));
+            protocol.Operate(sendArgs);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
+
+    protected override void HandleDownloadRequest(OperateReceiveArgs args)
+    {
+        try
+        {
+            if (Protocols.TryGetValue(ProtocolTypes.Download, out var protocol))
+                throw IocpException.ArgumentNull(nameof(ProtocolTypes));
+            //var requestArgs = new DownloadRequestArgs().ParseSsString(args.Arg);
+
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 }

@@ -34,9 +34,9 @@ internal class Tokenizer
 
     internal ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
 
-    internal Tokenizer(byte[] bytes)
+    internal Tokenizer(byte[] buffer)
     {
-        Buffer = bytes;
+        Buffer = buffer;
         Tokenize();
     }
 

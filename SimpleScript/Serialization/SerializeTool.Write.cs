@@ -1,5 +1,7 @@
 ﻿using LocalUtilities.FileHelper;
 using LocalUtilities.SimpleScript.Common;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serialization;
 
@@ -45,15 +47,18 @@ partial class SerializeTool
         }
     }
 
-    public static string ToSsString<T>(this T obj) where T : ISsSerializable
+    public static int ToSsBuffer<T>(this T obj, out byte[] buffer) where T : ISsSerializable
     {
+        buffer = [];
         try
         {
-            return FormatObject(obj, false);
+            var str = FormatObject(obj, false);
+            buffer = Encoding.UTF8.GetBytes(str);
+            return buffer.Length;
         }
         catch
         {
-            return "";
+            return 0;
         }
     }
 

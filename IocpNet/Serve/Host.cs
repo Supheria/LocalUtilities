@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using Microsoft.VisualBasic.Logging;
@@ -40,7 +41,8 @@ public abstract class Host
                 HandleLog(receiveArgs.Arg);
                 return;
             case OperateTypes.DownloadRequest:
-
+                HandleDownloadRequest(receiveArgs);
+                return;
         }
     }
 
@@ -95,5 +97,9 @@ public abstract class Host
             .Append(errorMessage)
             .ToString();
         HandleLog(log);
+    }
+    protected void HandleException(Exception ex)
+    {
+        HandleLog(ex.Message);
     }
 }

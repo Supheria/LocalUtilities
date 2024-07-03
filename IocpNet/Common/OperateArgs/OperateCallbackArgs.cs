@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.IocpNet.Common;
+﻿namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
 public sealed class OperateCallbackArgs(string timeStamp, ProtocolCode callbackCode, string? errorMessage = null)
 {

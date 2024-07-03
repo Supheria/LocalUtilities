@@ -6,6 +6,19 @@ namespace LocalUtilities.SimpleScript.Serialization;
 
 partial class SerializeTool
 {
+    public static T ParseSsBuffer<T>(this T obj, byte[] buffer, int offset, int count) where T : ISsSerializable
+    {
+        try
+        {
+            var bytes = new byte[count];
+            Array.Copy(buffer, offset, bytes, 0, count);
+            return ParseToObject(obj, buffer);
+        }
+        catch
+        {
+            return obj;
+        }
+    }
     public static T ParseSsString<T>(this T obj, string str) where T : ISsSerializable
     {
         try

@@ -32,4 +32,5 @@ public enum ProtocolCode
     WrongProtocolType,
     HostHasStarted,
     HostNotStartYet,
+    ArgumentNull,
 }

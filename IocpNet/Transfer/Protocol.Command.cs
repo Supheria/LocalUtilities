@@ -1,4 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral.Convert;
 using System;
 using System.Collections.Generic;
@@ -28,10 +30,8 @@ partial class Protocol
         try
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Operate)
-                .AppendValue(ProtocolKey.OperateType, operateArgs.Type)
-                .AppendValue(ProtocolKey.TimeStamp, operateArgs.TimeStamp);
-            var count = WriteU8Buffer(operateArgs.Arg, out var buffer);
+                .AppendCommand(ProtocolKey.Operate);
+            var count = operateArgs.ToSsBuffer(out var buffer);
             WriteCommand(commandComposer, buffer, 0, count);
             SendAsync();
         }
@@ -47,11 +47,9 @@ partial class Protocol
         string? timeStamp = null;
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate) ||
-                !commandParser.GetValueAsString(ProtocolKey.TimeStamp, out timeStamp))
-                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
-            var arg = ReadU8Buffer(buffer, offset, count);
-            OnOperate?.Invoke(new(operate.ToEnum<OperateTypes>(), arg));
+            var sendArgs = new OperateSendArgs().ParseSsBuffer(buffer, offset, count);
+            OnOperate?.Invoke(new(sendArgs.Type, sendArgs.Arg));
+            timeStamp = sendArgs.TimeStamp;
             commandComposer = new CommandComposer()
                 .AppendCommand(ProtocolKey.OperateCallback)
                 .AppendValue(ProtocolKey.TimeStamp, timeStamp)

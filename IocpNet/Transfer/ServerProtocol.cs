@@ -225,6 +225,26 @@ public class ServerProtocol : Protocol
         }
     }
 
+    public void Download(string dirName, string fileName, string startTime)
+    {
+        try
+        {
+
+            var filePath = GetFileRepoPath(dirName, fileName);
+            if (!File.Exists(filePath))
+                throw new IocpException(ProtocolCode.FileNotExist, filePath);
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+                throw new IocpException(ProtocolCode.ProcessingFile);
+            var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
+            HandleDownloadStart();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
+
     private void DoSendFile(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try

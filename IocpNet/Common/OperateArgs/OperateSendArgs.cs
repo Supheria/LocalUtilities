@@ -1,11 +1,13 @@
 ﻿using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
-namespace LocalUtilities.IocpNet.Common;
+namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class OperateSendArgs
+public sealed class OperateSendArgs : ISsSerializable
 {
     public IocpEventHandler? OnRetry;
 
@@ -13,11 +15,11 @@ public sealed class OperateSendArgs
 
     public LogHandler? OnLog;
 
-    public OperateTypes Type { get; }
+    public OperateTypes Type { get; private set; }
 
-    public string Arg { get; }
+    public string Arg { get; private set; }
 
-    public string TimeStamp { get; } = DateTime.Now.ToString(DateTimeFormat.Data);
+    public string TimeStamp { get; private set; } = DateTime.Now.ToString(DateTimeFormat.Data);
 
     DaemonThread DaemonThread { get; }
 
@@ -25,12 +27,19 @@ public sealed class OperateSendArgs
 
     int RetryTimes { get; set; } = 0;
 
+    public string LocalName => nameof(OperateSendArgs);
+
     public OperateSendArgs(OperateTypes type, string arg)
     {
         Type = type;
         Arg = arg;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
+    }
+
+    public OperateSendArgs() : this(OperateTypes.None, "")
+    {
+
     }
 
     private void Retry()
@@ -83,5 +92,19 @@ public sealed class OperateSendArgs
             .Append(Type)
             .ToString();
         OnLog?.Invoke(message);
+    }
+
+    public void Serialize(SsSerializer serializer)
+    {
+        serializer.WriteTag(nameof(Type), Type.ToString());
+        serializer.WriteTag(nameof(TimeStamp), TimeStamp);
+        serializer.WriteTag(nameof(Arg), Arg);
+    }
+
+    public void Deserialize(SsDeserializer deserializer)
+    {
+        Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
+        TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
+        Arg = deserializer.ReadTag(nameof(Arg));
     }
 }
