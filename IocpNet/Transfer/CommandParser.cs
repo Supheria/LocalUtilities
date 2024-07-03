@@ -3,7 +3,7 @@ using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using System.Diagnostics.CodeAnalysis;
 
-namespace LocalUtilities.IocpNet.Protocol;
+namespace LocalUtilities.IocpNet.Transfer;
 
 public class CommandParser
 {

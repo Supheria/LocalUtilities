@@ -1,10 +1,12 @@
-﻿namespace LocalUtilities.IocpNet.Protocol;
+﻿using LocalUtilities.IocpNet.Common;
+
+namespace LocalUtilities.IocpNet.Transfer;
 
 public class AutoDisposeFileStream
 {
     FileStream? FileStream { get; set; } = null;
 
-    System.Timers.Timer Timer { get; } = new();
+    DaemonThread DaemonThread { get; }
 
     public bool IsExpired => FileStream is null;
 
@@ -20,22 +22,25 @@ public class AutoDisposeFileStream
         }
     }
 
+    public AutoDisposeFileStream()
+    {
+        DaemonThread = new(ConstTabel.FileStreamExpireMilliseconds, DisposeFileStream);
+    }
+
     public bool Relocate(FileStream fileStream, int expireMilliseconds)
     {
         if (!IsExpired)
             return false;
         FileStream = fileStream;
-        Timer.Interval = expireMilliseconds;
-        Timer.Elapsed += (_, _) => Close();
-        Timer.Start();
+        DaemonThread.Start();
         return true;
     }
 
-    public void Close()
+    public void DisposeFileStream()
     {
         FileStream?.Dispose();
         FileStream = null;
-        Timer.Stop();
+        DaemonThread.Stop();
     }
 
     public bool Read(byte[] buffer, int offset, int count, out int readCount)
@@ -43,14 +48,14 @@ public class AutoDisposeFileStream
         readCount = 0;
         if (FileStream is null)
             return false;
-        Timer.Stop();
+        DaemonThread.Stop();
         try
         {
             readCount = FileStream.Read(buffer, offset, count);
         }
         finally
         {
-            Timer.Start();
+            DaemonThread.Start();
         }
         return true;
     }
@@ -59,16 +64,16 @@ public class AutoDisposeFileStream
     {
         if (FileStream is null)
             return false;
-        Timer.Stop();
+        DaemonThread.Stop();
         try
         {
             FileStream.Write(buffer, offset, count);
         }
         finally
         {
-            Timer.Start();
+            DaemonThread.Start();
         }
-        Timer.Start();
+        DaemonThread.Start();
         return true;
     }
 }

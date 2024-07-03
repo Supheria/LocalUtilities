@@ -2,7 +2,7 @@
 using LocalUtilities.TypeGeneral;
 using System.Text;
 
-namespace LocalUtilities.IocpNet.Protocol;
+namespace LocalUtilities.IocpNet.Transfer;
 
 public class CommandComposer
 {

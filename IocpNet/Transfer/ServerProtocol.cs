@@ -5,17 +5,17 @@ using LocalUtilities.TypeToolKit.Text;
 using System.Net.Sockets;
 using System.Text;
 
-namespace LocalUtilities.IocpNet.Protocol;
+namespace LocalUtilities.IocpNet.Transfer;
 
-public class HostProtocol : IocpProtocol
+public class ServerProtocol : Protocol
 {
-    public IocpProtocolTypes Type { get; private set; } = IocpProtocolTypes.None;
+    public ProtocolTypes Type { get; private set; } = ProtocolTypes.None;
 
     public string TimeStamp { get; } = DateTime.Now.ToString(DateTimeFormat.Data);
 
     protected override DaemonThread DaemonThread { get; }
 
-    public HostProtocol()
+    public ServerProtocol()
     {
         DaemonThread = new(1000, CheckTimeout);
     }
@@ -143,20 +143,18 @@ public class HostProtocol : IocpProtocol
                 !commandParser.GetValueAsString(ProtocolKey.Password, out var password) ||
                 !commandParser.GetValueAsString(ProtocolKey.ProtocolType, out var t))
                 throw new IocpException(ProtocolCode.ParameterError);
-            var type = t.ToEnum<IocpProtocolTypes>();
-            if (type is IocpProtocolTypes.None || Type is not IocpProtocolTypes.None && Type != type)
+            var type = t.ToEnum<ProtocolTypes>();
+            if (type is ProtocolTypes.None || Type is not ProtocolTypes.None && Type != type)
                 throw new IocpException(ProtocolCode.WrongProtocolType);
             Type = type;
-            if (type is not IocpProtocolTypes.HeartBeats)
+            if (type is not ProtocolTypes.HeartBeats)
                 DaemonThread.Stop();
             // TODO: validate userinfo
             UserInfo = new(name, password);
             IsLogin = true;
             HandleLogined();
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Login)
-                .AppendValue(ProtocolKey.UserId, UserInfo.Id)
-                .AppendValue(ProtocolKey.UserName, UserInfo.Name);
+                .AppendCommand(ProtocolKey.Login);
             CommandSucceed(commandComposer);
         }
         catch (Exception ex)
@@ -263,7 +261,7 @@ public class HostProtocol : IocpProtocol
             if (AutoFile.Length >= fileLength)
             {
                 // TODO: log success
-                AutoFile.Close();
+                AutoFile.DisposeFileStream();
                 HandleUploaded(startTime);
             }
             else
@@ -322,7 +320,7 @@ public class HostProtocol : IocpProtocol
             if (AutoFile.Position >= AutoFile.Length)
             {
                 // TODO: log success
-                AutoFile.Close();
+                AutoFile.DisposeFileStream();
                 HandleDownloaded(startTime);
                 return;
             }
@@ -344,22 +342,15 @@ public class HostProtocol : IocpProtocol
         }
     }
 
-    public override string GetLog(string message)
+    protected override string GetLog(string log)
     {
         return new StringBuilder()
-            .Append(SignTable.OpenParenthesis)
-            .Append("host")
-            .Append(SignTable.CloseParenthesis)
-            .Append(SocketInfo.RemoteEndPoint)
-            .Append(SignTable.OpenParenthesis)
-            .Append(UserInfo?.Name)
-            .Append(SignTable.CloseParenthesis)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
-            .Append(message)
-            .Append(SignTable.At)
-            .Append(DateTime.Now.ToString(DateTimeFormat.Outlook))
-            .ToString();
+                .Append(SignTable.OpenBracket)
+                .Append(SocketInfo.RemoteEndPoint)
+                .Append(SignTable.CloseBracket)
+                .Append(SignTable.Space)
+                .Append(log)
+                .ToString();
     }
 
     //private void DoDir(CommandParser commandParser)

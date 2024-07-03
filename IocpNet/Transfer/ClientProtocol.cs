@@ -2,16 +2,15 @@
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
-using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace LocalUtilities.IocpNet.Protocol;
+namespace LocalUtilities.IocpNet.Transfer;
 
-public class ClientProtocol : IocpProtocol
+public class ClientProtocol : Protocol
 {
-    public IocpProtocolTypes Type { get; }
+    public ProtocolTypes Type { get; }
 
     AutoResetEvent ConnectDone { get; } = new(false);
 
@@ -23,7 +22,7 @@ public class ClientProtocol : IocpProtocol
 
     protected override DaemonThread DaemonThread { get; }
 
-    public ClientProtocol(IocpProtocolTypes type)
+    public ClientProtocol(ProtocolTypes type)
     {
         Type = type;
         DaemonThread = new(ConstTabel.HeartBeatsInterval, DoHeartBeats);
@@ -49,7 +48,7 @@ public class ClientProtocol : IocpProtocol
             WriteCommand(commandComposer);
             SendAsync();
             LoginDone?.WaitOne(ResetSpan);
-            if (Type is IocpProtocolTypes.HeartBeats)
+            if (Type is ProtocolTypes.HeartBeats)
                 DaemonThread.Start();
         }
         catch (Exception ex)
@@ -249,7 +248,7 @@ public class ClientProtocol : IocpProtocol
             if (AutoFile.Position >= AutoFile.Length)
             {
                 // TODO: log success
-                AutoFile.Close();
+                AutoFile.DisposeFileStream();
                 HandleUploaded(startTime);
                 return;
             }
@@ -323,7 +322,7 @@ public class ClientProtocol : IocpProtocol
             if (AutoFile.Length >= fileLength)
             {
                 // TODO: log success
-                AutoFile.Close();
+                AutoFile.DisposeFileStream();
                 HandleDownloaded(startTime);
             }
             else
@@ -342,21 +341,14 @@ public class ClientProtocol : IocpProtocol
         }
     }
 
-    public override string GetLog(string message)
+    protected override string GetLog(string log)
     {
         return new StringBuilder()
-            .Append(SignTable.OpenParenthesis)
-            .Append("client")
-            .Append(SignTable.CloseParenthesis)
-            .Append(SocketInfo.LocalEndPoint)
-            .Append(SignTable.OpenParenthesis)
-            .Append(UserInfo?.Name)
-            .Append(SignTable.CloseParenthesis)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
-            .Append(message)
-            .Append(SignTable.At)
-            .Append(DateTime.Now.ToString(DateTimeFormat.Outlook))
-            .ToString();
+                .Append(SignTable.OpenBracket)
+                .Append(SocketInfo.LocalEndPoint)
+                .Append(SignTable.CloseBracket)
+                .Append(SignTable.Space)
+                .Append(log)
+                .ToString();
     }
 }

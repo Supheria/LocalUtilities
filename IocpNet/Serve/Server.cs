@@ -1,14 +1,16 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeToolKit.Text;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
+using System.Text;
 
 namespace LocalUtilities.IocpNet.Serve;
 
-public class IocpHost
+public class Server
 {
     public event LogHandler? OnLog;
 
@@ -18,7 +20,7 @@ public class IocpHost
 
     public bool IsStart { get; private set; } = false;
 
-    ConcurrentDictionary<string, UserHost> UserMap { get; } = [];
+    ConcurrentDictionary<string, ServerHost> UserMap { get; } = [];
 
     public void Start(int port)
     {
@@ -33,7 +35,7 @@ public class IocpHost
             Socket.Listen();
             AcceptAsync(null);
             IsStart = true;
-            HandleLog("host start");
+            HandleLog("start");
         }
         catch (Exception ex)
         {
@@ -51,7 +53,7 @@ public class IocpHost
                 user.CloseAll();
             Socket?.Close();
             IsStart = false;
-            HandleLog("host close");
+            HandleLog("close");
         }
         catch (Exception ex)
         {
@@ -78,10 +80,10 @@ public class IocpHost
     {
         if (acceptArgs.AcceptSocket is null)
             goto ACCEPT;
-        var protocol = new HostProtocol();
+        var protocol = new ServerProtocol();
         protocol.OnLogined += () =>
         {
-            if (protocol.UserInfo?.Name is null || protocol.UserInfo.Name is "")
+            if (protocol.UserInfo is null || protocol.UserInfo.Name is "")
             {
                 protocol.Close();
                 return;
@@ -91,7 +93,7 @@ public class IocpHost
             else
             {
                 user = new();
-                user.OnLog += (s) => OnLog?.Invoke(s);
+                user.OnLog += HandleLog;
                 user.OnClearUp += () => UserMap.TryRemove(user.Name, out _);
                 if (!user.Add(protocol))
                     return;
@@ -102,7 +104,7 @@ public class IocpHost
         };
         protocol.OnClosed += () =>
         {
-            if (protocol.UserInfo?.Name is null || protocol.UserInfo.Name is "" || !UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
+            if (protocol.UserInfo is null || protocol.UserInfo.Name is "" || !UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
                 return;
             user.Remove(protocol);
             OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
@@ -113,10 +115,19 @@ public class IocpHost
             AcceptAsync(acceptArgs);
     }
 
-    private void HandleLog(string message)
+    public void HandleLog(string log)
     {
-        // TODO:
-        OnLog?.Invoke(message);
+        log = new StringBuilder()
+            .Append(SignTable.OpenParenthesis)
+            .Append("host")
+            .Append(SignTable.CloseParenthesis)
+            .Append(SignTable.Space)
+            .Append(log)
+            .Append(SignTable.Space)
+            .Append(SignTable.At)
+            .Append(DateTime.Now.ToString(DateTimeFormat.Outlook))
+            .ToString();
+        OnLog?.Invoke(log);
     }
 
     private void HandleException(Exception ex)
@@ -127,7 +138,7 @@ public class IocpHost
 
     public void BroadcastMessage(string message)
     {
-        foreach(var user in  UserMap.Values)
+        foreach (var user in UserMap.Values)
             user.SendMessage(message);
     }
 }

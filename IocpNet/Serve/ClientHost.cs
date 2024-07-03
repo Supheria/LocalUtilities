@@ -1,13 +1,15 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.IocpNet.Transfer;
 using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeToolKit.Text;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Serve;
 
-public class IocpClient
+public class ClientHost
 {
     public event LogHandler? OnLog;
 
@@ -17,13 +19,13 @@ public class IocpClient
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    ClientProtocol HeartBeats { get; } = new(IocpProtocolTypes.HeartBeats);
+    ClientProtocol HeartBeats { get; } = new(ProtocolTypes.HeartBeats);
 
-    ClientProtocol Operator { get; } = new(IocpProtocolTypes.Operator);
+    ClientProtocol Operator { get; } = new(ProtocolTypes.Operator);
 
-    ClientProtocol Upload { get; } = new(IocpProtocolTypes.Upload);
+    ClientProtocol Upload { get; } = new(ProtocolTypes.Upload);
 
-    ClientProtocol Download { get; } = new(IocpProtocolTypes.Download);
+    ClientProtocol Download { get; } = new(ProtocolTypes.Download);
 
     public bool IsConnect => Host is not null;
 
@@ -33,48 +35,18 @@ public class IocpClient
 
     ConcurrentDictionary<string, OperateSendArgs> OperateWaitList { get; } = [];
 
-    public IocpClient()
+    public ClientHost()
     {
-        HeartBeats.OnLog += (s) => OnLog?.Invoke(s);
+        HeartBeats.OnLog += HandleLog;
+        Operator.OnLog += HandleLog;
+        Upload.OnLog += HandleLog;
+        Download.OnLog += HandleLog;
         HeartBeats.OnLogined += () => OnConnected?.Invoke();
         HeartBeats.OnClosed += () => OnDisconnected?.Invoke();
-        Operator.OnLog += (s) => OnLog?.Invoke(s);
         Operator.OnOperate += ProcessOperate;
         Operator.OnOperateCallback += ProcessOperateCallback;
-        Upload.OnLog += (s) => OnLog?.Invoke(s);
-        Download.OnLog += (s) => OnLog?.Invoke(s);
         Upload.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
         Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
-    }
-
-    private void ProcessOperate(OperateReceiveArgs args)
-    {
-        switch (args.Type)
-        {
-            case OperateTypes.Message:
-                OnLog?.Invoke(args.Arg);
-                return;
-        }
-    }
-
-    private void ProcessOperateCallback(OperateCallbackArgs args)
-    {
-        if (!OperateWaitList.TryGetValue(args.TimeStamp, out var sendArgs))
-            return;
-        HandleCallbackCode(sendArgs.Type, args.CallbackCode, args.ErrorMessage);
-        if (args.CallbackCode is ProtocolCode.Success)
-        {
-            sendArgs.Waste();
-            // TODO: process success
-            return;
-        }
-        sendArgs.Reuse();
-        switch (sendArgs.Type)
-        {
-            case OperateTypes.Message:
-                Operator.Operate(sendArgs);
-                return;
-        }
     }
 
     public void Connect(string address, int port, string name, string password)
@@ -108,15 +80,47 @@ public class IocpClient
         UserInfo = null;
     }
 
+    private void ProcessOperate(OperateReceiveArgs args)
+    {
+        switch (args.Type)
+        {
+            case OperateTypes.Message:
+                HandleLog(args.Arg);
+                return;
+        }
+    }
+
+    private void ProcessOperateCallback(OperateCallbackArgs callbackArgs)
+    {
+        if (!OperateWaitList.TryGetValue(callbackArgs.TimeStamp, out var sendArgs))
+            return;
+        sendArgs.Waste();
+        HandleCallbackCode(sendArgs.Type, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
+        if (callbackArgs.CallbackCode is ProtocolCode.Success)
+        {
+            // TODO: process success
+            return;
+        }
+    }
+
+    private void Operate(OperateSendArgs sendArgs)
+    {
+        sendArgs.OnLog += HandleLog;
+        sendArgs.OnRetry += operate;
+        sendArgs.OnWasted += () => OperateWaitList.TryRemove(sendArgs.TimeStamp, out _);
+        OperateWaitList.TryAdd(sendArgs.TimeStamp, sendArgs);
+        operate();
+        void operate()
+        {
+            Operator.Connect(Host, UserInfo);
+            Operator.Operate(sendArgs);
+        }
+    }
+
     public void SendMessage(string message)
     {
         var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
-        sendArgs.OnWaste += () =>
-        {
-            OperateWaitList.TryRemove(sendArgs.TimeStamp, out _);
-        };
-        OperateWaitList.TryAdd(sendArgs.TimeStamp, sendArgs);
-        Operator.Operate(sendArgs);
+        Operate(sendArgs);
     }
 
     public void UploadFile(string dirName, string filePath)
@@ -131,31 +135,42 @@ public class IocpClient
             }
             catch { }
         }
+        Upload.Connect(Host, UserInfo);
         Upload.Upload(dirName, fileName, true);
     }
 
     public void DownloadFile(string dirName, string filePath)
     {
+        Download.Connect(Host, UserInfo);
         Download.Download(dirName, Path.GetFileName(filePath), true);
     }
 
-    private void HandleLog(string message)
+    private void HandleLog(string log)
     {
-        // TODO:
-        OnLog?.Invoke(message);
+        log = new StringBuilder()
+            .Append(UserInfo?.Name)
+            .Append(SignTable.Colon)
+            .Append(SignTable.Space)
+            .Append(log)
+            .Append(SignTable.Space)
+            .Append(SignTable.At)
+            .Append(DateTime.Now.ToString(DateTimeFormat.Outlook))
+            .ToString();
+        OnLog?.Invoke(log);
     }
 
     private void HandleCallbackCode(OperateTypes operate, ProtocolCode code, string? errorMessage)
     {
-        var message = new StringBuilder()
-            .Append(operate)
+        var log = new StringBuilder()
             .Append(SignTable.OpenBracket)
             .Append(code)
             .Append(SignTable.CloseBracket)
-            .Append(SignTable.OpenParenthesis)
+            .Append(SignTable.Space)
+            .Append(operate)
+            .Append(SignTable.Colon)
+            .Append(SignTable.Space)
             .Append(errorMessage)
-            .Append(SignTable.CloseParenthesis)
             .ToString();
-        HandleLog(message);
+        HandleLog(log);
     }
 }

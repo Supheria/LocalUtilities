@@ -1,16 +1,17 @@
 ﻿using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common;
 
 public sealed class OperateSendArgs
 {
-    public IocpEventHandler? OnWaste;
+    public IocpEventHandler? OnRetry;
+
+    public event IocpEventHandler? OnWasted;
+
+    public LogHandler? OnLog;
 
     public OperateTypes Type { get; }
 
@@ -20,30 +21,67 @@ public sealed class OperateSendArgs
 
     DaemonThread DaemonThread { get; }
 
-    int RetryTimes { get; set; } = ConstTabel.OperateArgsRetryTimes;
+    int RetryTimesMax { get; set; } = ConstTabel.OperateRetryTimes;
+
+    int RetryTimes { get; set; } = 0;
 
     public OperateSendArgs(OperateTypes type, string args)
     {
         Type = type;
         Args = args;
-        DaemonThread = new(ConstTabel.OperateArgsWasteMilliseconds, Waste);
+        DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
+        DaemonThread.Start();
+    }
+
+    private void Retry()
+    {
+        if (--RetryTimesMax < 0)
+        {
+            Waste();
+            HandleOperateRetryFailed();
+            return;
+        }
+        RetryTimes++;
+        DaemonThread.Stop();
+        OnRetry?.Invoke();
+        HandleOperateRetry();
         DaemonThread.Start();
     }
 
     public void Waste()
     {
-        OnWaste?.Invoke();
         DaemonThread.Dispose();
+        OnWasted?.Invoke();
     }
 
-    public void Reuse()
+    private void HandleOperateRetry()
     {
-        if (--RetryTimes < 0)
-        {
-            Waste();
-            return;
-        }
-        DaemonThread.Stop();
-        DaemonThread.Start();
+        var message = new StringBuilder()
+            .Append(SignTable.OpenBracket)
+            .Append(StringTable.Retry)
+            .Append(SignTable.CloseBracket)
+            .Append(SignTable.Space)
+            .Append(Type)
+            .Append(SignTable.Colon)
+            .Append(SignTable.Space)
+            .Append(RetryTimes)
+            .Append(SignTable.Space)
+            .Append(StringTable.Times)
+            .ToString();
+        OnLog?.Invoke(message);
+    }
+
+    private void HandleOperateRetryFailed()
+    {
+        var message = new StringBuilder()
+            .Append(SignTable.OpenBracket)
+            .Append(StringTable.Retry)
+            .Append(SignTable.Space)
+            .Append(StringTable.Failed)
+            .Append(SignTable.Space)
+            .Append(SignTable.CloseBracket)
+            .Append(Type)
+            .ToString();
+        OnLog?.Invoke(message);
     }
 }

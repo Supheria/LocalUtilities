@@ -1,15 +1,15 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Windows.Forms;
 
-namespace LocalUtilities.IocpNet.Protocol;
+namespace LocalUtilities.IocpNet.Transfer;
 
-public abstract class IocpProtocol : IDisposable
+public abstract class Protocol : IDisposable
 {
     public event LogHandler? OnLog;
 
@@ -64,7 +64,7 @@ public abstract class IocpProtocol : IDisposable
         SendBuffer.ClearAllPacket();
         IsSendingAsync = false;
         IsLogin = false;
-        AutoFile.Close();
+        AutoFile.DisposeFileStream();
         SocketInfo.Disconnect();
         DaemonThread.Stop();
         GC.SuppressFinalize(this);
@@ -229,17 +229,12 @@ public abstract class IocpProtocol : IDisposable
         return Path.Combine(dir, fileName);
     }
 
-    public abstract string GetLog(string message);
-
-    private void HandleLog(string message)
+    protected void HandleLog(string log)
     {
-        OnLog?.Invoke(GetLog(message));
+        OnLog?.Invoke(GetLog(log));
     }
 
-    protected void HandleMessage(string message)
-    {
-        HandleLog(message);
-    }
+    protected abstract string GetLog(string log);
 
     protected void HandleException(Exception ex)
     {
