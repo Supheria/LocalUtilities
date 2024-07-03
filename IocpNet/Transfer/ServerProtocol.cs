@@ -13,11 +13,15 @@ public class ServerProtocol : Protocol
 
     public string TimeStamp { get; } = DateTime.Now.ToString(DateTimeFormat.Data);
 
-    protected override DaemonThread DaemonThread { get; }
-
     public ServerProtocol()
     {
-        DaemonThread = new(1000, CheckTimeout);
+        DaemonThread = new(ConstTabel.SocketTimeoutMilliseconds, CheckTimeout);
+        Commands[ProtocolKey.Login] = DoLogin;
+        Commands[ProtocolKey.HeartBeats] = (_, _, _, _) => { };
+        Commands[ProtocolKey.Upload] = DoUpload;
+        Commands[ProtocolKey.WriteFile] = DoWriteFile;
+        Commands[ProtocolKey.Download] = DoDownload;
+        Commands[ProtocolKey.SendFile] = DoSendFile;
     }
 
     private void CheckTimeout()
@@ -34,7 +38,7 @@ public class ServerProtocol : Protocol
             return;
         Socket = acceptSocket;
         SocketInfo.Connect(acceptSocket);
-        DaemonThread.Start();
+        DaemonThread?.Start();
         ReceiveAsync();
     }
 
@@ -66,22 +70,6 @@ public class ServerProtocol : Protocol
         SendAsync();
     }
 
-    public void Operate(OperateTypes operate, string args)
-    {
-        try
-        {
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Operate)
-                .AppendValue(ProtocolKey.OperateType, operate);
-            var count = WriteU8Buffer(args, out var buffer);
-            CommandSucceed(commandComposer, buffer, 0, count);
-        }
-        catch (Exception ex)
-        {
-            CommandFail(ex);
-        }
-    }
-
     protected override void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
@@ -91,41 +79,15 @@ public class ServerProtocol : Protocol
                 throw new IocpException(ProtocolCode.UnknownCommand);
             if (!CheckLogin(commandKey)) //检测登录
                 throw new IocpException(ProtocolCode.NotLogined);
-            switch (commandKey)
-            {
-                case ProtocolKey.Login:
-                    DoLogin(commandParser);
-                    return;
-                case ProtocolKey.HeartBeats:
-                    DoHeartBeats();
-                    return;
-                case ProtocolKey.Operate:
-                    DoOperate(commandParser, buffer, offset, count);
-                    return;
-                case ProtocolKey.Upload:
-                    DoUpload(commandParser);
-                    return;
-                case ProtocolKey.WriteFile:
-                    DoWriteFile(commandParser, buffer, offset, count);
-                    return;
-                case ProtocolKey.Download:
-                    DoDownload(commandParser);
-                    return;
-                case ProtocolKey.SendFile:
-                    DoSendFile(commandParser);
-                    return;
-                default:
-                    throw new IocpException(ProtocolCode.UnknownCommand);
-            }
-
+            if (!Commands.TryGetValue(commandKey, out var doCommand))
+                throw new IocpException(ProtocolCode.UnknownCommand);
+            doCommand(commandParser, buffer, offset, count);
         }
         catch (Exception ex)
         {
             CommandFail(ex);
         }
     }
-
-    protected
 
     private bool CheckLogin(ProtocolKey commandKey)
     {
@@ -135,7 +97,7 @@ public class ServerProtocol : Protocol
             return IsLogin;
     }
 
-    private void DoLogin(CommandParser commandParser)
+    private void DoLogin(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
@@ -148,7 +110,7 @@ public class ServerProtocol : Protocol
                 throw new IocpException(ProtocolCode.WrongProtocolType);
             Type = type;
             if (type is not ProtocolTypes.HeartBeats)
-                DaemonThread.Stop();
+                DaemonThread?.Stop();
             // TODO: validate userinfo
             UserInfo = new(name, password);
             IsLogin = true;
@@ -163,52 +125,7 @@ public class ServerProtocol : Protocol
         }
     }
 
-    private void DoHeartBeats()
-    {
-        try
-        {
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.HeartBeats);
-            CommandSucceed(commandComposer);
-        }
-        catch (Exception ex)
-        {
-            CommandFail(ex);
-        }
-    }
-
-    private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
-    {
-        CommandComposer commandComposer;
-        string? timeStamp = null;
-        try
-        {
-            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate) ||
-                !commandParser.GetValueAsString(ProtocolKey.TimeStamp, out timeStamp))
-                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
-            var arg = ReadU8Buffer(buffer, offset, count);
-            HandleOperate(new(operate.ToEnum<OperateTypes>(), arg));
-            commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.OperateCallback)
-                .AppendValue(ProtocolKey.TimeStamp, timeStamp)
-                .AppendSuccess();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.OperateCallback)
-                .AppendValue(ProtocolKey.TimeStamp, timeStamp);
-            if (ex is IocpException iocp)
-                commandComposer.AppendFailure(iocp.ErrorCode, iocp.Message);
-            else
-                commandComposer.AppendFailure(ProtocolCode.UnknowError, ex.Message);
-        }
-        WriteCommand(commandComposer);
-        SendAsync();
-    }
-
-    public void DoUpload(CommandParser commandParser)
+    public void DoUpload(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
@@ -278,7 +195,7 @@ public class ServerProtocol : Protocol
         }
     }
 
-    public void DoDownload(CommandParser commandParser)
+    public void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
@@ -308,7 +225,7 @@ public class ServerProtocol : Protocol
         }
     }
 
-    private void DoSendFile(CommandParser commandParser)
+    private void DoSendFile(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
@@ -324,8 +241,8 @@ public class ServerProtocol : Protocol
                 HandleDownloaded(startTime);
                 return;
             }
-            var buffer = new byte[packetLength];
-            if (!AutoFile.Read(buffer, 0, buffer.Length, out var count))
+            buffer = new byte[packetLength];
+            if (!AutoFile.Read(buffer, 0, buffer.Length, out count)) 
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
             HandleDownloading(AutoFile.Length, AutoFile.Position);
             var commandComposer = new CommandComposer()

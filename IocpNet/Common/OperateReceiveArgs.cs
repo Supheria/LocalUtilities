@@ -1,8 +1,8 @@
 ﻿namespace LocalUtilities.IocpNet.Common;
 
-public sealed class OperateReceiveArgs(OperateTypes type, string args)
+public sealed class OperateReceiveArgs(OperateTypes type, string arg)
 {
     public OperateTypes Type { get; } = type;
 
-    public string Arg { get; } = args;
+    public string Arg { get; } = arg;
 }

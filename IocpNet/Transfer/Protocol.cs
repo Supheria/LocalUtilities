@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -9,20 +10,8 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
-public abstract class Protocol : IDisposable
+public abstract partial class Protocol : IDisposable
 {
-    public event LogHandler? OnLog;
-
-    public event IocpEventHandler? OnLogined;
-
-    public event IocpEventHandler? OnClosed;
-
-    public event IocpEventHandler<string>? OnProcessing;
-
-    public event IocpEventHandler<OperateReceiveArgs>? OnOperate;
-
-    public event IocpEventHandler<OperateCallbackArgs>? OnOperateCallback;
-
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
@@ -43,7 +32,7 @@ public abstract class Protocol : IDisposable
 
     protected AutoDisposeFileStream AutoFile { get; } = new();
 
-    protected abstract DaemonThread DaemonThread { get; }
+    protected DaemonThread? DaemonThread { get; init; }
 
     public void Close()
     {
@@ -66,7 +55,7 @@ public abstract class Protocol : IDisposable
         IsLogin = false;
         AutoFile.DisposeFileStream();
         SocketInfo.Disconnect();
-        DaemonThread.Stop();
+        DaemonThread?.Stop();
         GC.SuppressFinalize(this);
     }
 
@@ -132,8 +121,6 @@ public abstract class Protocol : IDisposable
         return;
     }
 
-    protected abstract void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count);
-
     public void SendAsync()
     {
         if (IsSendingAsync || Socket is null || !SendBuffer.GetFirstPacket(out var packetOffset, out var packetCount))
@@ -163,54 +150,7 @@ public abstract class Protocol : IDisposable
         SendAsync();
     }
 
-    protected void WriteCommand(CommandComposer commandComposer)
-    {
-        WriteCommand(commandComposer, [], 0, 0);
-    }
-
-    protected void WriteCommand(CommandComposer commandComposer, byte[] buffer, int offset, int count)
-    {
-        // 获取命令
-        var command = commandComposer.GetCommand();
-        // 获取命令的字节数组
-        var commandLength = WriteU8Buffer(command, out var commandBuffer);
-        // 获取总大小(4个字节的包总长度+4个字节的命令长度+命令字节数组的长度+数据的字节数组长度)
-        int totalLength = sizeof(int) + sizeof(int) + commandLength + count;
-        SendBuffer.StartPacket();
-        SendBuffer.DynamicBufferManager.WriteValue(totalLength, false); // 写入总大小
-        SendBuffer.DynamicBufferManager.WriteValue(commandLength, false); // 写入命令大小
-        SendBuffer.DynamicBufferManager.WriteData(commandBuffer); // 写入命令内容
-        SendBuffer.DynamicBufferManager.WriteData(buffer, offset, count); // 写入二进制数据
-        SendBuffer.EndPacket();
-    }
-
-    protected static int WriteU8Buffer(string? str, [NotNullWhen(true)] out byte[] buffer)
-    {
-        buffer = [];
-        try
-        {
-            if (str is null)
-                return 0;
-            buffer = Encoding.UTF8.GetBytes(str);
-            return buffer.Length;
-        }
-        catch
-        {
-            return 0;
-        }
-    }
-
-    protected static string ReadU8Buffer(byte[] buffer, int offset, int count)
-    {
-        try
-        {
-            return Encoding.UTF8.GetString(buffer, offset, count);
-        }
-        catch
-        {
-            return "";
-        }
-    }
+   
 
     public string GetFileRepoPath(string dirName, string fileName)
     {
@@ -228,118 +168,4 @@ public abstract class Protocol : IDisposable
         }
         return Path.Combine(dir, fileName);
     }
-
-    protected void HandleLog(string log)
-    {
-        OnLog?.Invoke(GetLog(log));
-    }
-
-    protected abstract string GetLog(string log);
-
-    protected void HandleException(Exception ex)
-    {
-        HandleLog(ex.Message);
-    }
-
-    protected void HandleLogined()
-    {
-        HandleLog("login");
-        OnLogined?.Invoke();
-    }
-
-    protected void HandleUploadStart()
-    {
-        HandleLog("upload file start...");
-    }
-
-    protected void HandleDownloadStart()
-    {
-        HandleLog("download file start...");
-    }
-
-    protected void HandleUploading(long fileLength, long position)
-    {
-        var message = new StringBuilder()
-            .Append("uploading")
-            .Append(Math.Round(position * 100d / fileLength, 2))
-            .Append(SignTable.Percent)
-            .ToString();
-        OnProcessing?.Invoke(message);
-    }
-
-    protected void HandleDownloading(long fileLength, long position)
-    {
-        var message = new StringBuilder()
-            .Append("downloading")
-            .Append(Math.Round(position * 100d / fileLength, 2))
-            .Append(SignTable.Percent)
-            .ToString();
-        OnProcessing?.Invoke(message);
-    }
-
-    protected void HandleUploaded(string startTime)
-    {
-        var span = DateTime.Now - startTime.ToDateTime(DateTimeFormat.Data);
-        var message = new StringBuilder()
-            .Append("upload file success")
-            .Append(SignTable.OpenParenthesis)
-            .Append(Math.Round(span.TotalMilliseconds, 2))
-            .Append("ms")
-            .Append(SignTable.CloseParenthesis)
-            .ToString();
-        HandleLog(message);
-        OnProcessing?.Invoke(message);
-    }
-
-    protected void HandleDownloaded(string startTime)
-    {
-        var span = DateTime.Now - startTime.ToDateTime(DateTimeFormat.Data);
-        var message = new StringBuilder()
-            .Append("download file success")
-            .Append(SignTable.OpenParenthesis)
-            .Append(Math.Round(span.TotalMilliseconds, 2))
-            .Append("ms")
-            .Append(SignTable.CloseParenthesis)
-            .ToString();
-        HandleLog(message);
-        OnProcessing?.Invoke(message);
-    }
-
-    protected void HandleClosed()
-    {
-        HandleLog("close");
-        OnClosed?.Invoke();
-    }
-
-    protected void HandleOperate(OperateReceiveArgs args)
-    {
-        OnOperate?.Invoke(args);
-    }
-
-    protected void HandleOperateCallback(OperateCallbackArgs args)
-    {
-        OnOperateCallback?.Invoke(args);
-    }
-
-    //protected void HandleTestTransferSpeed(int bytesTransferred, TimeSpan span)
-    //{
-    //    var speed = bytesTransferred * 1000 / span.TotalMilliseconds;
-    //    var sb = new StringBuilder();
-    //    if (speed > ConstTabel.OneMB)
-    //    {
-    //        sb.Append(Math.Round(speed / ConstTabel.OneMB, 2))
-    //            .Append("MB/s");
-    //    }
-    //    else if (speed > ConstTabel.OneKB)
-    //    {
-    //        sb.Append(Math.Round(speed / ConstTabel.OneKB, 2))
-    //            .Append("KB/s");
-    //    }
-    //    else
-    //    {
-    //        sb.Append(Math.Round(speed, 2))
-    //            .Append("KB/s");
-    //    }
-    //    OnTestTransferSpeed?.InvokeAsync(sb.ToString());
-    //}
 }

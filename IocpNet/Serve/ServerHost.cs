@@ -7,15 +7,11 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Serve;
 
-public class ServerHost
+public class ServerHost : Host
 {
     public IocpEventHandler? OnClearUp;
 
-    public LogHandler? OnLog;
-
     ConcurrentDictionary<ProtocolTypes, ServerProtocol> Protocols { get; } = [];
-
-    UserInfo? UserInfo { get; set; } = null;
 
     public string Name => UserInfo?.Name ?? "";
 
@@ -32,21 +28,14 @@ public class ServerHost
             goto CLOSE;
         protocol.OnLog += HandleLog;
         if (protocol.Type is ProtocolTypes.Operator)
-            protocol.OnOperate += ProcessOperate;
+        {
+            protocol.OnOperate += HandleOperate;
+            protocol.OnOperateCallback += HandleOperateCallback;
+        }
         return true;
     CLOSE:
         protocol.Close();
         return false;
-    }
-
-    private void ProcessOperate(OperateReceiveArgs args)
-    {
-        switch (args.Type)
-        {
-            case OperateTypes.Message:
-                HandleLog(args.Arg);
-                return;
-        }
     }
 
     public void Remove(ServerProtocol protocol)
@@ -66,26 +55,10 @@ public class ServerHost
         }
     }
 
-    public void Operate(OperateTypes operate, string args)
+    protected override void DoOperate(OperateSendArgs sendArgs)
     {
         if (!Protocols.TryGetValue(ProtocolTypes.Operator, out var protocol))
             return;
-        protocol.Operate(operate, args);
-    }
-
-    public void SendMessage(string message)
-    {
-        Operate(OperateTypes.Message, message);
-    }
-
-    public void HandleLog(string log)
-    {
-        log = new StringBuilder()
-            .Append(UserInfo?.Name)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
-            .Append(log)
-            .ToString();
-        OnLog?.Invoke(log);
+        protocol.Operate(sendArgs);
     }
 }

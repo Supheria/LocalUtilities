@@ -15,7 +15,7 @@ public sealed class OperateSendArgs
 
     public OperateTypes Type { get; }
 
-    public string Args { get; }
+    public string Arg { get; }
 
     public string TimeStamp { get; } = DateTime.Now.ToString(DateTimeFormat.Data);
 
@@ -25,10 +25,10 @@ public sealed class OperateSendArgs
 
     int RetryTimes { get; set; } = 0;
 
-    public OperateSendArgs(OperateTypes type, string args)
+    public OperateSendArgs(OperateTypes type, string arg)
     {
         Type = type;
-        Args = args;
+        Arg = arg;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }

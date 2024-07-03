@@ -20,12 +20,30 @@ public class ClientProtocol : Protocol
 
     bool IsConnect { get; set; } = false;
 
-    protected override DaemonThread DaemonThread { get; }
-
     public ClientProtocol(ProtocolTypes type)
     {
         Type = type;
-        DaemonThread = new(ConstTabel.HeartBeatsInterval, DoHeartBeats);
+        if (type is ProtocolTypes.HeartBeats)
+            DaemonThread = new(ConstTabel.HeartBeatsInterval, HeartBeats);
+        Commands[ProtocolKey.Login] = DoLogin;
+        Commands[ProtocolKey.Upload] = DoUpload;
+        Commands[ProtocolKey.Download] = DoDownload;
+    }
+
+    private void HeartBeats()
+    {
+        try
+        {
+            var commandComposer = new CommandComposer()
+                .AppendCommand(ProtocolKey.HeartBeats);
+            WriteCommand(commandComposer);
+            SendAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+            // TODO: log fail
+        }
     }
 
     public void Connect(IPEndPoint? host, UserInfo? userInfo)
@@ -48,8 +66,7 @@ public class ClientProtocol : Protocol
             WriteCommand(commandComposer);
             SendAsync();
             LoginDone?.WaitOne(ResetSpan);
-            if (Type is ProtocolTypes.HeartBeats)
-                DaemonThread.Start();
+            DaemonThread?.Start();
         }
         catch (Exception ex)
         {
@@ -87,24 +104,6 @@ public class ClientProtocol : Protocol
         ConnectDone.Set();
     }
 
-    public void Operate(OperateSendArgs operateArgs)
-    {
-        try
-        {
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Operate)
-                .AppendValue(ProtocolKey.OperateType, operateArgs.Type)
-                .AppendValue(ProtocolKey.TimeStamp, operateArgs.TimeStamp);
-            var count = WriteU8Buffer(operateArgs.Args, out var buffer);
-            WriteCommand(commandComposer, buffer, 0, count);
-            SendAsync();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
-
     protected override void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
@@ -120,29 +119,9 @@ public class ClientProtocol : Protocol
             //        throw new IocpException(code);
             //}
             commandParser.GetValueAsCommandKey(out var commandKey);
-            switch (commandKey)
-            {
-                case ProtocolKey.Login:
-                    DoLogin();
-                    return;
-                case ProtocolKey.HeartBeats:
-                    DoHeartBeats();
-                    return;
-                case ProtocolKey.Operate:
-                    DoOperate(commandParser, buffer, offset, count);
-                    return;
-                case ProtocolKey.OperateCallback:
-                    DoOperateCallback(commandParser);
-                    return;
-                case ProtocolKey.Upload:
-                    DoUpload(commandParser);
-                    return;
-                case ProtocolKey.Download:
-                    DoDownload(commandParser, buffer, offset, count);
-                    return;
-                default:
-                    throw new IocpException(ProtocolCode.UnknownCommand);
-            };
+            if (!Commands.TryGetValue(commandKey, out var doCommand))
+                throw new IocpException(ProtocolCode.UnknownCommand);
+            doCommand(commandParser, buffer, offset, count);
         }
         catch (Exception ex)
         {
@@ -151,58 +130,11 @@ public class ClientProtocol : Protocol
         }
     }
 
-    private void DoLogin()
+    private void DoLogin(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         IsLogin = true;
         LoginDone.Set();
         HandleLogined();
-    }
-
-    private void DoHeartBeats()
-    {
-        try
-        {
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.HeartBeats);
-            WriteCommand(commandComposer);
-            SendAsync();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            // TODO: log fail
-        }
-    }
-
-    private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
-    {
-        try
-        {
-            if (!commandParser.GetValueAsString(ProtocolKey.OperateType, out var operate))
-                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperate));
-            var arg = ReadU8Buffer(buffer, offset, count);
-            HandleOperate(new(operate.ToEnum<OperateTypes>(), arg));
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
-
-    private void DoOperateCallback(CommandParser commandParser)
-    {
-        try
-        {
-            if (!commandParser.GetValueAsString(ProtocolKey.TimeStamp, out var timeStamp) ||
-                !commandParser.GetValueAsString(ProtocolKey.CallbackCode, out var callbackCode))
-                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperateCallback));
-            commandParser.GetValueAsString(ProtocolKey.ErrorMessage, out var errorMessage);
-            HandleOperateCallback(new(timeStamp, callbackCode.ToEnum<ProtocolCode>(), errorMessage));
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
     }
 
     public void Upload(string dirName, string fileName, bool canRename)
@@ -236,7 +168,7 @@ public class ClientProtocol : Protocol
         }
     }
 
-    private void DoUpload(CommandParser commandParser)
+    private void DoUpload(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
@@ -252,8 +184,8 @@ public class ClientProtocol : Protocol
                 HandleUploaded(startTime);
                 return;
             }
-            var buffer = new byte[packetLength];
-            if (!AutoFile.Read(buffer, 0, buffer.Length, out var count))
+            buffer = new byte[packetLength];
+            if (!AutoFile.Read(buffer, 0, buffer.Length, out count))
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
             HandleUploading(AutoFile.Length, AutoFile.Position);
             var commandComposer = new CommandComposer()
