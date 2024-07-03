@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
@@ -31,13 +32,15 @@ public abstract class Host
 
     protected abstract void DoOperate(OperateSendArgs sendArgs);
 
-    protected void HandleOperate(OperateReceiveArgs args)
+    protected void HandleOperate(OperateReceiveArgs receiveArgs)
     {
-        switch (args.Type)
+        switch (receiveArgs.Type)
         {
             case OperateTypes.Message:
-                HandleLog(args.Arg);
+                HandleLog(receiveArgs.Arg);
                 return;
+            case OperateTypes.DownloadRequest:
+
         }
     }
 
@@ -52,6 +55,11 @@ public abstract class Host
             // TODO: process success
             return;
         }
+    }
+
+    protected virtual void HandleDownloadRequest(OperateReceiveArgs args)
+    {
+
     }
 
     public void SendMessage(string message)
