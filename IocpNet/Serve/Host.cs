@@ -20,56 +20,6 @@ public abstract class Host
 
     protected UserInfo? UserInfo { get; set; } = null;
 
-    ConcurrentDictionary<string, CommandSendArgs> OperateWaitList { get; } = [];
-
-    protected void Command(CommandSendArgs sendArgs)
-    {
-        sendArgs.OnLog += HandleLog;
-        sendArgs.OnRetry += () => SendCommand(sendArgs);
-        sendArgs.OnWasted += () => OperateWaitList.TryRemove(sendArgs.TimeStamp, out _);
-        OperateWaitList.TryAdd(sendArgs.TimeStamp, sendArgs);
-        SendCommand(sendArgs);
-    }
-
-    protected abstract void SendCommand(CommandSendArgs sendArgs);
-
-    protected void ReceiveCommand(CommandReceiveArgs receiveArgs)
-    {
-        switch (receiveArgs.Type)
-        {
-            case OperateTypes.Message:
-                HandleLog(receiveArgs.Arg);
-                return;
-            case OperateTypes.DownloadRequest:
-                HandleDownloadRequest(receiveArgs);
-                return;
-        }
-    }
-
-    protected void ReceiveCommandCallback(CommandCallbackArgs callbackArgs)
-    {
-        if (!OperateWaitList.TryGetValue(callbackArgs.TimeStamp, out var sendArgs))
-            return;
-        sendArgs.Waste();
-        HandleCallbackCode(sendArgs.OperateType, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
-        if (callbackArgs.CallbackCode is ProtocolCode.Success)
-        {
-            // TODO: process success
-            return;
-        }
-    }
-
-    protected virtual void HandleDownloadRequest(CommandReceiveArgs receiveArgs)
-    {
-
-    }
-
-    public void SendMessage(string message)
-    {
-        var sendArgs = new CommandSendArgs(OperateTypes.Message, Transfer.ProtocolTypes.Operator, message);
-        Command(sendArgs);
-    }
-
     protected void HandleLog(string log)
     {
         log = new StringBuilder()
@@ -84,20 +34,6 @@ public abstract class Host
         OnLog?.Invoke(log);
     }
 
-    protected void HandleCallbackCode(OperateTypes operate, ProtocolCode code, string? errorMessage)
-    {
-        var log = new StringBuilder()
-            .Append(SignTable.OpenBracket)
-            .Append(code)
-            .Append(SignTable.CloseBracket)
-            .Append(SignTable.Space)
-            .Append(operate)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
-            .Append(errorMessage)
-            .ToString();
-        HandleLog(log);
-    }
     protected void HandleException(Exception ex)
     {
         HandleLog(ex.Message);

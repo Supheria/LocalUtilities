@@ -20,7 +20,7 @@ partial class Protocol
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    public event IocpEventHandler<CommandReceiveArgs>? OnOperate;
+    public event IocpEventHandler<CommandSendArgs>? OnOperate;
 
     public event IocpEventHandler<CommandCallbackArgs>? OnOperateCallback;
 

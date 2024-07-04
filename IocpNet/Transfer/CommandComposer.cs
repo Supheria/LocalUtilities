@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Transfer;
@@ -13,9 +14,18 @@ public class CommandComposer
         Commands.Clear();
     }
 
-    public string GetCommand()
+    public int GetCommandBuffer(out byte[] buffer)
     {
-        return Commands.ToString();
+        buffer = [];
+        try
+        {
+            buffer = Encoding.UTF8.GetBytes(Commands.ToString());
+            return buffer.Length;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     private void AppendLine(ProtocolKey commandKey, string? value)

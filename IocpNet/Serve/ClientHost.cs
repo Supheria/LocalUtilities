@@ -1,4 +1,5 @@
-﻿using LocalUtilities.IocpNet.Common.OperateArgs;
+﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
 using LocalUtilities.SimpleScript.Serialization;
@@ -38,10 +39,32 @@ public class ClientHost : Host
         Download.OnLog += HandleLog;
         HeartBeats.OnLogined += () => OnConnected?.Invoke();
         HeartBeats.OnClosed += () => OnDisconnected?.Invoke();
-        Operator.OnOperate += ReceiveCommand;
-        Operator.OnOperateCallback += ReceiveCommandCallback;
+        Operator.OnOperate += ReceiveOperate;
+        Operator.OnOperateCallback += ReceiveOperateCallback;
         Upload.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
         Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
+    }
+
+    private void ReceiveOperate(CommandSendArgs sendArgs)
+    {
+        switch (sendArgs.Type)
+        {
+            case OperateTypes.Message:
+                ReceiveMessage(sendArgs);
+                break;
+        }
+    }
+
+    private void ReceiveMessage(CommandSendArgs sendArgs)
+    {
+        HandleLog(sendArgs.Data);
+        var callbackArgs = new CommandCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
+        Operator.OperateCallback(callbackArgs);
+    }
+
+    private void ReceiveOperateCallback(CommandCallbackArgs args)
+    {
+
     }
 
     public void Connect(string address, int port, string name, string password)
@@ -75,22 +98,6 @@ public class ClientHost : Host
         Download.Dispose();
     }
 
-    protected override void SendCommand(CommandSendArgs sendArgs)
-    {
-        switch (sendArgs.ProtocolType)
-        {
-            case ProtocolTypes.Operator:
-                Operator.Command(sendArgs);
-                return;
-            case ProtocolTypes.Upload:
-                Upload.Command(sendArgs);
-                return;
-            case ProtocolTypes.Download:
-                Download.Command(sendArgs);
-                return;
-        }
-    }
-
     public void UploadFile(string dirName, string filePath)
     {
         var fileName = Path.GetFileName(filePath);
@@ -111,12 +118,18 @@ public class ClientHost : Host
         try
         {
             var requestArgs = Download.StartDownloadRequest(dirName, Path.GetFileName(filePath), true);
-            var sendArgs = new CommandSendArgs(Common.OperateTypes.DownloadRequest, ProtocolTypes.Download, requestArgs.ToSsString());
-            Command(sendArgs);
+            //var sendArgs = new CommandSendArgs(Common.OperateTypes.DownloadRequest, ProtocolTypes.Download, requestArgs.ToSs());
+            //Operate(sendArgs);
         }
         catch (Exception ex)
         {
             HandleException(ex);
         }
+    }
+
+    public void SendMessage(string message)
+    {
+        var sendArgs = new CommandSendArgs(OperateTypes.Message, message);
+        Operator.Operate(sendArgs);
     }
 }
