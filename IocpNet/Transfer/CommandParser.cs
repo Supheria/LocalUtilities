@@ -20,7 +20,7 @@ public class CommandParser
         var lines = command.Split(SignTable.NewLine, StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in lines)
         {
-            var pair = line.Split(SignTable.Equal, StringSplitOptions.None);
+            var pair = line.Split(SignTable.Colon, StringSplitOptions.None);
             if (pair.Length < 2)
                 continue;
             var key = pair[0].ToEnum<ProtocolKey>();

@@ -54,6 +54,11 @@ partial class SerializeTool
         return buffer.Length;
     }
 
+    public static string ToSsString<T>(this T obj) where T : ISsSerializable
+    {
+        return FormatObject(obj, false);
+    }
+
     public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
     {
         try

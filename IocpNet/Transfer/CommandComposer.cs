@@ -22,7 +22,7 @@ public class CommandComposer
     {
         var str = new StringBuilder()
             .Append(commandKey.ToString())
-            .Append(SignTable.Equal)
+            .Append(SignTable.Colon)
             .Append(value)
             .ToString();
         Commands.Append(str)

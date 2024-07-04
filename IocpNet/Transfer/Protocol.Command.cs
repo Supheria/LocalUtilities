@@ -19,20 +19,20 @@ partial class Protocol
 
     public Protocol()
     {
-        Commands[ProtocolKey.Operate] = DoOperate;
-        Commands[ProtocolKey.OperateCallback] = DoOperateCallback;
+        Commands[ProtocolKey.Operate] = Command;
+        Commands[ProtocolKey.OperateCallback] = CommandCallback;
     }
 
     protected abstract void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count);
 
-    public void Operate(OperateSendArgs operateArgs)
+    public void Command(CommandSendArgs sendArgs)
     {
         try
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Operate);
-            var count = operateArgs.ToSsBuffer(out var buffer);
-            WriteCommand(commandComposer, buffer, 0, count);
+                .AppendCommand(ProtocolKey.Operate)
+                .AppendValue(ProtocolKey.SendArgs, sendArgs.ToSsString());
+            WriteCommand(commandComposer);
             SendAsync();
         }
         catch (Exception ex)
@@ -41,14 +41,17 @@ partial class Protocol
         }
     }
 
-    private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
+    private void Command(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
-        var sendArgs = new OperateSendArgs();
-        OperateCallbackArgs callbackArgs;
+        var sendArgs = new CommandSendArgs();
+        CommandCallbackArgs callbackArgs;
         try
         {
-            sendArgs.ParseSsBuffer(buffer, offset, count);
-            OnOperate?.Invoke(new(sendArgs.Type, sendArgs.Arg));
+            if (!commandParser.GetValueAsString(ProtocolKey.SendArgs, out var args))
+                throw new IocpException(ProtocolCode.ParameterError, nameof(Command));
+            sendArgs.ParseSsString(args);
+            //sendArgs.ParseSsBuffer(buffer, offset, count);
+            OnOperate?.Invoke(new(sendArgs.OperateType, sendArgs.Data));
             callbackArgs = new(sendArgs.TimeStamp, ProtocolCode.Success);
         }
         catch (Exception ex)
@@ -68,11 +71,11 @@ partial class Protocol
         SendAsync();
     }
 
-    private void DoOperateCallback(CommandParser commandParser, byte[] buffer, int offset, int count)
+    private void CommandCallback(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
         try
         {
-            var callbackArgs = new OperateCallbackArgs().ParseSsBuffer(buffer, offset, count);
+            var callbackArgs = new CommandCallbackArgs().ParseSsBuffer(buffer, offset, count);
             OnOperateCallback?.Invoke(callbackArgs);
         }
         catch (Exception ex)

@@ -7,4 +7,5 @@ public enum OperateTypes
     UserList,
     UploadRequest,
     DownloadRequest,
+    DownloadContinue,
 }

@@ -1,4 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
@@ -225,24 +227,23 @@ public class ServerProtocol : Protocol
         }
     }
 
-    public void Download(string dirName, string fileName, string startTime)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="requestArgs"></param>
+    /// <param name="sendArgs"></param>
+    /// <exception cref="IocpException"></exception>
+    public DownloadContinueArgs StartDownloadContinue(string dirName, string fileName, string startTime)
     {
-        try
-        {
-
-            var filePath = GetFileRepoPath(dirName, fileName);
-            if (!File.Exists(filePath))
-                throw new IocpException(ProtocolCode.FileNotExist, filePath);
-            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-                throw new IocpException(ProtocolCode.ProcessingFile);
-            var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
-            HandleDownloadStart();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
+        var filePath = GetFileRepoPath(dirName, fileName);
+        if (!File.Exists(filePath))
+            throw new IocpException(ProtocolCode.FileNotExist, filePath);
+        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+            throw new IocpException(ProtocolCode.ProcessingFile);
+        var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
+        HandleDownloadStart();
+        return new DownloadContinueArgs(fileStream.Length, packetLength, 0, startTime);
     }
 
     private void DoSendFile(CommandParser commandParser, byte[] buffer, int offset, int count)

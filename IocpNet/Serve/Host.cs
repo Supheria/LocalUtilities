@@ -20,20 +20,20 @@ public abstract class Host
 
     protected UserInfo? UserInfo { get; set; } = null;
 
-    ConcurrentDictionary<string, OperateSendArgs> OperateWaitList { get; } = [];
+    ConcurrentDictionary<string, CommandSendArgs> OperateWaitList { get; } = [];
 
-    private void Operate(OperateSendArgs sendArgs)
+    protected void Command(CommandSendArgs sendArgs)
     {
         sendArgs.OnLog += HandleLog;
-        sendArgs.OnRetry += () => DoOperate(sendArgs);
+        sendArgs.OnRetry += () => SendCommand(sendArgs);
         sendArgs.OnWasted += () => OperateWaitList.TryRemove(sendArgs.TimeStamp, out _);
         OperateWaitList.TryAdd(sendArgs.TimeStamp, sendArgs);
-        DoOperate(sendArgs);
+        SendCommand(sendArgs);
     }
 
-    protected abstract void DoOperate(OperateSendArgs sendArgs);
+    protected abstract void SendCommand(CommandSendArgs sendArgs);
 
-    protected void HandleOperate(OperateReceiveArgs receiveArgs)
+    protected void ReceiveCommand(CommandReceiveArgs receiveArgs)
     {
         switch (receiveArgs.Type)
         {
@@ -46,12 +46,12 @@ public abstract class Host
         }
     }
 
-    protected void HandleOperateCallback(OperateCallbackArgs callbackArgs)
+    protected void ReceiveCommandCallback(CommandCallbackArgs callbackArgs)
     {
         if (!OperateWaitList.TryGetValue(callbackArgs.TimeStamp, out var sendArgs))
             return;
         sendArgs.Waste();
-        HandleCallbackCode(sendArgs.Type, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
+        HandleCallbackCode(sendArgs.OperateType, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
         if (callbackArgs.CallbackCode is ProtocolCode.Success)
         {
             // TODO: process success
@@ -59,15 +59,15 @@ public abstract class Host
         }
     }
 
-    protected virtual void HandleDownloadRequest(OperateReceiveArgs args)
+    protected virtual void HandleDownloadRequest(CommandReceiveArgs receiveArgs)
     {
 
     }
 
     public void SendMessage(string message)
     {
-        var sendArgs = new OperateSendArgs(OperateTypes.Message, message, DateTime.Now.ToString(DateTimeFormat.Data));
-        Operate(sendArgs);
+        var sendArgs = new CommandSendArgs(OperateTypes.Message, Transfer.ProtocolTypes.Operator, message);
+        Command(sendArgs);
     }
 
     protected void HandleLog(string log)

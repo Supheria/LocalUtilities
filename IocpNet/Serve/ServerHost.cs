@@ -31,8 +31,8 @@ public class ServerHost : Host
         protocol.OnLog += HandleLog;
         if (protocol.Type is ProtocolTypes.Operator)
         {
-            protocol.OnOperate += HandleOperate;
-            protocol.OnOperateCallback += HandleOperateCallback;
+            protocol.OnOperate += ReceiveCommand;
+            protocol.OnOperateCallback += ReceiveCommandCallback;
         }
         return true;
     CLOSE:
@@ -57,13 +57,13 @@ public class ServerHost : Host
         }
     }
 
-    protected override void DoOperate(OperateSendArgs sendArgs)
+    protected override void SendCommand(CommandSendArgs sendArgs)
     {
         try
         {
-            if (!Protocols.TryGetValue(ProtocolTypes.Operator, out var protocol))
+            if (!Protocols.TryGetValue(sendArgs.ProtocolType, out var protocol))
                 throw IocpException.ArgumentNull(nameof(ProtocolTypes));
-            protocol.Operate(sendArgs);
+            protocol.Command(sendArgs);
         }
         catch (Exception ex)
         {
@@ -71,14 +71,16 @@ public class ServerHost : Host
         }
     }
 
-    protected override void HandleDownloadRequest(OperateReceiveArgs args)
+    protected override void HandleDownloadRequest(CommandReceiveArgs receiveArgs)
     {
         try
         {
-            if (Protocols.TryGetValue(ProtocolTypes.Download, out var protocol))
+            if (!Protocols.TryGetValue(ProtocolTypes.Download, out var protocol))
                 throw IocpException.ArgumentNull(nameof(ProtocolTypes));
-            //var requestArgs = new DownloadRequestArgs().ParseSsString(args.Arg);
-
+            var requestArgs = new DownloadRequestArgs().ParseSsString(receiveArgs.Arg);
+            var continueArgs = protocol.StartDownloadContinue(requestArgs.DirName, requestArgs.FileName, requestArgs.StartTime);
+            var sendArgs = new CommandSendArgs(OperateTypes.DownloadContinue, ProtocolTypes.Download, continueArgs.ToSsString());
+            Command(sendArgs);
         }
         catch (Exception ex)
         {

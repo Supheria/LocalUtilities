@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
@@ -204,36 +205,22 @@ public class ClientProtocol : Protocol
         }
     }
 
-    public void Download(string dirName, string fileName, bool canRename)
+    public DownloadRequestArgs StartDownloadRequest(string dirName, string fileName, bool canRename)
     {
-        try
+        //if (!IsLogin)
+        //    throw new IocpException(ProtocolCode.NotLogined);
+        var filePath = GetFileRepoPath(dirName, fileName);
+        if (File.Exists(filePath))
         {
-            if (!IsLogin)
-                throw new IocpException(ProtocolCode.NotLogined);
-            var filePath = GetFileRepoPath(dirName, fileName);
-            if (File.Exists(filePath))
-            {
-                if (!canRename)
-                    throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
-                filePath = filePath.RenamePathByDateTime();
-            }
-            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-                throw new IocpException(ProtocolCode.ProcessingFile);
-            HandleDownloadStart();
-            var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Download)
-                .AppendValue(ProtocolKey.DirName, dirName)
-                .AppendValue(ProtocolKey.FileName, fileName)
-                .AppendValue(ProtocolKey.StartTime, DateTime.Now.ToString(DateTimeFormat.Data));
-            WriteCommand(commandComposer);
-            SendAsync();
+            if (!canRename)
+                throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
+            filePath = filePath.RenamePathByDateTime();
         }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            // TODO: log fail
-        }
+        var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+        if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+            throw new IocpException(ProtocolCode.ProcessingFile);
+        HandleDownloadStart();
+        return new(dirName, fileName, canRename);
     }
 
     private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)

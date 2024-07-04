@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.IocpNet.Transfer;
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class OperateSendArgs : ISsSerializable
+public sealed class CommandSendArgs : ISsSerializable
 {
     public IocpEventHandler? OnRetry;
 
@@ -15,11 +16,13 @@ public sealed class OperateSendArgs : ISsSerializable
 
     public LogHandler? OnLog;
 
-    public OperateTypes Type { get; private set; }
+    public OperateTypes OperateType { get; private set; }
 
-    public string Arg { get; private set; }
+    public ProtocolTypes ProtocolType { get; private set; }
 
-    public string TimeStamp { get; private set; }
+    public string Data { get; private set; }
+
+    public string TimeStamp { get; private set; } = DateTime.Now.ToString(DateTimeFormat.Data);
 
     DaemonThread DaemonThread { get; }
 
@@ -27,18 +30,18 @@ public sealed class OperateSendArgs : ISsSerializable
 
     int RetryTimes { get; set; } = 0;
 
-    public string LocalName => nameof(OperateSendArgs);
+    public string LocalName => nameof(CommandSendArgs);
 
-    public OperateSendArgs(OperateTypes type, string arg, string timeStamp)
+    public CommandSendArgs(OperateTypes operateType, ProtocolTypes protocolType, string data)
     {
-        Type = type;
-        Arg = arg;
-        TimeStamp = timeStamp;
+        OperateType = operateType;
+        ProtocolType = protocolType;
+        Data = data;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }
 
-    public OperateSendArgs() : this(OperateTypes.None, "", "")
+    public CommandSendArgs() : this(OperateTypes.None, ProtocolTypes.None, "")
     {
 
     }
@@ -71,7 +74,7 @@ public sealed class OperateSendArgs : ISsSerializable
             .Append(StringTable.Retry)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(Type)
+            .Append(OperateType)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(RetryTimes)
@@ -90,22 +93,22 @@ public sealed class OperateSendArgs : ISsSerializable
             .Append(StringTable.Failed)
             .Append(SignTable.Space)
             .Append(SignTable.CloseBracket)
-            .Append(Type)
+            .Append(OperateType)
             .ToString();
         OnLog?.Invoke(message);
     }
 
     public void Serialize(SsSerializer serializer)
     {
-        serializer.WriteTag(nameof(Type), Type.ToString());
+        serializer.WriteTag(nameof(OperateType), OperateType.ToString());
         serializer.WriteTag(nameof(TimeStamp), TimeStamp);
-        serializer.WriteTag(nameof(Arg), Arg);
+        serializer.WriteTag(nameof(Data), Data);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
+        OperateType = deserializer.ReadTag(nameof(OperateType), s => s.ToEnum<OperateTypes>());
         TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
-        Arg = deserializer.ReadTag(nameof(Arg));
+        Data = deserializer.ReadTag(nameof(Data));
     }
 }

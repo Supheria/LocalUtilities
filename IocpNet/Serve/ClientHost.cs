@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Collections.Concurrent;
@@ -37,8 +38,8 @@ public class ClientHost : Host
         Download.OnLog += HandleLog;
         HeartBeats.OnLogined += () => OnConnected?.Invoke();
         HeartBeats.OnClosed += () => OnDisconnected?.Invoke();
-        Operator.OnOperate += HandleOperate;
-        Operator.OnOperateCallback += HandleOperateCallback;
+        Operator.OnOperate += ReceiveCommand;
+        Operator.OnOperateCallback += ReceiveCommandCallback;
         Upload.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
         Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
     }
@@ -74,10 +75,20 @@ public class ClientHost : Host
         Download.Dispose();
     }
 
-    protected override void DoOperate(OperateSendArgs sendArgs)
+    protected override void SendCommand(CommandSendArgs sendArgs)
     {
-        Operator.Connect(Host, UserInfo);
-        Operator.Operate(sendArgs);
+        switch (sendArgs.ProtocolType)
+        {
+            case ProtocolTypes.Operator:
+                Operator.Command(sendArgs);
+                return;
+            case ProtocolTypes.Upload:
+                Upload.Command(sendArgs);
+                return;
+            case ProtocolTypes.Download:
+                Download.Command(sendArgs);
+                return;
+        }
     }
 
     public void UploadFile(string dirName, string filePath)
@@ -92,13 +103,20 @@ public class ClientHost : Host
             }
             catch { }
         }
-        Upload.Connect(Host, UserInfo);
         Upload.Upload(dirName, fileName, true);
     }
 
     public void DownloadFile(string dirName, string filePath)
     {
-        Download.Connect(Host, UserInfo);
-        Download.Download(dirName, Path.GetFileName(filePath), true);
+        try
+        {
+            var requestArgs = Download.StartDownloadRequest(dirName, Path.GetFileName(filePath), true);
+            var sendArgs = new CommandSendArgs(Common.OperateTypes.DownloadRequest, ProtocolTypes.Download, requestArgs.ToSsString());
+            Command(sendArgs);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 }
