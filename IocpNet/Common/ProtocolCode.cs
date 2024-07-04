@@ -2,11 +2,12 @@
 
 public enum ProtocolCode
 {
+    None,
     Success,
-    UnknownCommand,
+    UnknowError,
     PacketLengthError,
     PacketFormatError,
-    UnknowError,
+    UnknownCommand,
     CommandNoCompleted,
     ParameterError,
     ParameterInvalid,

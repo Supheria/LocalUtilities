@@ -49,17 +49,9 @@ partial class SerializeTool
 
     public static int ToSsBuffer<T>(this T obj, out byte[] buffer) where T : ISsSerializable
     {
-        buffer = [];
-        try
-        {
-            var str = FormatObject(obj, false);
-            buffer = Encoding.UTF8.GetBytes(str);
-            return buffer.Length;
-        }
-        catch
-        {
-            return 0;
-        }
+        var str = FormatObject(obj, false);
+        buffer = Encoding.UTF8.GetBytes(str);
+        return buffer.Length;
     }
 
     public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()

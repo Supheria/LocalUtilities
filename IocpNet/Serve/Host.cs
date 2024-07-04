@@ -66,7 +66,7 @@ public abstract class Host
 
     public void SendMessage(string message)
     {
-        var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
+        var sendArgs = new OperateSendArgs(OperateTypes.Message, message, DateTime.Now.ToString(DateTimeFormat.Data));
         Operate(sendArgs);
     }
 

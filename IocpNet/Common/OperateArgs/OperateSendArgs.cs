@@ -19,7 +19,7 @@ public sealed class OperateSendArgs : ISsSerializable
 
     public string Arg { get; private set; }
 
-    public string TimeStamp { get; private set; } = DateTime.Now.ToString(DateTimeFormat.Data);
+    public string TimeStamp { get; private set; }
 
     DaemonThread DaemonThread { get; }
 
@@ -29,15 +29,16 @@ public sealed class OperateSendArgs : ISsSerializable
 
     public string LocalName => nameof(OperateSendArgs);
 
-    public OperateSendArgs(OperateTypes type, string arg)
+    public OperateSendArgs(OperateTypes type, string arg, string timeStamp)
     {
         Type = type;
         Arg = arg;
+        TimeStamp = timeStamp;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }
 
-    public OperateSendArgs() : this(OperateTypes.None, "")
+    public OperateSendArgs() : this(OperateTypes.None, "", "")
     {
 
     }

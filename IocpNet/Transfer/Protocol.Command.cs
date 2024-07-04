@@ -43,30 +43,28 @@ partial class Protocol
 
     private void DoOperate(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
-        CommandComposer commandComposer;
-        string? timeStamp = null;
+        var sendArgs = new OperateSendArgs();
+        OperateCallbackArgs callbackArgs;
         try
         {
-            var sendArgs = new OperateSendArgs().ParseSsBuffer(buffer, offset, count);
+            sendArgs.ParseSsBuffer(buffer, offset, count);
             OnOperate?.Invoke(new(sendArgs.Type, sendArgs.Arg));
-            timeStamp = sendArgs.TimeStamp;
-            commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.OperateCallback)
-                .AppendValue(ProtocolKey.TimeStamp, timeStamp)
-                .AppendSuccess();
+            callbackArgs = new(sendArgs.TimeStamp, ProtocolCode.Success);
         }
         catch (Exception ex)
         {
             HandleException(ex);
-            commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.OperateCallback)
-                .AppendValue(ProtocolKey.TimeStamp, timeStamp);
-            if (ex is IocpException iocp)
-                commandComposer.AppendFailure(iocp.ErrorCode, iocp.Message);
-            else
-                commandComposer.AppendFailure(ProtocolCode.UnknowError, ex.Message);
+            var errorCode = ex switch
+            {
+                IocpException iocp => iocp.ErrorCode,
+                _ => ProtocolCode.UnknowError,
+            };
+            callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
         }
-        WriteCommand(commandComposer);
+        var commandComposer = new CommandComposer()
+            .AppendCommand(ProtocolKey.OperateCallback);
+        count = callbackArgs.ToSsBuffer(out buffer);
+        WriteCommand(commandComposer, buffer, 0, count);
         SendAsync();
     }
 
@@ -74,11 +72,8 @@ partial class Protocol
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.TimeStamp, out var timeStamp) ||
-                !commandParser.GetValueAsString(ProtocolKey.CallbackCode, out var callbackCode))
-                throw new IocpException(ProtocolCode.ParameterError, nameof(DoOperateCallback));
-            commandParser.GetValueAsString(ProtocolKey.ErrorMessage, out var errorMessage);
-            OnOperateCallback?.Invoke(new(timeStamp, callbackCode.ToEnum<ProtocolCode>(), errorMessage));
+            var callbackArgs = new OperateCallbackArgs().ParseSsBuffer(buffer, offset, count);
+            OnOperateCallback?.Invoke(callbackArgs);
         }
         catch (Exception ex)
         {
