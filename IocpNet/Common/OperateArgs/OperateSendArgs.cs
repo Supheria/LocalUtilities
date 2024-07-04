@@ -8,7 +8,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class CommandSendArgs : ISsSerializable
+public sealed class OperateSendArgs : ISsSerializable
 {
     public IocpEventHandler? OnRetry;
 
@@ -28,17 +28,17 @@ public sealed class CommandSendArgs : ISsSerializable
 
     int RetryTimes { get; set; } = 0;
 
-    public string LocalName => nameof(CommandSendArgs);
+    public string LocalName => nameof(OperateSendArgs);
 
-    public CommandSendArgs(OperateTypes operateType, string data)
+    public OperateSendArgs(OperateTypes type, string data)
     {
-        Type = operateType;
         Data = data;
+        Type = type;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }
 
-    public CommandSendArgs() : this(OperateTypes.None, "")
+    public OperateSendArgs() : this(OperateTypes.None, "")
     {
 
     }
@@ -71,7 +71,7 @@ public sealed class CommandSendArgs : ISsSerializable
             .Append(StringTable.Retry)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(Type)
+            .Append(Data)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(RetryTimes)
@@ -90,7 +90,7 @@ public sealed class CommandSendArgs : ISsSerializable
             .Append(StringTable.Failed)
             .Append(SignTable.Space)
             .Append(SignTable.CloseBracket)
-            .Append(Type)
+            .Append(Data)
             .ToString();
         OnLog?.Invoke(message);
     }

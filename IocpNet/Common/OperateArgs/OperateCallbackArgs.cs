@@ -3,7 +3,7 @@ using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class CommandCallbackArgs(string timeStamp, string data, ProtocolCode callbackCode, string errorMessage = "") : ISsSerializable
+public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolCode callbackCode, string errorMessage = "") : ISsSerializable
 {
     public string TimeStamp { get; private set; } = timeStamp;
 
@@ -13,14 +13,14 @@ public sealed class CommandCallbackArgs(string timeStamp, string data, ProtocolC
 
     public string ErrorMessage { get; private set; } = errorMessage;
 
-    public string LocalName => nameof(CommandCallbackArgs);
+    public string LocalName => nameof(OperateCallbackArgs);
 
-    public CommandCallbackArgs() : this("", "", ProtocolCode.None)
+    public OperateCallbackArgs() : this("", "", ProtocolCode.None)
     {
 
     }
 
-    public CommandCallbackArgs(string timeStamp, ProtocolCode callbackCode, string errorMessage = "") : this(timeStamp, "", callbackCode, errorMessage)
+    public OperateCallbackArgs(string timeStamp, ProtocolCode callbackCode, string errorMessage = "") : this(timeStamp, "", callbackCode, errorMessage)
     {
 
     }

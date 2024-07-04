@@ -101,16 +101,17 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     /// <param name="default"></param>
     /// <returns></returns>
     /// <exception cref="SsParseExceptions">multiAssignment of name</exception>
-    public T ReadObject<T>(T @default) where T : ISsSerializable
+    public T ReadObject<T>() where T : ISsSerializable, new()
     {
-        if (!Elements.TryGetValue(@default.LocalName, out var elements) || elements.Count is 0)
-            return @default;
+        var obj = new T();
+        if (!Elements.TryGetValue(obj.LocalName, out var elements) || elements.Count is 0)
+            return obj;
         if (elements.Count > 1)
-            throw SsParseExceptions.MultiAssignment(@default.LocalName);
+            throw SsParseExceptions.MultiAssignment(obj.LocalName);
         if (elements[0] is not ElementScope scope)
-            throw SsParseExceptions.WrongObjectEntry(@default.LocalName);
-        new SsDeserializer(@default).Deserialize(scope.Property);
-        return @default;
+            throw SsParseExceptions.WrongObjectEntry(obj.LocalName);
+        new SsDeserializer(obj).Deserialize(scope.Property);
+        return obj;
     }
 
     /// <summary>

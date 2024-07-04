@@ -29,12 +29,12 @@ public class CommandParser
         return result;
     }
 
-    public bool GetValueAsCommandKey(out ProtocolKey key)
+    public bool GetValueAsCommandKey(out CommandTypes type)
     {
-        key = ProtocolKey.None;
+        type = CommandTypes.None;
         if (!Commands.TryGetValue(ProtocolKey.Command, out var value))
             return false;
-        key = value.ToEnum<ProtocolKey>();
+        type = value.ToEnum<CommandTypes>();
         return true;
     }
 

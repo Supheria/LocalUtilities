@@ -45,7 +45,7 @@ public class ClientHost : Host
         Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
     }
 
-    private void ReceiveOperate(CommandSendArgs sendArgs)
+    private void ReceiveOperate(OperateSendArgs sendArgs)
     {
         switch (sendArgs.Type)
         {
@@ -55,14 +55,14 @@ public class ClientHost : Host
         }
     }
 
-    private void ReceiveMessage(CommandSendArgs sendArgs)
+    private void ReceiveMessage(OperateSendArgs sendArgs)
     {
         HandleLog(sendArgs.Data);
-        var callbackArgs = new CommandCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
+        var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
         Operator.OperateCallback(callbackArgs);
     }
 
-    private void ReceiveOperateCallback(CommandCallbackArgs args)
+    private void ReceiveOperateCallback(OperateCallbackArgs args)
     {
 
     }
@@ -117,7 +117,7 @@ public class ClientHost : Host
     {
         try
         {
-            var requestArgs = Download.StartDownloadRequest(dirName, Path.GetFileName(filePath), true);
+            //var requestArgs = Download.DownLoad(dirName, Path.GetFileName(filePath), true);
             //var sendArgs = new CommandSendArgs(Common.OperateTypes.DownloadRequest, ProtocolTypes.Download, requestArgs.ToSs());
             //Operate(sendArgs);
         }
@@ -129,7 +129,7 @@ public class ClientHost : Host
 
     public void SendMessage(string message)
     {
-        var sendArgs = new CommandSendArgs(OperateTypes.Message, message);
-        Operator.Operate(sendArgs);
+        var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
+        Operator.SendCommand(CommandTypes.Operate, sendArgs);
     }
 }

@@ -17,19 +17,19 @@ partial class Protocol
 {
     protected delegate void CommandHandler(CommandParser commandParser, byte[] buffer, int offset, int count);
 
-    protected Dictionary<ProtocolKey, CommandHandler> Commands { get; } = [];
+    protected Dictionary<CommandTypes, CommandHandler> Commands { get; } = [];
 
-    ConcurrentDictionary<string, CommandSendArgs> CommandWaitList { get; } = [];
+    ConcurrentDictionary<string, OperateSendArgs> CommandWaitList { get; } = [];
 
     public Protocol()
     {
-        Commands[ProtocolKey.Operate] = Operate;
-        Commands[ProtocolKey.OperateCallback] = OperateCallback;
+        Commands[CommandTypes.Operate] = Operate;
+        Commands[CommandTypes.OperateCallback] = OperateCallback;
     }
 
     protected abstract void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count);
 
-    public void Operate(CommandSendArgs sendArgs)
+    public void SendCommand(CommandTypes type, OperateSendArgs sendArgs)
     {
         try
         {
@@ -46,8 +46,8 @@ partial class Protocol
         void operate()
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Operate)
-                .AppendValue(ProtocolKey.Args, sendArgs.ToSs());
+                .AppendCommand(type)
+                .AppendValue(ProtocolKey.SendArgs, sendArgs.ToSs());
             WriteCommand(commandComposer);
             SendAsync();
         }
@@ -55,10 +55,10 @@ partial class Protocol
 
     private void Operate(CommandParser commandParser, byte[] buffer, int offset, int count)
     {
-        var sendArgs = new CommandSendArgs();
+        var sendArgs = new OperateSendArgs();
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.Args, out var args))
+            if (!commandParser.GetValueAsString(ProtocolKey.SendArgs, out var args))
                 throw new IocpException(ProtocolCode.ParameterError, nameof(Operate));
             sendArgs.ParseSs(args);
             OnOperate?.Invoke(sendArgs);
@@ -71,18 +71,18 @@ partial class Protocol
                 IocpException iocp => iocp.ErrorCode,
                 _ => ProtocolCode.UnknowError,
             };
-            var callbackArgs = new CommandCallbackArgs(sendArgs.TimeStamp, errorCode, ex.Message);
+            var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, errorCode, ex.Message);
             OperateCallback(callbackArgs);
         }
     }
 
-    public void OperateCallback(CommandCallbackArgs callbackArgs)
+    public void OperateCallback(OperateCallbackArgs callbackArgs)
     {
         try
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.OperateCallback)
-                .AppendValue(ProtocolKey.Args, callbackArgs.ToSs());
+                .AppendCommand(CommandTypes.OperateCallback)
+                .AppendValue(ProtocolKey.CallbackArgs, callbackArgs.ToSs());
             WriteCommand(commandComposer);
             SendAsync();
         }
@@ -97,13 +97,13 @@ partial class Protocol
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.Args, out var args))
+            if (!commandParser.GetValueAsString(ProtocolKey.CallbackArgs, out var args))
                 throw new IocpException(ProtocolCode.ParameterError, nameof(OperateCallback));
-            var callbackArgs = new CommandCallbackArgs().ParseSs(args);
+            var callbackArgs = new OperateCallbackArgs().ParseSs(args);
             if (!CommandWaitList.TryGetValue(callbackArgs.TimeStamp, out var sendArgs))
                 return;
             sendArgs.Waste();
-            HandleCallbackCode(sendArgs.Type, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
+            HandleCallbackCode(sendArgs.Data, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
             if (callbackArgs.CallbackCode is not ProtocolCode.Success)
                 return;
             OnOperateCallback?.Invoke(callbackArgs);
@@ -133,14 +133,14 @@ partial class Protocol
         SendBuffer.EndPacket();
     }
 
-    protected void HandleCallbackCode(OperateTypes operate, ProtocolCode code, string? errorMessage)
+    protected void HandleCallbackCode(string data, ProtocolCode code, string? errorMessage)
     {
         var log = new StringBuilder()
             .Append(SignTable.OpenBracket)
             .Append(code)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(operate)
+            .Append(data)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(errorMessage)

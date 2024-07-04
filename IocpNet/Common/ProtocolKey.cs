@@ -69,6 +69,7 @@ public enum ProtocolKey
     OperateType,
     TimeStamp,
     OperateCallback,
-    Args,
+    SendArgs,
+    CallbackArgs
 }
 

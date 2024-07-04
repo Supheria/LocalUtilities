@@ -20,9 +20,9 @@ partial class Protocol
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    public event IocpEventHandler<CommandSendArgs>? OnOperate;
+    public event IocpEventHandler<OperateSendArgs>? OnOperate;
 
-    public event IocpEventHandler<CommandCallbackArgs>? OnOperateCallback;
+    public event IocpEventHandler<OperateCallbackArgs>? OnOperateCallback;
 
     protected void HandleLog(string log)
     {

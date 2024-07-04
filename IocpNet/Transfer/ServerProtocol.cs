@@ -18,12 +18,12 @@ public class ServerProtocol : Protocol
     public ServerProtocol()
     {
         DaemonThread = new(ConstTabel.SocketTimeoutMilliseconds, CheckTimeout);
-        Commands[ProtocolKey.Login] = DoLogin;
-        Commands[ProtocolKey.HeartBeats] = (_, _, _, _) => { };
-        Commands[ProtocolKey.Upload] = DoUpload;
-        Commands[ProtocolKey.WriteFile] = DoWriteFile;
-        Commands[ProtocolKey.Download] = DoDownload;
-        Commands[ProtocolKey.SendFile] = DoSendFile;
+        Commands[CommandTypes.Login] = DoLogin;
+        Commands[CommandTypes.HeartBeats] = (_, _, _, _) => { };
+        Commands[CommandTypes.Upload] = DoUpload;
+        Commands[CommandTypes.WriteFile] = DoWriteFile;
+        Commands[CommandTypes.Download] = DoDownload;
+        Commands[CommandTypes.SendFile] = DoSendFile;
     }
 
     private void CheckTimeout()
@@ -76,7 +76,7 @@ public class ServerProtocol : Protocol
     {
         try
         {
-            var commandKey = ProtocolKey.None;
+            var commandKey = CommandTypes.None;
             if (!commandParser.GetValueAsCommandKey(out commandKey))
                 throw new IocpException(ProtocolCode.UnknownCommand);
             if (!CheckLogin(commandKey)) //检测登录
@@ -91,9 +91,9 @@ public class ServerProtocol : Protocol
         }
     }
 
-    private bool CheckLogin(ProtocolKey commandKey)
+    private bool CheckLogin(CommandTypes type)
     {
-        if (commandKey is ProtocolKey.Login)
+        if (type is CommandTypes.Login)
             return true;
         else
             return IsLogin;
@@ -118,7 +118,7 @@ public class ServerProtocol : Protocol
             IsLogin = true;
             HandleLogined();
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Login);
+                .AppendCommand(CommandTypes.Login);
             CommandSucceed(commandComposer);
         }
         catch (Exception ex)
@@ -149,7 +149,7 @@ public class ServerProtocol : Protocol
                 throw new IocpException(ProtocolCode.ProcessingFile);
             HandleUploadStart();
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Upload)
+                .AppendCommand(CommandTypes.Upload)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength)
                 .AppendValue(ProtocolKey.Position, 0);
@@ -186,7 +186,7 @@ public class ServerProtocol : Protocol
             else
                 HandleUploading(fileLength, AutoFile.Position);
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Upload)
+                .AppendCommand(CommandTypes.Upload)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength);
             CommandSucceed(commandComposer);
@@ -214,7 +214,7 @@ public class ServerProtocol : Protocol
             var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
             HandleDownloadStart();
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Download)
+                .AppendCommand(CommandTypes.Download)
                 .AppendValue(ProtocolKey.FileLength, fileStream.Length)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength)
@@ -267,7 +267,7 @@ public class ServerProtocol : Protocol
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
             HandleDownloading(AutoFile.Length, AutoFile.Position);
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Download)
+                .AppendCommand(CommandTypes.Download)
                 .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength)

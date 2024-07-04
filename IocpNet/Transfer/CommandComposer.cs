@@ -39,9 +39,9 @@ public class CommandComposer
             .Append(SignTable.NewLine);
     }
 
-    public CommandComposer AppendCommand(ProtocolKey commandKey)
+    public CommandComposer AppendCommand(CommandTypes type)
     {
-        AppendLine(ProtocolKey.Command, commandKey.ToString());
+        AppendLine(ProtocolKey.Command, type.ToString());
         return this;
     }
 

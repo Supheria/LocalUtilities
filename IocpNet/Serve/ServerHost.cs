@@ -40,7 +40,7 @@ public class ServerHost : Host
         return false;
     }
 
-    private void ReceiveOperate(CommandSendArgs sendArgs)
+    private void ReceiveOperate(OperateSendArgs sendArgs)
     {
         switch (sendArgs.Type)
         {
@@ -50,13 +50,13 @@ public class ServerHost : Host
         }
     }
 
-    private void ReceiveMessage(CommandSendArgs sendArgs)
+    private void ReceiveMessage(OperateSendArgs sendArgs)
     {
         try
         {
             HandleLog(sendArgs.Data);
             var protocol = Protocols[ProtocolTypes.Operator];
-            var callbackArgs = new CommandCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
+            var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
             protocol.OperateCallback(callbackArgs);
         }
         catch (Exception ex)
@@ -65,7 +65,7 @@ public class ServerHost : Host
         }
     }
 
-    private void ReceiveOperateCallback(CommandCallbackArgs args)
+    private void ReceiveOperateCallback(OperateCallbackArgs args)
     {
 
     }
@@ -91,9 +91,9 @@ public class ServerHost : Host
     {
         try
         {
-            var sendArgs = new CommandSendArgs(OperateTypes.Message, message);
+            var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
             var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.Operate(sendArgs);
+            protocol.SendCommand(CommandTypes.Operate, sendArgs);
         }
         catch (Exception ex)
         {

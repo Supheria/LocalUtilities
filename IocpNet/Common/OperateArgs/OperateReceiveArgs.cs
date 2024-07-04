@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class CommandReceiveArgs(OperateTypes type, string data)
+public sealed class OperateReceiveArgs(OperateTypes type, string data)
 {
     public OperateTypes Type { get; } = type;
 

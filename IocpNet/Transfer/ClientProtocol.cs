@@ -26,9 +26,9 @@ public class ClientProtocol : Protocol
         Type = type;
         if (type is ProtocolTypes.HeartBeats)
             DaemonThread = new(ConstTabel.HeartBeatsInterval, HeartBeats);
-        Commands[ProtocolKey.Login] = DoLogin;
-        Commands[ProtocolKey.Upload] = DoUpload;
-        Commands[ProtocolKey.Download] = DoDownload;
+        Commands[CommandTypes.Login] = DoLogin;
+        Commands[CommandTypes.Upload] = DoUpload;
+        Commands[CommandTypes.Download] = DoDownload;
     }
 
     private void HeartBeats()
@@ -36,7 +36,7 @@ public class ClientProtocol : Protocol
         try
         {
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.HeartBeats);
+                .AppendCommand(CommandTypes.HeartBeats);
             WriteCommand(commandComposer);
             SendAsync();
         }
@@ -60,7 +60,7 @@ public class ClientProtocol : Protocol
                 throw new IocpException(ProtocolCode.NoConnection);
             UserInfo = userInfo;
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Login)
+                .AppendCommand(CommandTypes.Login)
                 .AppendValue(ProtocolKey.UserName, UserInfo.Name)
                 .AppendValue(ProtocolKey.Password, UserInfo.Password)
                 .AppendValue(ProtocolKey.ProtocolType, Type);
@@ -153,7 +153,7 @@ public class ClientProtocol : Protocol
             var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
             HandleUploadStart();
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.Upload)
+                .AppendCommand(CommandTypes.Upload)
                 .AppendValue(ProtocolKey.DirName, dirName)
                 .AppendValue(ProtocolKey.FileName, fileName)
                 .AppendValue(ProtocolKey.StartTime, DateTime.Now.ToString(DateTimeFormat.Data))
@@ -190,7 +190,7 @@ public class ClientProtocol : Protocol
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
             HandleUploading(AutoFile.Length, AutoFile.Position);
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.WriteFile)
+                .AppendCommand(CommandTypes.WriteFile)
                 .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength)
@@ -205,22 +205,28 @@ public class ClientProtocol : Protocol
         }
     }
 
-    public DownloadRequestArgs StartDownloadRequest(string dirName, string fileName, bool canRename)
+    public void DownLoad(string dirName, string fileName, bool canRename)
     {
-        //if (!IsLogin)
-        //    throw new IocpException(ProtocolCode.NotLogined);
-        var filePath = GetFileRepoPath(dirName, fileName);
-        if (File.Exists(filePath))
+        try
         {
-            if (!canRename)
-                throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
-            filePath = filePath.RenamePathByDateTime();
+            var filePath = GetFileRepoPath(dirName, fileName);
+            if (File.Exists(filePath))
+            {
+                if (!canRename)
+                    throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
+                filePath = filePath.RenamePathByDateTime();
+            }
+            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+                throw new IocpException(ProtocolCode.ProcessingFile);
+            HandleDownloadStart();
+            var requestArgs = new DownloadRequestArgs(dirName, fileName, canRename);
+            //var sendArgs = new CommandSendArgs(, )
         }
-        var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-        if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-            throw new IocpException(ProtocolCode.ProcessingFile);
-        HandleDownloadStart();
-        return new(dirName, fileName, canRename);
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
@@ -247,7 +253,7 @@ public class ClientProtocol : Protocol
             else
                 HandleDownloading(fileLength, AutoFile.Position);
             var commandComposer = new CommandComposer()
-                .AppendCommand(ProtocolKey.SendFile)
+                .AppendCommand(CommandTypes.SendFile)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength);
             WriteCommand(commandComposer);
