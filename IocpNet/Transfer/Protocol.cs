@@ -75,7 +75,7 @@ public abstract partial class Protocol : IDisposable
                     ProcessReceive(receiveArgs);
             }
         }
-        catch
+        catch(Exception ex)
         {
             Close();
         }
@@ -88,43 +88,36 @@ public abstract partial class Protocol : IDisposable
             receiveArgs.BytesTransferred <= 0 ||
             receiveArgs.SocketError is not SocketError.Success)
             goto CLOSE;
-        try
+        SocketInfo.Active();
+        ReceiveBuffer.WriteData(receiveArgs.Buffer!, receiveArgs.Offset, receiveArgs.BytesTransferred);
+        // 按照长度分包
+        // 小于四个字节表示包头未完全接收，继续接收
+        while (ReceiveBuffer.DataCount > sizeof(int))
         {
-            SocketInfo.Active();
-            ReceiveBuffer.WriteData(receiveArgs.Buffer!, receiveArgs.Offset, receiveArgs.BytesTransferred);
-            // 按照长度分包
-            // 小于四个字节表示包头未完全接收，继续接收
-            while (ReceiveBuffer.DataCount > sizeof(int))
-            {
-                var buffer = ReceiveBuffer.GetData();
-                var packetLength = BitConverter.ToInt32(buffer, 0);
-                if (UseNetByteOrder)
-                    packetLength = IPAddress.NetworkToHostOrder(packetLength);
-                // 最大Buffer异常保护
-                // buffer = [totol legth] + [command length] + [command] + [data]
-                var offset = sizeof(int); // totol length
-                var commandLength = BitConverter.ToInt32(buffer, offset); //取出命令长度
-                offset += sizeof(int); // command length
-                var bytesMax = ConstTabel.DataBytesTransferredMax + commandLength + offset;
-                if (packetLength > bytesMax || ReceiveBuffer.DataCount > bytesMax)
-                    goto CLOSE;
-                // 收到的数据没有达到包长度，继续接收
-                if (ReceiveBuffer.DataCount < packetLength)
-                    goto RECEIVE;
-                var command = new Command().ParseSs(buffer, offset, commandLength);
-                offset += commandLength;
-                // 处理命令,offset + sizeof(int) + commandLen后面的为数据，数据的长度为count - sizeof(int) - sizeof(int) - length，注意是包的总长度－包长度所占的字节（sizeof(int)）－ 命令长度所占的字节（sizeof(int)） - 命令的长度
-                ProcessCommand(command, buffer, offset, packetLength - offset);
-                ReceiveBuffer.RemoveData(packetLength);
-            }
-        RECEIVE:
-            ReceiveAsync();
-            return;
+            var buffer = ReceiveBuffer.GetData();
+            var packetLength = BitConverter.ToInt32(buffer, 0);
+            if (UseNetByteOrder)
+                packetLength = IPAddress.NetworkToHostOrder(packetLength);
+            // 最大Buffer异常保护
+            // buffer = [totol legth] + [command length] + [command] + [data]
+            var offset = sizeof(int); // totol length
+            var commandLength = BitConverter.ToInt32(buffer, offset); //取出命令长度
+            offset += sizeof(int); // command length
+            var bytesMax = ConstTabel.DataBytesTransferredMax + commandLength + offset;
+            if (packetLength > bytesMax || ReceiveBuffer.DataCount > bytesMax)
+                goto CLOSE;
+            // 收到的数据没有达到包长度，继续接收
+            if (ReceiveBuffer.DataCount < packetLength)
+                goto RECEIVE;
+            var command = new Command().ParseSs(buffer, offset, commandLength);
+            offset += commandLength;
+            // 处理命令,offset + sizeof(int) + commandLen后面的为数据，数据的长度为count - sizeof(int) - sizeof(int) - length，注意是包的总长度－包长度所占的字节（sizeof(int)）－ 命令长度所占的字节（sizeof(int)） - 命令的长度
+            ProcessCommand(command, buffer, offset, packetLength - offset);
+            ReceiveBuffer.RemoveData(packetLength);
         }
-        catch
-        {
-            goto CLOSE;
-        }
+    RECEIVE:
+        ReceiveAsync();
+        return;
     CLOSE:
         Close();
         return;

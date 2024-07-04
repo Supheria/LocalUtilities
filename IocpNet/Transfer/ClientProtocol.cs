@@ -248,7 +248,7 @@ public class ClientProtocol : Protocol
             else
                 HandleDownloading(confirmArgs.FileLength, AutoFile.Position);
             var continueArgs = new DownloadContinueArgs(confirmArgs.StartTime, confirmArgs.PacketLength);
-            SendCommand(CommandTypes.SendFile, new(OperateTypes.DownloadContinue, confirmArgs.ToSs()));
+            SendCommand(CommandTypes.SendFile, new(OperateTypes.DownloadContinue, continueArgs.ToSs()));
         }
         catch (Exception ex)
         {

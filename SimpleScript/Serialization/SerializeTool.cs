@@ -53,9 +53,9 @@ public static partial class SerializeTool
         return buffer;
     }
 
-    private static T ParseToObject<T>(T obj, byte[] buffer) where T : ISsSerializable
+    private static T ParseToObject<T>(T obj, byte[] buffer, int offset, int count) where T : ISsSerializable
     {
-        var elements = new Tokenizer(buffer).Elements.Property[obj.LocalName];
+        var elements = new Tokenizer(buffer, offset, count).Elements.Property[obj.LocalName];
         if (elements.Count is 0)
             throw SsParseExceptions.CannotFindEntry(obj.LocalName);
         if (elements.Count > 1)
@@ -67,10 +67,10 @@ public static partial class SerializeTool
         return obj;
     }
 
-    private static ICollection<T> ParseToArray<T>(string arrayName, byte[] buffer) where T : ISsSerializable, new()
+    private static ICollection<T> ParseToArray<T>(string arrayName, byte[] buffer, int offset, int count) where T : ISsSerializable, new()
     {
         var list = new List<T>();
-        var elements = new Tokenizer(buffer).Elements.Property[arrayName];
+        var elements = new Tokenizer(buffer, offset, count).Elements.Property[arrayName];
         if (elements.Count is 0)
             throw SsParseExceptions.CannotFindEntry(arrayName);
         if (elements.Count > 1)

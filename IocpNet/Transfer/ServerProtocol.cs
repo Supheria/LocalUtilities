@@ -222,28 +222,9 @@ public class ServerProtocol : Protocol
             callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
         }
         command = new Command(CommandTypes.Download)
-            .AppendValue(ProtocolKey.CallbackArgs, callbackArgs);
+            .AppendCallbackArgs(callbackArgs);
         WriteCommand(command);
         SendAsync();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="requestArgs"></param>
-    /// <param name="sendArgs"></param>
-    /// <exception cref="IocpException"></exception>
-    public DownloadConfirmArgs StartDownloadContinue(string dirName, string fileName, string startTime)
-    {
-        var filePath = GetFileRepoPath(dirName, fileName);
-        if (!File.Exists(filePath))
-            throw new IocpException(ProtocolCode.FileNotExist, filePath);
-        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
-            throw new IocpException(ProtocolCode.ProcessingFile);
-        var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
-        HandleDownloadStart();
-        return new DownloadConfirmArgs(fileStream.Length, packetLength, 0, startTime);
     }
 
     private void DoSendFile(Command command, byte[] buffer, int offset, int count)
@@ -264,10 +245,11 @@ public class ServerProtocol : Protocol
                 return;
             }
             buffer = new byte[continueArgs.PacketLength];
+            var str = Encoding.UTF8.GetString(buffer);
             if (!AutoFile.Read(buffer, 0, buffer.Length, out count)) 
                 throw new IocpException(ProtocolCode.FileExpired, continueArgs.StartTime);
             HandleDownloading(AutoFile.Length, AutoFile.Position);
-            var confirmArgs = new DownloadConfirmArgs(AutoFile.Length, continueArgs.PacketLength, 0, continueArgs.StartTime);
+            var confirmArgs = new DownloadConfirmArgs(AutoFile.Length, continueArgs.PacketLength, AutoFile.Position, continueArgs.StartTime);
             callbackArgs = new(sendArgs.TimeStamp, confirmArgs.ToSs(), ProtocolCode.Success);
         }
         catch (Exception ex)
@@ -281,8 +263,8 @@ public class ServerProtocol : Protocol
             callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
         }
         command = new Command(CommandTypes.Download)
-            .AppendValue(ProtocolKey.CallbackArgs, callbackArgs);
-        WriteCommand(command);
+            .AppendCallbackArgs(callbackArgs);
+        WriteCommand(command, buffer, 0, count);
         SendAsync();
     }
 

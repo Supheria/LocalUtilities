@@ -34,9 +34,10 @@ internal class Tokenizer
 
     internal ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
 
-    internal Tokenizer(byte[] buffer)
+    internal Tokenizer(byte[] buffer, int offset, int count)
     {
-        Buffer = buffer;
+        Buffer = new byte[count];
+        Array.Copy(buffer, offset, Buffer, 0, count);
         Tokenize();
     }
 

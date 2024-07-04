@@ -117,7 +117,8 @@ public class ClientHost : Host
     {
         try
         {
-            Download.DownLoad(dirName, filePath, true);
+            var fileName = Path.GetFileName(filePath)
+;            Download.DownLoad(dirName, fileName, true);
         }
         catch (Exception ex)
         {

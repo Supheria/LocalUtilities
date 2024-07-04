@@ -14,7 +14,7 @@ public class DownloadContinueArgs(string startTime, long packetLength) : ISsSeri
 
     public long PacketLength { get; private set; } = packetLength;
 
-    public string LocalName => throw new NotImplementedException();
+    public string LocalName => nameof(DownloadContinueArgs);
 
     public DownloadContinueArgs() : this("", 0)
     {

@@ -8,26 +8,19 @@ partial class SerializeTool
 {
     public static T ParseSs<T>(this T obj, byte[] buffer, int offset, int count) where T : ISsSerializable
     {
-        var bytes = new byte[count];
-        Array.Copy(buffer, offset, bytes, 0, count);
-        return ParseToObject(obj, buffer);
+        return ParseToObject(obj, buffer, offset, count);
     }
 
     public static T ParseSs<T>(this T obj, string str) where T : ISsSerializable
     {
-        return ParseToObject(obj, Encoding.UTF8.GetBytes(str));
+        var buffer = Encoding.UTF8.GetBytes(str);
+        return ParseToObject(obj, buffer, 0, buffer.Length);
     }
 
     public static ICollection<T> ParseSsString<T>(this string str, string arrayName) where T : ISsSerializable, new()
     {
-        try
-        {
-            return ParseToArray<T>(arrayName, Encoding.UTF8.GetBytes(str));
-        }
-        catch
-        {
-            return [];
-        }
+        var buffer = Encoding.UTF8.GetBytes(str);
+        return ParseToArray<T>(arrayName, buffer, 0, buffer.Length);
     }
 
     /// <summary>
@@ -42,7 +35,7 @@ partial class SerializeTool
         {
             var deserializer = new SsDeserializer(obj);
             var buffer = ReadFileBuffer(deserializer.GetInitializeFilePath());
-            return ParseToObject(obj, buffer);
+            return ParseToObject(obj, buffer, 0, buffer.Length);
         }
         catch
         {
@@ -64,7 +57,7 @@ partial class SerializeTool
         try
         {
             var buffer = ReadFileBuffer(filePath);
-            return ParseToObject(obj, buffer);
+            return ParseToObject(obj, buffer, 0, buffer.Length);
         }
         catch (Exception ex)
         {
@@ -77,12 +70,11 @@ partial class SerializeTool
         try
         {
             var buffer = ReadFileBuffer(filePath);
-            return ParseToArray<T>(arrayName, buffer);
+            return ParseToArray<T>(arrayName, buffer, 0, buffer.Length);
         }
         catch (Exception ex)
         {
             throw new SsParseExceptions(ex.Message);
         }
     }
-
 }
