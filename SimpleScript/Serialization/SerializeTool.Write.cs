@@ -7,6 +7,30 @@ namespace LocalUtilities.SimpleScript.Serialization;
 
 partial class SerializeTool
 {
+    public static int ToSs<T>(this T obj, out byte[] buffer) where T : ISsSerializable
+    {
+        var str = FormatObject(obj, false);
+        buffer = Encoding.UTF8.GetBytes(str);
+        return buffer.Length;
+    }
+
+    public static string ToSs<T>(this T obj) where T : ISsSerializable
+    {
+        return FormatObject(obj, false);
+    }
+
+    public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
+    {
+        try
+        {
+            return FormatObjects(arrayName, items, false);
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
     public static void SaveToSimpleScript<T>(this T obj, bool writeIntoMultiLines) where T : ISsSerializable
     {
         try
@@ -46,29 +70,4 @@ partial class SerializeTool
             throw new SsFormatException(ex.Message);
         }
     }
-
-    public static int ToSs<T>(this T obj, out byte[] buffer) where T : ISsSerializable
-    {
-        var str = FormatObject(obj, false);
-        buffer = Encoding.UTF8.GetBytes(str);
-        return buffer.Length;
-    }
-
-    public static string ToSs<T>(this T obj) where T : ISsSerializable
-    {
-        return FormatObject(obj, false);
-    }
-
-    public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
-    {
-        try
-        {
-            return FormatObjects(arrayName, items, false);
-        }
-        catch
-        {
-            return "";
-        }
-    }
-
 }

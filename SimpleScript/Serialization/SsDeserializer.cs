@@ -78,7 +78,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         {
             foreach (var elements in array.Properties)
             {
-                var arr = elements.Values.SelectMany(x => x.Select(x => x.Name.Text)).ToList();
+                var arr = elements.Values.SelectMany(x => x.Select(x => x.Tag.Text)).ToList();
                 list.Add(toItem(arr));
             }
         });
@@ -89,7 +89,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         return GeneralReadList<ElementScope, KeyValuePair<TTag, TValue>>(name, (scope, list) =>
         {
             var tag = toTag(scope.Tag.Text);
-            var values = scope.Property.SelectMany(x => x.Value.Select(x => x.Name.Text)).ToList();
+            var values = scope.Property.SelectMany(x => x.Value.Select(x => x.Tag.Text)).ToList();
             list.Add(new(tag, toValue(values)));
         });
     }

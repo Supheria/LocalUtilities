@@ -4,6 +4,7 @@ using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 
@@ -49,41 +50,38 @@ public class ServerProtocol : Protocol
         CommandFail(ex, new());
     }
 
-    private void CommandFail(Exception ex, CommandComposer commandComposer)
+    private void CommandFail(Exception ex, Command command)
     {
         if (ex is IocpException iocp)
-            commandComposer.AppendFailure(iocp.ErrorCode, iocp.Message);
+            command.AppendFailure(iocp.ErrorCode, iocp.Message);
         else
-            commandComposer.AppendFailure(ProtocolCode.UnknowError, ex.Message);
-        WriteCommand(commandComposer);
+            command.AppendFailure(ProtocolCode.UnknowError, ex.Message);
+        WriteCommand(command);
         SendAsync();
         HandleException(ex);
     }
 
-    private void CommandSucceed(CommandComposer commandComposer)
+    private void CommandSucceed(Command command)
     {
-        CommandSucceed(commandComposer, [], 0, 0);
+        CommandSucceed(command, [], 0, 0);
     }
 
-    private void CommandSucceed(CommandComposer commandComposer, byte[] buffer, int offset, int count)
+    private void CommandSucceed(Command command, byte[] buffer, int offset, int count)
     {
-        commandComposer.AppendSuccess();
-        WriteCommand(commandComposer, buffer, offset, count);
+        command.AppendSuccess();
+        WriteCommand(command, buffer, offset, count);
         SendAsync();
     }
 
-    protected override void ProcessCommand(CommandParser commandParser, byte[] buffer, int offset, int count)
+    protected override void ProcessCommand(Command command, byte[] buffer, int offset, int count)
     {
         try
         {
-            var commandKey = CommandTypes.None;
-            if (!commandParser.GetValueAsCommandKey(out commandKey))
-                throw new IocpException(ProtocolCode.UnknownCommand);
-            if (!CheckLogin(commandKey)) //检测登录
+            if (!CheckLogin(command.Type)) //检测登录
                 throw new IocpException(ProtocolCode.NotLogined);
-            if (!Commands.TryGetValue(commandKey, out var doCommand))
+            if (!Commands.TryGetValue(command.Type, out var doCommand))
                 throw new IocpException(ProtocolCode.UnknownCommand);
-            doCommand(commandParser, buffer, offset, count);
+            doCommand(command, buffer, offset, count);
         }
         catch (Exception ex)
         {
@@ -99,13 +97,13 @@ public class ServerProtocol : Protocol
             return IsLogin;
     }
 
-    private void DoLogin(CommandParser commandParser, byte[] buffer, int offset, int count)
+    private void DoLogin(Command command, byte[] buffer, int offset, int count)
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.UserName, out var name) ||
-                !commandParser.GetValueAsString(ProtocolKey.Password, out var password) ||
-                !commandParser.GetValueAsString(ProtocolKey.ProtocolType, out var t))
+            if (!command.GetValueAsString(ProtocolKey.UserName, out var name) ||
+                !command.GetValueAsString(ProtocolKey.Password, out var password) ||
+                !command.GetValueAsString(ProtocolKey.ProtocolType, out var t))
                 throw new IocpException(ProtocolCode.ParameterError);
             var type = t.ToEnum<ProtocolTypes>();
             if (type is ProtocolTypes.None || Type is not ProtocolTypes.None && Type != type)
@@ -117,9 +115,8 @@ public class ServerProtocol : Protocol
             UserInfo = new(name, password);
             IsLogin = true;
             HandleLogined();
-            var commandComposer = new CommandComposer()
-                .AppendCommand(CommandTypes.Login);
-            CommandSucceed(commandComposer);
+            command = new Command(CommandTypes.Login);
+            CommandSucceed(command);
         }
         catch (Exception ex)
         {
@@ -127,15 +124,15 @@ public class ServerProtocol : Protocol
         }
     }
 
-    public void DoUpload(CommandParser commandParser, byte[] buffer, int offset, int count)
+    public void DoUpload(Command command, byte[] buffer, int offset, int count)
     {
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.DirName, out var dirName) ||
-                !commandParser.GetValueAsString(ProtocolKey.FileName, out var fileName) ||
-                !commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
-                !commandParser.GetValueAsLong(ProtocolKey.PacketLength, out var packetLength) ||
-                !commandParser.GetValueAsBool(ProtocolKey.CanRename, out var canRename))
+            if (!command.GetValueAsString(ProtocolKey.DirName, out var dirName) ||
+                !command.GetValueAsString(ProtocolKey.FileName, out var fileName) ||
+                !command.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
+                !command.GetValueAsLong(ProtocolKey.PacketLength, out var packetLength) ||
+                !command.GetValueAsBool(ProtocolKey.CanRename, out var canRename))
                 throw new IocpException(ProtocolCode.ParameterError, "");
             var filePath = GetFileRepoPath(dirName, fileName);
             if (File.Exists(filePath))
@@ -148,12 +145,11 @@ public class ServerProtocol : Protocol
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
                 throw new IocpException(ProtocolCode.ProcessingFile);
             HandleUploadStart();
-            var commandComposer = new CommandComposer()
-                .AppendCommand(CommandTypes.Upload)
+            command = new Command(CommandTypes.Upload)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength)
                 .AppendValue(ProtocolKey.Position, 0);
-            CommandSucceed(commandComposer);
+            CommandSucceed(command);
         }
         catch (Exception ex)
         {
@@ -162,14 +158,14 @@ public class ServerProtocol : Protocol
 
     }
 
-    private void DoWriteFile(CommandParser commandParser, byte[] buffer, int offset, int count)
+    private void DoWriteFile(Command command, byte[] buffer, int offset, int count)
     {
         try
         {
-            if (!commandParser.GetValueAsLong(ProtocolKey.FileLength, out var fileLength) ||
-                !commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
-                !commandParser.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength) ||
-                !commandParser.GetValueAsLong(ProtocolKey.Position, out var position))
+            if (!command.GetValueAsLong(ProtocolKey.FileLength, out var fileLength) ||
+                !command.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
+                !command.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength) ||
+                !command.GetValueAsLong(ProtocolKey.Position, out var position))
                 throw new IocpException(ProtocolCode.ParameterError);
             if (AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.FileExpired, startTime);
@@ -185,11 +181,10 @@ public class ServerProtocol : Protocol
             }
             else
                 HandleUploading(fileLength, AutoFile.Position);
-            var commandComposer = new CommandComposer()
-                .AppendCommand(CommandTypes.Upload)
+            command = new Command(CommandTypes.Upload)
                 .AppendValue(ProtocolKey.StartTime, startTime)
                 .AppendValue(ProtocolKey.PacketLength, packetLength);
-            CommandSucceed(commandComposer);
+            CommandSucceed(command);
         }
         catch (Exception ex)
         {
@@ -197,15 +192,15 @@ public class ServerProtocol : Protocol
         }
     }
 
-    public void DoDownload(CommandParser commandParser, byte[] buffer, int offset, int count)
+    public void DoDownload(Command command, byte[] buffer, int offset, int count)
     {
+        OperateSendArgs sendArgs = new();
+        OperateCallbackArgs callbackArgs;
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.DirName, out var dirName) ||
-                !commandParser.GetValueAsString(ProtocolKey.FileName, out var fileName) ||
-                !commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime))
-                throw new IocpException(ProtocolCode.ParameterError);
-            var filePath = GetFileRepoPath(dirName, fileName);
+            sendArgs = command.GetValueAsSendArgs();
+            var requestArgs = new DownloadRequestArgs().ParseSs(sendArgs.Data);
+            var filePath = GetFileRepoPath(requestArgs.DirName, requestArgs.FileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -213,18 +208,23 @@ public class ServerProtocol : Protocol
                 throw new IocpException(ProtocolCode.ProcessingFile);
             var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
             HandleDownloadStart();
-            var commandComposer = new CommandComposer()
-                .AppendCommand(CommandTypes.Download)
-                .AppendValue(ProtocolKey.FileLength, fileStream.Length)
-                .AppendValue(ProtocolKey.StartTime, startTime)
-                .AppendValue(ProtocolKey.PacketLength, packetLength)
-                .AppendValue(ProtocolKey.Position, 0);
-            CommandSucceed(commandComposer);
+            var confirmArgs = new DownloadConfirmArgs(fileStream.Length, packetLength, 0, requestArgs.StartTime);
+            callbackArgs = new(sendArgs.TimeStamp, confirmArgs.ToSs(), ProtocolCode.Success);
         }
         catch (Exception ex)
         {
-            CommandFail(ex);
+            HandleException(ex);
+            var errorCode = ex switch
+            {
+                IocpException iocp => iocp.ErrorCode,
+                _ => ProtocolCode.UnknowError,
+            };
+            callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
         }
+        command = new Command(CommandTypes.Download)
+            .AppendValue(ProtocolKey.CallbackArgs, callbackArgs);
+        WriteCommand(command);
+        SendAsync();
     }
 
     /// <summary>
@@ -233,7 +233,7 @@ public class ServerProtocol : Protocol
     /// <param name="requestArgs"></param>
     /// <param name="sendArgs"></param>
     /// <exception cref="IocpException"></exception>
-    public DownloadContinueArgs StartDownloadContinue(string dirName, string fileName, string startTime)
+    public DownloadConfirmArgs StartDownloadContinue(string dirName, string fileName, string startTime)
     {
         var filePath = GetFileRepoPath(dirName, fileName);
         if (!File.Exists(filePath))
@@ -243,41 +243,47 @@ public class ServerProtocol : Protocol
             throw new IocpException(ProtocolCode.ProcessingFile);
         var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
         HandleDownloadStart();
-        return new DownloadContinueArgs(fileStream.Length, packetLength, 0, startTime);
+        return new DownloadConfirmArgs(fileStream.Length, packetLength, 0, startTime);
     }
 
-    private void DoSendFile(CommandParser commandParser, byte[] buffer, int offset, int count)
+    private void DoSendFile(Command command, byte[] buffer, int offset, int count)
     {
+        OperateSendArgs sendArgs = new();
+        OperateCallbackArgs callbackArgs;
         try
         {
-            if (!commandParser.GetValueAsString(ProtocolKey.StartTime, out var startTime) ||
-                !commandParser.GetValueAsInt(ProtocolKey.PacketLength, out var packetLength))
-                throw new IocpException(ProtocolCode.ParameterError);
+            sendArgs = command.GetValueAsSendArgs();
+            var continueArgs = new DownloadContinueArgs().ParseSs(sendArgs.Data);
             if (AutoFile.IsExpired)
-                throw new IocpException(ProtocolCode.FileExpired, startTime);
+                throw new IocpException(ProtocolCode.FileExpired, continueArgs.StartTime);
             if (AutoFile.Position >= AutoFile.Length)
             {
                 // TODO: log success
                 AutoFile.DisposeFileStream();
-                HandleDownloaded(startTime);
+                HandleDownloaded(continueArgs.StartTime);
                 return;
             }
-            buffer = new byte[packetLength];
+            buffer = new byte[continueArgs.PacketLength];
             if (!AutoFile.Read(buffer, 0, buffer.Length, out count)) 
-                throw new IocpException(ProtocolCode.FileExpired, startTime);
+                throw new IocpException(ProtocolCode.FileExpired, continueArgs.StartTime);
             HandleDownloading(AutoFile.Length, AutoFile.Position);
-            var commandComposer = new CommandComposer()
-                .AppendCommand(CommandTypes.Download)
-                .AppendValue(ProtocolKey.FileLength, AutoFile.Length)
-                .AppendValue(ProtocolKey.StartTime, startTime)
-                .AppendValue(ProtocolKey.PacketLength, packetLength)
-                .AppendValue(ProtocolKey.Position, AutoFile.Position);
-            CommandSucceed(commandComposer, buffer, 0, count);
+            var confirmArgs = new DownloadConfirmArgs(AutoFile.Length, continueArgs.PacketLength, 0, continueArgs.StartTime);
+            callbackArgs = new(sendArgs.TimeStamp, confirmArgs.ToSs(), ProtocolCode.Success);
         }
         catch (Exception ex)
         {
             CommandFail(ex);
+            var errorCode = ex switch
+            {
+                IocpException iocp => iocp.ErrorCode,
+                _ => ProtocolCode.UnknowError,
+            };
+            callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
         }
+        command = new Command(CommandTypes.Download)
+            .AppendValue(ProtocolKey.CallbackArgs, callbackArgs);
+        WriteCommand(command);
+        SendAsync();
     }
 
     protected override string GetLog(string log)

@@ -15,14 +15,7 @@ partial class SerializeTool
 
     public static T ParseSs<T>(this T obj, string str) where T : ISsSerializable
     {
-        try
-        {
-            return ParseToObject(obj, Encoding.UTF8.GetBytes(str));
-        }
-        catch
-        {
-            return obj;
-        }
+        return ParseToObject(obj, Encoding.UTF8.GetBytes(str));
     }
 
     public static ICollection<T> ParseSsString<T>(this string str, string arrayName) where T : ISsSerializable, new()

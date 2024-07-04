@@ -8,36 +8,28 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public class DownloadContinueArgs(long fileLength, long packetLength, long filePosition, string startTime) : ISsSerializable
+public class DownloadContinueArgs(string startTime, long packetLength) : ISsSerializable
 {
-    public long FileLength { get; private set; } = fileLength;
+    public string StartTime { get; private set; } = startTime;
 
     public long PacketLength { get; private set; } = packetLength;
 
-    public long FilePosition { get; private set; } = filePosition;
+    public string LocalName => throw new NotImplementedException();
 
-    public string StartTime { get; private set; } = startTime;
-
-    public string LocalName => nameof(DownloadContinueArgs);
-
-    public DownloadContinueArgs(): this(0, 0, 0, "")
+    public DownloadContinueArgs() : this("", 0)
     {
 
     }
 
     public void Serialize(SsSerializer serializer)
     {
-        serializer.WriteTag(nameof(FileLength), FileLength.ToString());
-        serializer.WriteTag(nameof(PacketLength), PacketLength.ToString());
-        serializer.WriteTag(nameof(FilePosition), FilePosition.ToString());
         serializer.WriteTag(nameof(StartTime), StartTime);
+        serializer.WriteTag(nameof(PacketLength), PacketLength.ToString());
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        FileLength = deserializer.ReadTag(nameof(FileLength), s => s.ToLong());
-        PacketLength = deserializer.ReadTag(nameof(PacketLength), s=>s.ToInt());
-        FilePosition = deserializer.ReadTag(nameof(FilePosition), s => s.ToLong());
         StartTime = deserializer.ReadTag(nameof(StartTime));
+        PacketLength = deserializer.ReadTag(nameof(PacketLength), s => s.ToLong());
     }
 }

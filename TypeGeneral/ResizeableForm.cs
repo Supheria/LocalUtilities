@@ -3,15 +3,11 @@ using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.TypeGeneral;
 
-public delegate void FormOnSaveing(SsSerializer serializer);
-
-public delegate void FormOnLoading(SsDeserializer deserializer);
-
 public abstract class ResizeableForm : Form, ISsSerializable
 {
-    protected event FormOnSaveing? OnSaveForm;
+    protected event SerializeHandler? OnSaveForm;
 
-    protected event FormOnLoading? OnLoadForm;
+    protected event DeserializeHandler? OnLoadForm;
 
     protected event OnComponentRunning? OnDrawClient;
 

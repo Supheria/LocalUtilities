@@ -4,7 +4,11 @@ namespace LocalUtilities.TypeGeneral;
 
 public abstract class SerializableTagValues<TKey, TValue> : ISsSerializable where TKey : notnull
 {
-    public Dictionary<TKey, TValue> Map { get; set; } = [];
+    public Dictionary<TKey, TValue> Map { get; private set; } = [];
+
+    protected event SerializeHandler? OnSerialize;
+
+    protected event DeserializeHandler? OnDeserialize;
 
     public abstract string LocalName { get; }
 
@@ -19,10 +23,12 @@ public abstract class SerializableTagValues<TKey, TValue> : ISsSerializable wher
     public void Serialize(SsSerializer serializer)
     {
         serializer.WriteTagValuesArray("", Map, WriteTag, WriteValue);
+        OnSerialize?.Invoke(serializer);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
         Map = deserializer.ReadTagValuesArray("", ReadTag, ReadValue).ToDictionary();
+        OnDeserialize?.Invoke(deserializer);
     }
 }

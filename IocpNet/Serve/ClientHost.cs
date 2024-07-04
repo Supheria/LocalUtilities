@@ -117,9 +117,7 @@ public class ClientHost : Host
     {
         try
         {
-            //var requestArgs = Download.DownLoad(dirName, Path.GetFileName(filePath), true);
-            //var sendArgs = new CommandSendArgs(Common.OperateTypes.DownloadRequest, ProtocolTypes.Download, requestArgs.ToSs());
-            //Operate(sendArgs);
+            Download.DownLoad(dirName, filePath, true);
         }
         catch (Exception ex)
         {

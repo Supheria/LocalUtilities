@@ -71,7 +71,7 @@ public sealed class OperateSendArgs : ISsSerializable
             .Append(StringTable.Retry)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(Data)
+            .Append(Type)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(RetryTimes)
@@ -90,7 +90,7 @@ public sealed class OperateSendArgs : ISsSerializable
             .Append(StringTable.Failed)
             .Append(SignTable.Space)
             .Append(SignTable.CloseBracket)
-            .Append(Data)
+            .Append(Type)
             .ToString();
         OnLog?.Invoke(message);
     }
