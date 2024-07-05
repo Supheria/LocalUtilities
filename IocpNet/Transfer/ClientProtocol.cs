@@ -216,9 +216,9 @@ public class ClientProtocol : Protocol
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
                 throw new IocpException(ProtocolCode.ProcessingFile);
             HandleDownloadStart();
-            var requestArgs = new DownloadRequestArgs(dirName, fileName, canRename);
-            var sendArgs = new OperateSendArgs(OperateTypes.DownloadRequest, requestArgs.ToSs());
-            SendCommand(CommandTypes.Download, sendArgs);
+            var downloadArgs = new DownloadArgs(DateTime.Now, dirName, fileName, canRename);
+            var sendArgs = new OperateSendArgs(OperateTypes.DownloadRequest, downloadArgs.ToSs());
+            SendCommandInWaiting(CommandTypes.Download, sendArgs);
         }
         catch (Exception ex)
         {
@@ -232,29 +232,45 @@ public class ClientProtocol : Protocol
         {
             if (!ReceiveCallback(command, out var callbackArgs))
                 return;
-            var confirmArgs = new DownloadConfirmArgs().ParseSs(callbackArgs.Data);
+            var downloadArgs = new DownloadArgs().ParseSs(callbackArgs.Data);
             if (AutoFile.IsExpired)
-                throw new IocpException(ProtocolCode.FileExpired, confirmArgs.StartTime);
+                RelocateDownloadFile(downloadArgs);
             AutoFile.Write(buffer, offset, count);
             // simple validation
-            if (AutoFile.Position != confirmArgs.FilePosition)
+            if (AutoFile.Position != downloadArgs.FilePosition)
                 throw new IocpException(ProtocolCode.NotSameVersion);
-            if (AutoFile.Length >= confirmArgs.FileLength)
+            var sendArgd = new OperateSendArgs(OperateTypes.DownloadContinue, downloadArgs.ToSs());
+            if (AutoFile.Length >= downloadArgs.FileLength)
             {
-                // TODO: log success
                 AutoFile.DisposeFileStream();
-                HandleDownloaded(confirmArgs.StartTime);
+                HandleDownloaded(downloadArgs.StartTime);
+                SendCommand(CommandTypes.SendFile, sendArgd);
             }
             else
-                HandleDownloading(confirmArgs.FileLength, AutoFile.Position);
-            var continueArgs = new DownloadContinueArgs(confirmArgs.StartTime, confirmArgs.PacketLength);
-            SendCommand(CommandTypes.SendFile, new(OperateTypes.DownloadContinue, continueArgs.ToSs()));
+            {
+                HandleDownloading(downloadArgs.FileLength, AutoFile.Position);
+                SendCommandInWaiting(CommandTypes.SendFile, sendArgd);
+            }
         }
         catch (Exception ex)
         {
             HandleException(ex);
             // TODO: log fail
         }
+    }
+
+    private void RelocateDownloadFile(DownloadArgs args)
+    {
+        var filePath = GetFileRepoPath(args.DirName, args.FileName);
+        if (File.Exists(filePath))
+        {
+            if (!args.CanRename)
+                throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
+            filePath = filePath.RenamePathByDateTime();
+        }
+        var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+        if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+            throw new IocpException(ProtocolCode.ProcessingFile);
     }
 
     protected override string GetLog(string log)

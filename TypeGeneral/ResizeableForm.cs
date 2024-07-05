@@ -129,8 +129,8 @@ public abstract class ResizeableForm : Form, ISsSerializable
         Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint());
         WindowState = deserializer.ReadTag(nameof(WindowState), s => s.ToEnum<FormWindowState>());
         Padding = deserializer.ReadTag(nameof(Padding), int.Parse);
-        LabelFontData = deserializer.ReadObject<FontData>();
-        ContentFontData = deserializer.ReadObject<FontData>();
+        deserializer.ReadObject(LabelFontData);
+        deserializer.ReadObject(ContentFontData);
         OnLoadForm?.Invoke(deserializer);
     }
 }

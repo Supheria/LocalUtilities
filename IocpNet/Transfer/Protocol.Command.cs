@@ -29,12 +29,25 @@ partial class Protocol
 
     protected abstract void ProcessCommand(Command command, byte[] buffer, int offset, int count);
 
-    public void SendCommand(CommandTypes type, OperateSendArgs sendArgs)
+    public void SendCommand(CommandTypes type, OperateArgs args)
     {
-        SendCommand(type, sendArgs, [], 0, 0);
+        SendCommand(type, args, [], 0, 0);
     }
 
-    public void SendCommand(CommandTypes type, OperateSendArgs sendArgs, byte[] buffer, int offset, int count)
+    public void SendCommand(CommandTypes type, OperateArgs args, byte[] buffer, int offset, int count)
+    {
+        var commandComposer = new Command(type)
+                .AppendOperateArgs(args);
+        WriteCommand(commandComposer, buffer, offset, count);
+        SendAsync();
+    }
+
+    public void SendCommandInWaiting(CommandTypes type, OperateSendArgs sendArgs)
+    {
+        SendCommandInWaiting(type, sendArgs, [], 0, 0);
+    }
+
+    public void SendCommandInWaiting(CommandTypes type, OperateSendArgs sendArgs, byte[] buffer, int offset, int count)
     {
         try
         {
@@ -51,7 +64,7 @@ partial class Protocol
         void operate()
         {
             var commandComposer = new Command(type)
-                .AppenSendArgs(sendArgs);
+                .AppendOperateArgs(sendArgs);
             WriteCommand(commandComposer, buffer, offset, count);
             SendAsync();
         }
@@ -93,7 +106,7 @@ partial class Protocol
         try
         {
             var command = new Command(CommandTypes.OperateCallback)
-                .AppendCallbackArgs(callbackArgs);
+                .AppendOperateArgs(callbackArgs);
             WriteCommand(command);
             SendAsync();
         }

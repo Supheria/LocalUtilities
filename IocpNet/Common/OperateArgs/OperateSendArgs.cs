@@ -8,7 +8,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class OperateSendArgs : ISsSerializable
+public sealed class OperateSendArgs : OperateArgs
 {
     public IocpEventHandler? OnRetry;
 
@@ -18,19 +18,15 @@ public sealed class OperateSendArgs : ISsSerializable
 
     public OperateTypes Type { get; private set; }
 
-    public string Data { get; private set; }
-
-    public string TimeStamp { get; private set; } = DateTime.Now.ToString(DateTimeFormat.Data);
-
     DaemonThread DaemonThread { get; }
 
     int RetryTimesMax { get; set; } = ConstTabel.OperateRetryTimes;
 
     int RetryTimes { get; set; } = 0;
 
-    public string LocalName => nameof(OperateSendArgs);
+    public override string LocalName => nameof(OperateSendArgs);
 
-    public OperateSendArgs(OperateTypes type, string data)
+    public OperateSendArgs(OperateTypes type, string data) : base(DateTime.Now.ToString(DateTimeFormat.Data), data)
     {
         Data = data;
         Type = type;
@@ -41,6 +37,20 @@ public sealed class OperateSendArgs : ISsSerializable
     public OperateSendArgs() : this(OperateTypes.None, "")
     {
 
+    }
+
+    public override void Serialize(SsSerializer serializer)
+    {
+        serializer.WriteTag(nameof(Type), Type.ToString());
+        serializer.WriteTag(nameof(TimeStamp), TimeStamp);
+        serializer.WriteTag(nameof(Data), Data);
+    }
+
+    public override void Deserialize(SsDeserializer deserializer)
+    {
+        Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
+        TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
+        Data = deserializer.ReadTag(nameof(Data));
     }
 
     private void Retry()
@@ -93,19 +103,5 @@ public sealed class OperateSendArgs : ISsSerializable
             .Append(Type)
             .ToString();
         OnLog?.Invoke(message);
-    }
-
-    public void Serialize(SsSerializer serializer)
-    {
-        serializer.WriteTag(nameof(Type), Type.ToString());
-        serializer.WriteTag(nameof(TimeStamp), TimeStamp);
-        serializer.WriteTag(nameof(Data), Data);
-    }
-
-    public void Deserialize(SsDeserializer deserializer)
-    {
-        Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
-        TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
-        Data = deserializer.ReadTag(nameof(Data));
     }
 }

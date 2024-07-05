@@ -67,26 +67,21 @@ public class Command : SerializableTagValues<ProtocolKey, string>
         return this;
     }
 
-    public Command AppenSendArgs(OperateSendArgs sendArgs)
+    public Command AppendOperateArgs(OperateArgs args)
     {
-        Map[ProtocolKey.SendArgs] = sendArgs.ToSs();
-        return this;
-    }
 
-    public Command AppendCallbackArgs(OperateCallbackArgs callbackArgs)
-    {
-        Map[ProtocolKey.CallbackArgs] = callbackArgs.ToSs();
+        Map[ProtocolKey.OperateArgs] = args.ToSs();
         return this;
     }
 
     public OperateCallbackArgs GetValueAsCallbackArgs()
     {
-        return new OperateCallbackArgs().ParseSs(Map[ProtocolKey.CallbackArgs]);
+        return new OperateCallbackArgs().ParseSs(Map[ProtocolKey.OperateArgs]);
     }
 
     public OperateSendArgs GetValueAsSendArgs()
     {
-        return new OperateSendArgs().ParseSs(Map[ProtocolKey.SendArgs]);
+        return new OperateSendArgs().ParseSs(Map[ProtocolKey.OperateArgs]);
     }
 
     // HACK

@@ -3,17 +3,13 @@ using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolCode callbackCode, string errorMessage = "") : ISsSerializable
+public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolCode callbackCode, string errorMessage = "") : OperateArgs(timeStamp, data)
 {
-    public string TimeStamp { get; private set; } = timeStamp;
-
-    public string Data { get; private set; } = data;
-
     public ProtocolCode CallbackCode { get; private set; } = callbackCode;
 
     public string ErrorMessage { get; private set; } = errorMessage;
 
-    public string LocalName => nameof(OperateCallbackArgs);
+    public override string LocalName => nameof(OperateCallbackArgs);
 
     public OperateCallbackArgs() : this("", "", ProtocolCode.None)
     {
@@ -25,7 +21,7 @@ public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolC
 
     }
 
-    public void Serialize(SsSerializer serializer)
+    public override void Serialize(SsSerializer serializer)
     {
         serializer.WriteTag(nameof(TimeStamp), TimeStamp);
         serializer.WriteTag(nameof(Data), Data);
@@ -33,7 +29,7 @@ public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolC
         serializer.WriteTag(nameof(ErrorMessage), ErrorMessage);
     }
 
-    public void Deserialize(SsDeserializer deserializer)
+    public override void Deserialize(SsDeserializer deserializer)
     {
         TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
         Data = deserializer.ReadTag(nameof(Data));

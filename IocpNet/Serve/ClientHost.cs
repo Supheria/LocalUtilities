@@ -129,6 +129,6 @@ public class ClientHost : Host
     public void SendMessage(string message)
     {
         var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
-        Operator.SendCommand(CommandTypes.Operate, sendArgs);
+        Operator.SendCommandInWaiting(CommandTypes.Operate, sendArgs);
     }
 }

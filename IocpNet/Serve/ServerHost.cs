@@ -93,7 +93,7 @@ public class ServerHost : Host
         {
             var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
             var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommand(CommandTypes.Operate, sendArgs);
+            protocol.SendCommandInWaiting(CommandTypes.Operate, sendArgs);
         }
         catch (Exception ex)
         {

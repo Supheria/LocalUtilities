@@ -199,17 +199,18 @@ public class ServerProtocol : Protocol
         try
         {
             sendArgs = command.GetValueAsSendArgs();
-            var requestArgs = new DownloadRequestArgs().ParseSs(sendArgs.Data);
-            var filePath = GetFileRepoPath(requestArgs.DirName, requestArgs.FileName);
+            var downloadArgs = new DownloadArgs().ParseSs(sendArgs.Data);
+            var filePath = GetFileRepoPath(downloadArgs.DirName, downloadArgs.FileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
                 throw new IocpException(ProtocolCode.ProcessingFile);
-            var packetLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
             HandleDownloadStart();
-            var confirmArgs = new DownloadConfirmArgs(fileStream.Length, packetLength, 0, requestArgs.StartTime);
-            callbackArgs = new(sendArgs.TimeStamp, confirmArgs.ToSs(), ProtocolCode.Success);
+            downloadArgs.FileLength = AutoFile.Length;
+            downloadArgs.PacketLength = fileStream.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : fileStream.Length;
+            callbackArgs = new(sendArgs.TimeStamp, downloadArgs.ToSs(), ProtocolCode.Success);
+            SendCommand(CommandTypes.Download, callbackArgs);
         }
         catch (Exception ex)
         {
@@ -220,11 +221,8 @@ public class ServerProtocol : Protocol
                 _ => ProtocolCode.UnknowError,
             };
             callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
+            SendCommand(CommandTypes.Download, callbackArgs);
         }
-        command = new Command(CommandTypes.Download)
-            .AppendCallbackArgs(callbackArgs);
-        WriteCommand(command);
-        SendAsync();
     }
 
     private void DoSendFile(Command command, byte[] buffer, int offset, int count)
@@ -234,38 +232,35 @@ public class ServerProtocol : Protocol
         try
         {
             sendArgs = command.GetValueAsSendArgs();
-            var continueArgs = new DownloadContinueArgs().ParseSs(sendArgs.Data);
-            if (AutoFile.IsExpired)
-                throw new IocpException(ProtocolCode.FileExpired, continueArgs.StartTime);
+            var downloadArgs = new DownloadArgs().ParseSs(sendArgs.Data);
+            if (!AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, downloadArgs.FileName);
             if (AutoFile.Position >= AutoFile.Length)
             {
-                // TODO: log success
                 AutoFile.DisposeFileStream();
-                HandleDownloaded(continueArgs.StartTime);
+                HandleDownloaded(downloadArgs.StartTime);
                 return;
             }
-            buffer = new byte[continueArgs.PacketLength];
+            buffer = new byte[downloadArgs.PacketLength];
             var str = Encoding.UTF8.GetString(buffer);
             if (!AutoFile.Read(buffer, 0, buffer.Length, out count)) 
-                throw new IocpException(ProtocolCode.FileExpired, continueArgs.StartTime);
+                throw new IocpException(ProtocolCode.FileExpired, downloadArgs.FileName);
             HandleDownloading(AutoFile.Length, AutoFile.Position);
-            var confirmArgs = new DownloadConfirmArgs(AutoFile.Length, continueArgs.PacketLength, AutoFile.Position, continueArgs.StartTime);
-            callbackArgs = new(sendArgs.TimeStamp, confirmArgs.ToSs(), ProtocolCode.Success);
+            downloadArgs.FilePosition = AutoFile.Position;
+            callbackArgs = new(sendArgs.TimeStamp, downloadArgs.ToSs(), ProtocolCode.Success);
+            SendCommand(CommandTypes.Download, callbackArgs, buffer, 0, count);
         }
         catch (Exception ex)
         {
-            CommandFail(ex);
+            HandleException(ex);
             var errorCode = ex switch
             {
                 IocpException iocp => iocp.ErrorCode,
                 _ => ProtocolCode.UnknowError,
             };
             callbackArgs = new(sendArgs.TimeStamp, errorCode, ex.Message);
+            SendCommand(CommandTypes.Download, callbackArgs);
         }
-        command = new Command(CommandTypes.Download)
-            .AppendCallbackArgs(callbackArgs);
-        WriteCommand(command, buffer, 0, count);
-        SendAsync();
     }
 
     protected override string GetLog(string log)
