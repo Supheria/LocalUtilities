@@ -33,12 +33,12 @@ public static class SsFormatter
                 case SignTable.Less:
                 case SignTable.OpenBrace:
                 case SignTable.CloseBrace:
+                case SignTable.Return:
+                case SignTable.NewLine:
+                case SignTable.Empty:
                     useQuote = true;
                     sb.Append(ch);
                     continue;
-                case SignTable.Return:
-                case SignTable.NewLine:
-                    throw SsFormatException.ElementInMultiLines(str);
                 default:
                     sb.Append(ch);
                     continue;

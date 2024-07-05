@@ -10,22 +10,27 @@ internal class Token
 
     public int Column { get; }
 
+    bool QuotedOrEscaped { get; } = false;
+
     public Token()
     {
         Text = "";
         Submitted = true;
     }
 
-    public Token(string text, int line, int column)
+    public Token(string text, int line, int column, bool quotedOrEscaped)
     {
         Text = text;
         Line = line;
         Column = column;
+        QuotedOrEscaped = quotedOrEscaped;
     }
 
     public char Head()
     {
-        return Text.FirstOrDefault();
+        if (Text.Length is not 1 || QuotedOrEscaped)
+            return '\0';
+        return Text[0];
     }
 
     public Word Submit()

@@ -126,7 +126,7 @@ internal class ParseTree
                     case SignTable.OpenBrace:
                         token.Submit();
                         if (Operator.Text[0] != SignTable.Equal)
-                            throw SsParseExceptions.UnexpectedOperator(new(Operator.Text, Operator.Line, Operator.Column), Step.ToString());
+                            throw SsParseExceptions.UnexpectedOperator(Operator, Step.ToString());
                         Step = Steps.OperatorOn;
                         return this;
                     default:
@@ -140,7 +140,7 @@ internal class ParseTree
                     case SignTable.OpenBrace:
                         token.Submit();
                         if (Operator.Text[0] != SignTable.Equal)
-                            throw SsParseExceptions.UnexpectedOperator(new(Operator.Text, Operator.Line, Operator.Column), Step.ToString());
+                            throw SsParseExceptions.UnexpectedOperator(Operator, Step.ToString());
                         Step = Steps.OperatorOn;
                         return this;
                     default:

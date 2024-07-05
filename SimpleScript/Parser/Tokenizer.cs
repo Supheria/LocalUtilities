@@ -82,17 +82,13 @@ internal class Tokenizer
                         GetU8Char();
                         return false;
                     case SignTable.Quote:
+                    //case SignTable.Return:
+                    //case SignTable.NewLine:
+                    //case SignTable.Empty:
                         //Composing.Append(GetChar());
-                        Composed = new(Composing.ToString(), Line, Column);
+                        Composed = new(Composing.ToString(), Line, Column, true);
                         State = States.None;
                         GetU8Char();
-                        return true;
-                    case SignTable.Return:
-                    case SignTable.NewLine:
-                    case SignTable.Empty:
-                        Composing.Append(SignTable.Quote);
-                        Composed = new(Composing.ToString(), Line, Column);
-                        State = States.None;
                         return true;
                 }
                 Composing.Append(GetU8Char());
@@ -103,7 +99,7 @@ internal class Tokenizer
                     case SignTable.Return:
                     case SignTable.NewLine:
                     case SignTable.Empty:
-                        Composed = new(Composing.ToString(), Line, Column);
+                        Composed = new(Composing.ToString(), Line, Column, true);
                         State = States.None;
                         return true;
                     default:
@@ -126,7 +122,7 @@ internal class Tokenizer
                     case SignTable.CloseBrace:
                     case SignTable.Quote:
                     case SignTable.Empty:
-                        Composed = new(Composing.ToString(), Line, Column);
+                        Composed = new(Composing.ToString(), Line, Column, false);
                         State = States.None;
                         return true;
                     default:
@@ -164,7 +160,7 @@ internal class Tokenizer
                     case SignTable.Less:
                     case SignTable.OpenBrace:
                     case SignTable.CloseBrace:
-                        Composed = new(GetU8Char().ToString(), Line, Column);
+                        Composed = new(GetU8Char().ToString(), Line, Column, false);
                         return true;
                     case SignTable.Tab:
                     case SignTable.Space:

@@ -9,6 +9,11 @@ internal class SsParseExceptions(string message) : Exception(message)
         return new($"step on {step}: unexpected operator {token}");
     }
 
+    internal static SsParseExceptions UnexpectedOperator(Word word, string step)
+    {
+        return new($"step on {step}: unexpected operator {word}");
+    }
+
     internal static SsParseExceptions UnexpectedDelimiter(Token token, string step)
     {
         return new($"step on {step}: unexpected delimiter {token}");
