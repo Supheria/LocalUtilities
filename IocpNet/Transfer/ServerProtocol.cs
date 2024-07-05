@@ -233,7 +233,7 @@ public class ServerProtocol : Protocol
         {
             sendArgs = command.GetValueAsSendArgs();
             var downloadArgs = new DownloadArgs().ParseSs(sendArgs.Data);
-            if (!AutoFile.IsExpired)
+            if (AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.FileExpired, downloadArgs.FileName);
             if (AutoFile.Position >= AutoFile.Length)
             {

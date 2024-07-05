@@ -13,7 +13,7 @@ public class ConstTabel
 
     public const int HeartBeatsInterval = 10 * 1000;
 
-    public const int FileStreamExpireMilliseconds = 30 * 1000;
+    public const int FileStreamExpireMilliseconds = 5 * 1000;
 
     public const int OperateRetryInterval = 3 * 1000;
 
