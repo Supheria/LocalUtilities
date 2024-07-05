@@ -16,8 +16,6 @@ public sealed class OperateSendArgs : OperateArgs
 
     public LogHandler? OnLog;
 
-    public OperateTypes Type { get; private set; }
-
     DaemonThread DaemonThread { get; }
 
     int RetryTimesMax { get; set; } = ConstTabel.OperateRetryTimes;
@@ -26,33 +24,20 @@ public sealed class OperateSendArgs : OperateArgs
 
     public override string LocalName => nameof(OperateSendArgs);
 
-    private OperateSendArgs(string timeStamp, OperateTypes type, string args) : base(timeStamp, args)
+    private OperateSendArgs(OperateTypes type, string timeStamp,string args) : base(type, timeStamp, args)
     {
-        Type = type;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
-        OnSerialize += OperateSendArgs_OnSerialize;
-        OnDeserialize += OperateSendArgs_OnDeserialize;
         DaemonThread.Start();
     }
 
-    public OperateSendArgs(OperateTypes type, string args) : this(DateTime.Now.ToString(DateTimeFormat.Data), type, args)
+    public OperateSendArgs(OperateTypes type, string args) : this(type, DateTime.Now.ToString(DateTimeFormat.Data), args)
     {
 
     }
 
-    public OperateSendArgs() : this("", OperateTypes.None, "")
+    public OperateSendArgs() : this(OperateTypes.None, "", "")
     {
 
-    }
-
-    private void OperateSendArgs_OnSerialize(SsSerializer serializer)
-    {
-        serializer.WriteTag(nameof(Type), Type.ToString());
-    }
-
-    private void OperateSendArgs_OnDeserialize(SsDeserializer deserializer)
-    {
-        Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
     }
 
     private void Retry()
@@ -109,8 +94,8 @@ public sealed class OperateSendArgs : OperateArgs
             .Append(StringTable.Retry)
             .Append(SignTable.Space)
             .Append(StringTable.Failed)
-            .Append(SignTable.Space)
             .Append(SignTable.CloseBracket)
+            .Append(SignTable.Space)
             .Append(Type)
             .ToString();
         OnLog?.Invoke(message);

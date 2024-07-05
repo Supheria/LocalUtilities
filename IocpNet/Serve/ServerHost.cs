@@ -56,7 +56,7 @@ public class ServerHost : Host
         {
             HandleLog(sendArgs.Args);
             var protocol = Protocols[ProtocolTypes.Operator];
-            var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
+            var callbackArgs = new OperateCallbackArgs(sendArgs.Type, sendArgs.TimeStamp, ProtocolCode.Success);
             protocol.OperateCallback(callbackArgs);
         }
         catch (Exception ex)

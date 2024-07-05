@@ -11,7 +11,7 @@ public sealed class OperateCallbackArgs : OperateArgs
 
     public override string LocalName => nameof(OperateCallbackArgs);
 
-    public OperateCallbackArgs(string timeStamp, string args, ProtocolCode callbackCode, string errorMessage = "") : base(timeStamp, args)
+    public OperateCallbackArgs(OperateTypes type, string timeStamp, string args, ProtocolCode callbackCode, string errorMessage = "") : base(type, timeStamp, args)
     {
         CallbackCode = callbackCode;
         ErrorMessage = errorMessage;
@@ -19,12 +19,12 @@ public sealed class OperateCallbackArgs : OperateArgs
         OnDeserialize += OperateCallbackArgs_OnDeserialize;
     }
 
-    public OperateCallbackArgs() : this("", "", ProtocolCode.None)
+    public OperateCallbackArgs(OperateTypes type, string timeStamp, ProtocolCode callbackCode, string errorMessage = "") : this(type, timeStamp, "", callbackCode, errorMessage)
     {
 
     }
 
-    public OperateCallbackArgs(string timeStamp, ProtocolCode callbackCode, string errorMessage = "") : this(timeStamp, "", callbackCode, errorMessage)
+    public OperateCallbackArgs() : this(OperateTypes.None, "", "", ProtocolCode.None)
     {
 
     }

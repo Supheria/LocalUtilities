@@ -6,6 +6,7 @@ public enum OperateTypes
     Message,
     UserList,
     UploadRequest,
+    UploadContinue,
     DownloadRequest,
     DownloadContinue,
 }

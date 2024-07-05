@@ -72,9 +72,9 @@ partial class Protocol
         OnProcessing?.Invoke(message);
     }
 
-    protected void HandleUploaded(string startTime)
+    protected void HandleUploaded(DateTime startTime)
     {
-        var span = DateTime.Now - startTime.ToDateTime(DateTimeFormat.Data);
+        var span = DateTime.Now - startTime;
         var message = new StringBuilder()
             .Append("upload file success")
             .Append(SignTable.OpenParenthesis)

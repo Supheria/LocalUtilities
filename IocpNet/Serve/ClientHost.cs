@@ -58,7 +58,7 @@ public class ClientHost : Host
     private void ReceiveMessage(OperateSendArgs sendArgs)
     {
         HandleLog(sendArgs.Args);
-        var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
+        var callbackArgs = new OperateCallbackArgs(sendArgs.Type, sendArgs.TimeStamp, ProtocolCode.Success);
         Operator.OperateCallback(callbackArgs);
     }
 

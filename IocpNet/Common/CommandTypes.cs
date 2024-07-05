@@ -17,4 +17,5 @@ public enum CommandTypes
     HeartBeats,
     WriteFile,
     SendFile,
+    TransferFile
 }

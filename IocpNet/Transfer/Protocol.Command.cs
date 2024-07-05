@@ -78,7 +78,7 @@ partial class Protocol
         sendArgs.Waste();
         if (callbackArgs.CallbackCode is ProtocolCode.Success)
             return true;
-        HandleErrorCode(sendArgs.Type, callbackArgs);
+        HandleErrorCode(callbackArgs);
         return false;
     }
 
@@ -98,7 +98,7 @@ partial class Protocol
                 IocpException iocp => iocp.ErrorCode,
                 _ => ProtocolCode.UnknowError,
             };
-            var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, errorCode, ex.Message);
+            var callbackArgs = new OperateCallbackArgs(sendArgs.Type, sendArgs.TimeStamp, errorCode, ex.Message);
             OperateCallback(callbackArgs);
         }
     }
@@ -152,14 +152,14 @@ partial class Protocol
         SendBuffer.EndPacket();
     }
 
-    protected void HandleErrorCode(OperateTypes type, OperateCallbackArgs callbackArgs)
+    protected void HandleErrorCode(OperateCallbackArgs callbackArgs)
     {
         var log = new StringBuilder()
             .Append(SignTable.OpenBracket)
             .Append(callbackArgs.CallbackCode)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(type)
+            .Append(callbackArgs.Type)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(callbackArgs.ErrorMessage)
