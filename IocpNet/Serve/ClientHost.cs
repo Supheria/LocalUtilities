@@ -119,7 +119,7 @@ public class ClientHost : Host
         try
         {
             var fileName = Path.GetFileName(filePath)
-;            Download.DownLoad(dirName, fileName, true);
+;            Download.DownLoad(dirName, fileName);
         }
         catch (Exception ex)
         {

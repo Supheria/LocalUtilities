@@ -148,7 +148,7 @@ public class ClientProtocol : Protocol
             if (!AutoFile.Relocate(fileStream))
                 throw new IocpException(ProtocolCode.ProcessingFile);
             HandleUploadStart();
-            var fileArgs = new FileProcessArgs(dirName, fileName, canRename)
+            var fileArgs = new FileProcessArgs(dirName, fileName)
             {
                 PacketLength = AutoFile.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : AutoFile.Length
             };
@@ -161,13 +161,23 @@ public class ClientProtocol : Protocol
         }
     }
 
-    public void DownLoad(string dirName, string fileName, bool canRename)
+    public void DownLoad(string dirName, string fileName)
     {
         try
         {
             if (!AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.ProcessingFile);
-            var fileArgs = new FileProcessArgs(dirName, fileName, canRename);
+            var filePath = GetFileRepoPath(dirName, fileName);
+            if (File.Exists(filePath))
+            {
+                // TODO: send md5 valiedate
+                filePath = filePath.RenamePathByDateTime();
+            }
+            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+            if (!AutoFile.Relocate(fileStream))
+                throw new IocpException(ProtocolCode.ProcessingFile);
+            HandleDownloadStart();
+            var fileArgs = new FileProcessArgs(dirName, fileName);
             var sendArgs = new OperateSendArgs(OperateTypes.DownloadRequest, fileArgs.ToSs());
             SendCommandInWaiting(CommandTypes.TransferFile, sendArgs);
         }
@@ -225,10 +235,7 @@ public class ClientProtocol : Protocol
     private void DoDownload(FileProcessArgs args, byte[] buffer, int offset, int count)
     {
         if (AutoFile.IsExpired)
-        {
-            RelocateDownloadFile(args);
-            HandleDownloadStart();
-        }
+            throw new IocpException(ProtocolCode.FileExpired, args.FileName);
         AutoFile.Write(buffer, offset, count);
         // simple validation
         if (AutoFile.Position != args.FilePosition)
@@ -246,20 +253,6 @@ public class ClientProtocol : Protocol
             HandleDownloading(args.FileLength, AutoFile.Position);
             SendCommandInWaiting(CommandTypes.TransferFile, sendArgd);
         }
-    }
-
-    private void RelocateDownloadFile(FileProcessArgs args)
-    {
-        var filePath = GetFileRepoPath(args.DirName, args.FileName);
-        if (File.Exists(filePath))
-        {
-            if (!args.CanRename)
-                throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
-            filePath = filePath.RenamePathByDateTime();
-        }
-        var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-        if (!AutoFile.Relocate(fileStream))
-            throw new IocpException(ProtocolCode.ProcessingFile);
     }
 
     protected override string GetLog(string log)

@@ -9,15 +9,13 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public class FileProcessArgs(string dirName, string fileName, bool canRename) : ISsSerializable
+public class FileProcessArgs(string dirName, string fileName) : ISsSerializable
 {
     public DateTime StartTime { get; private set; } = DateTime.Now;
 
     public string DirName { get; private set; } = dirName;
 
     public string FileName { get; private set; } = fileName;
-
-    public bool CanRename { get; private set; } = canRename;
 
     public long FileLength { get; set; } = 0;
 
@@ -27,7 +25,7 @@ public class FileProcessArgs(string dirName, string fileName, bool canRename) : 
 
     public string LocalName => nameof(FileProcessArgs);
 
-    public FileProcessArgs() : this("", "", false)
+    public FileProcessArgs() : this("", "")
     {
 
     }
@@ -37,7 +35,6 @@ public class FileProcessArgs(string dirName, string fileName, bool canRename) : 
         serializer.WriteTag(nameof(StartTime), StartTime.ToString(DateTimeFormat.Data));
         serializer.WriteTag(nameof(DirName), DirName);
         serializer.WriteTag(nameof(FileName), FileName);
-        serializer.WriteTag(nameof(CanRename), CanRename.ToString());
         serializer.WriteTag(nameof(FileLength), FileLength.ToString());
         serializer.WriteTag(nameof(PacketLength), PacketLength.ToString());
         serializer.WriteTag(nameof(FilePosition), FilePosition.ToString());
@@ -48,7 +45,6 @@ public class FileProcessArgs(string dirName, string fileName, bool canRename) : 
         StartTime = deserializer.ReadTag(nameof(StartTime), s => s.ToDateTime(DateTimeFormat.Data));
         DirName = deserializer.ReadTag(nameof(DirName));
         FileName = deserializer.ReadTag(nameof(FileName));
-        CanRename = deserializer.ReadTag(nameof(CanRename), s => s.ToBool());
         FileLength = deserializer.ReadTag(nameof(FileLength), s => s.ToLong());
         PacketLength = deserializer.ReadTag(nameof(PacketLength), s=>s.ToInt());
         FilePosition = deserializer.ReadTag(nameof(FilePosition), s => s.ToLong());
