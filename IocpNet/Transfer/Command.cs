@@ -74,12 +74,12 @@ public class Command : SerializableTagValues<ProtocolKey, string>
         return this;
     }
 
-    public OperateCallbackArgs GetValueAsCallbackArgs()
+    public OperateCallbackArgs GetOperateCallbackArgs()
     {
         return new OperateCallbackArgs().ParseSs(Map[ProtocolKey.OperateArgs]);
     }
 
-    public OperateSendArgs GetValueAsSendArgs()
+    public OperateSendArgs GetOperateSendArgs()
     {
         return new OperateSendArgs().ParseSs(Map[ProtocolKey.OperateArgs]);
     }

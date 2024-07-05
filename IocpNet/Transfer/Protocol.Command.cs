@@ -72,12 +72,14 @@ partial class Protocol
 
     protected bool ReceiveCallback(Command command, out OperateCallbackArgs callbackArgs)
     {
-        callbackArgs = command.GetValueAsCallbackArgs();
+        callbackArgs = command.GetOperateCallbackArgs();
         if (!CommandWaitList.TryGetValue(callbackArgs.TimeStamp, out var sendArgs))
             return false;
         sendArgs.Waste();
-        HandleCallbackCode(sendArgs.Type, callbackArgs.CallbackCode, callbackArgs.ErrorMessage);
-        return callbackArgs.CallbackCode is ProtocolCode.Success;
+        if (callbackArgs.CallbackCode is ProtocolCode.Success)
+            return true;
+        HandleErrorCode(sendArgs.Type, callbackArgs);
+        return false;
     }
 
     private void Operate(Command command, byte[] buffer, int offset, int count)
@@ -85,7 +87,7 @@ partial class Protocol
         var sendArgs = new OperateSendArgs();
         try
         {
-            sendArgs = command.GetValueAsSendArgs();
+            sendArgs = command.GetOperateSendArgs();
             OnOperate?.Invoke(sendArgs);
         }
         catch (Exception ex)
@@ -150,17 +152,17 @@ partial class Protocol
         SendBuffer.EndPacket();
     }
 
-    protected void HandleCallbackCode(OperateTypes type, ProtocolCode code, string? errorMessage)
+    protected void HandleErrorCode(OperateTypes type, OperateCallbackArgs callbackArgs)
     {
         var log = new StringBuilder()
             .Append(SignTable.OpenBracket)
-            .Append(code)
+            .Append(callbackArgs.CallbackCode)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
             .Append(type)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
-            .Append(errorMessage)
+            .Append(callbackArgs.ErrorMessage)
             .ToString();
         HandleLog(log);
     }

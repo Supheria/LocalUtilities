@@ -27,10 +27,13 @@ public class AutoDisposeFileStream
         DaemonThread = new(ConstTabel.FileStreamExpireMilliseconds, DisposeFileStream);
     }
 
-    public bool Relocate(FileStream fileStream, int expireMilliseconds)
+    public bool Relocate(FileStream fileStream)
     {
         if (!IsExpired)
+        {
+            fileStream.Dispose();
             return false;
+        }
         FileStream = fileStream;
         DaemonThread.Start();
         return true;

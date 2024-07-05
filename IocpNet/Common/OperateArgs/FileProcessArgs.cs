@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public class DownloadArgs(DateTime startTime, string dirName, string fileName, bool canRename) : ISsSerializable
+public class FileProcessArgs(string dirName, string fileName, bool canRename) : ISsSerializable
 {
-    public DateTime StartTime { get; private set; } = startTime;
+    public DateTime StartTime { get; private set; } = DateTime.Now;
 
     public string DirName { get; private set; } = dirName;
 
@@ -25,9 +25,9 @@ public class DownloadArgs(DateTime startTime, string dirName, string fileName, b
 
     public long FilePosition { get; set; } = 0;
 
-    public string LocalName => nameof(DownloadArgs);
+    public string LocalName => nameof(FileProcessArgs);
 
-    public DownloadArgs(): this(new(), "", "", false)
+    public FileProcessArgs() : this("", "", false)
     {
 
     }

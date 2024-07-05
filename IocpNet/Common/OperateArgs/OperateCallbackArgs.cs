@@ -3,13 +3,21 @@ using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolCode callbackCode, string errorMessage = "") : OperateArgs(timeStamp, data)
+public sealed class OperateCallbackArgs : OperateArgs
 {
-    public ProtocolCode CallbackCode { get; private set; } = callbackCode;
+    public ProtocolCode CallbackCode { get; private set; }
 
-    public string ErrorMessage { get; private set; } = errorMessage;
+    public string ErrorMessage { get; private set; }
 
     public override string LocalName => nameof(OperateCallbackArgs);
+
+    public OperateCallbackArgs(string timeStamp, string args, ProtocolCode callbackCode, string errorMessage = "") : base(timeStamp, args)
+    {
+        CallbackCode = callbackCode;
+        ErrorMessage = errorMessage;
+        OnSerialize += OperateCallbackArgs_OnSerialize;
+        OnDeserialize += OperateCallbackArgs_OnDeserialize;
+    }
 
     public OperateCallbackArgs() : this("", "", ProtocolCode.None)
     {
@@ -21,18 +29,14 @@ public sealed class OperateCallbackArgs(string timeStamp, string data, ProtocolC
 
     }
 
-    public override void Serialize(SsSerializer serializer)
+    private void OperateCallbackArgs_OnSerialize(SsSerializer serializer)
     {
-        serializer.WriteTag(nameof(TimeStamp), TimeStamp);
-        serializer.WriteTag(nameof(Data), Data);
         serializer.WriteTag(nameof(CallbackCode), CallbackCode.ToString());
         serializer.WriteTag(nameof(ErrorMessage), ErrorMessage);
     }
 
-    public override void Deserialize(SsDeserializer deserializer)
+    private void OperateCallbackArgs_OnDeserialize(SsDeserializer deserializer)
     {
-        TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
-        Data = deserializer.ReadTag(nameof(Data));
         CallbackCode = deserializer.ReadTag(nameof(CallbackCode), s => s.ToEnum<ProtocolCode>());
         ErrorMessage = deserializer.ReadTag(nameof(ErrorMessage));
     }

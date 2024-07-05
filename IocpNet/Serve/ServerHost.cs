@@ -54,7 +54,7 @@ public class ServerHost : Host
     {
         try
         {
-            HandleLog(sendArgs.Data);
+            HandleLog(sendArgs.Args);
             var protocol = Protocols[ProtocolTypes.Operator];
             var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
             protocol.OperateCallback(callbackArgs);

@@ -57,7 +57,7 @@ public class ClientHost : Host
 
     private void ReceiveMessage(OperateSendArgs sendArgs)
     {
-        HandleLog(sendArgs.Data);
+        HandleLog(sendArgs.Args);
         var callbackArgs = new OperateCallbackArgs(sendArgs.TimeStamp, ProtocolCode.Success);
         Operator.OperateCallback(callbackArgs);
     }
@@ -100,17 +100,18 @@ public class ClientHost : Host
 
     public void UploadFile(string dirName, string filePath)
     {
-        var fileName = Path.GetFileName(filePath);
-        var localPath = Upload.GetFileRepoPath(dirName, fileName);
-        if (!File.Exists(localPath))
+        try
         {
-            try
-            {
+            var fileName = Path.GetFileName(filePath);
+            var localPath = Upload.GetFileRepoPath(dirName, fileName);
+            if (!File.Exists(localPath))
                 File.Copy(filePath, localPath);
-            }
-            catch { }
+            Upload.Upload(dirName, fileName, true);
         }
-        Upload.Upload(dirName, fileName, true);
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     public void DownloadFile(string dirName, string filePath)

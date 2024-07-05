@@ -26,31 +26,33 @@ public sealed class OperateSendArgs : OperateArgs
 
     public override string LocalName => nameof(OperateSendArgs);
 
-    public OperateSendArgs(OperateTypes type, string data) : base(DateTime.Now.ToString(DateTimeFormat.Data), data)
+    private OperateSendArgs(string timeStamp, OperateTypes type, string args) : base(timeStamp, args)
     {
-        Data = data;
         Type = type;
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
+        OnSerialize += OperateSendArgs_OnSerialize;
+        OnDeserialize += OperateSendArgs_OnDeserialize;
         DaemonThread.Start();
     }
 
-    public OperateSendArgs() : this(OperateTypes.None, "")
+    public OperateSendArgs(OperateTypes type, string args) : this(DateTime.Now.ToString(DateTimeFormat.Data), type, args)
     {
 
     }
 
-    public override void Serialize(SsSerializer serializer)
+    public OperateSendArgs() : this("", OperateTypes.None, "")
+    {
+
+    }
+
+    private void OperateSendArgs_OnSerialize(SsSerializer serializer)
     {
         serializer.WriteTag(nameof(Type), Type.ToString());
-        serializer.WriteTag(nameof(TimeStamp), TimeStamp);
-        serializer.WriteTag(nameof(Data), Data);
     }
 
-    public override void Deserialize(SsDeserializer deserializer)
+    private void OperateSendArgs_OnDeserialize(SsDeserializer deserializer)
     {
         Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
-        TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
-        Data = deserializer.ReadTag(nameof(Data));
     }
 
     private void Retry()
