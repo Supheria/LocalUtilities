@@ -55,17 +55,26 @@ public sealed class OperateSendArgs : OperateArgs
 
     private void Retry()
     {
-        if (--RetryTimesMax < 0)
+        try
         {
+            if (--RetryTimesMax < 0)
+            {
+                Waste();
+                HandleOperateRetryFailed();
+                return;
+            }
+            RetryTimes++;
+            DaemonThread.Stop();
+            OnRetry?.Invoke();
+            HandleOperateRetry();
+            DaemonThread.Start();
+        }
+        catch (Exception ex)
+        {
+            OnLog?.Invoke(ex.Message);
             Waste();
             HandleOperateRetryFailed();
-            return;
         }
-        RetryTimes++;
-        DaemonThread.Stop();
-        OnRetry?.Invoke();
-        HandleOperateRetry();
-        DaemonThread.Start();
     }
 
     public void Waste()

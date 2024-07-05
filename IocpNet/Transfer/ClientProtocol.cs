@@ -205,17 +205,8 @@ public class ClientProtocol : Protocol
     {
         try
         {
-            var filePath = GetFileRepoPath(dirName, fileName);
-            if (File.Exists(filePath))
-            {
-                if (!canRename)
-                    throw new IocpException(ProtocolCode.FileAlreadyExist, filePath);
-                filePath = filePath.RenamePathByDateTime();
-            }
-            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            if (!AutoFile.Relocate(fileStream, ConstTabel.FileStreamExpireMilliseconds))
+            if (!AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.ProcessingFile);
-            HandleDownloadStart();
             var downloadArgs = new DownloadArgs(DateTime.Now, dirName, fileName, canRename);
             var sendArgs = new OperateSendArgs(OperateTypes.DownloadRequest, downloadArgs.ToSs());
             SendCommandInWaiting(CommandTypes.Download, sendArgs);
@@ -234,22 +225,26 @@ public class ClientProtocol : Protocol
                 return;
             var downloadArgs = new DownloadArgs().ParseSs(callbackArgs.Data);
             if (AutoFile.IsExpired)
+            {
                 RelocateDownloadFile(downloadArgs);
+                HandleDownloadStart();
+            }
             AutoFile.Write(buffer, offset, count);
             // simple validation
             if (AutoFile.Position != downloadArgs.FilePosition)
                 throw new IocpException(ProtocolCode.NotSameVersion);
+            downloadArgs.FilePosition = AutoFile.Position;
             var sendArgd = new OperateSendArgs(OperateTypes.DownloadContinue, downloadArgs.ToSs());
             if (AutoFile.Length >= downloadArgs.FileLength)
             {
                 AutoFile.DisposeFileStream();
                 HandleDownloaded(downloadArgs.StartTime);
-                SendCommand(CommandTypes.SendFile, sendArgd);
+                SendCommand(CommandTypes.Download, sendArgd);
             }
             else
             {
                 HandleDownloading(downloadArgs.FileLength, AutoFile.Position);
-                SendCommandInWaiting(CommandTypes.SendFile, sendArgd);
+                SendCommandInWaiting(CommandTypes.Download, sendArgd);
             }
         }
         catch (Exception ex)
