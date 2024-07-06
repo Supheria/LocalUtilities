@@ -24,7 +24,7 @@ public class AutoDisposeFileStream
 
     public AutoDisposeFileStream()
     {
-        DaemonThread = new(ConstTabel.FileStreamExpireMilliseconds, DisposeFileStream);
+        DaemonThread = new(ConstTabel.FileStreamExpireMilliseconds, Dispose);
     }
 
     public bool Relocate(FileStream fileStream)
@@ -39,14 +39,14 @@ public class AutoDisposeFileStream
         return true;
     }
 
-    public void DisposeFileStream()
+    public void Dispose()
     {
         FileStream?.Dispose();
         FileStream = null;
         DaemonThread.Stop();
     }
 
-    public bool Read(byte[] buffer, int offset, int count, out int readCount)
+    public bool Read(byte[] buffer, out int readCount)
     {
         readCount = 0;
         if (FileStream is null)
@@ -54,7 +54,7 @@ public class AutoDisposeFileStream
         DaemonThread.Stop();
         try
         {
-            readCount = FileStream.Read(buffer, offset, count);
+            readCount = FileStream.Read(buffer);
         }
         finally
         {
@@ -63,14 +63,14 @@ public class AutoDisposeFileStream
         return true;
     }
 
-    public bool Write(byte[] buffer, int offset, int count)
+    public bool Write(byte[] buffer)
     {
         if (FileStream is null)
             return false;
         DaemonThread.Stop();
         try
         {
-            FileStream.Write(buffer, offset, count);
+            FileStream.Write(buffer);
         }
         finally
         {

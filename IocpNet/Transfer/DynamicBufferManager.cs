@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
@@ -53,11 +54,6 @@ public class DynamicBufferManager(int bufferSize)
         }
     }
 
-    public void WriteData(byte[] data)
-    {
-        WriteData(data, 0, data.Length);
-    }
-
     public void WriteData(byte[] data, int offset, int count)
     {
         lock (Buffer)
@@ -76,56 +72,37 @@ public class DynamicBufferManager(int bufferSize)
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="value"></param>
-    /// <param name="hostToNetworkOrder">NET是小头结构，网络字节是大头结构，需要客户端和服务器约定好</param>
-    public void WriteValue(short value, bool hostToNetworkOrder)
-    {
-        if (hostToNetworkOrder)
-            value = System.Net.IPAddress.HostToNetworkOrder(value);
-        var data = BitConverter.GetBytes(value);
-        WriteData(data);
-    }
+    //public void WriteValue(byte value)
+    //{
+    //    WriteData([value]);
+    //}
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="value"></param>
-    /// <param name="hostToNetworkOrder">NET是小头结构，网络字节是大头结构，需要客户端和服务器约定好</param>
-    public void WriteValue(int value, bool hostToNetworkOrder)
-    {
-        if (hostToNetworkOrder)
-        {
-            value = System.Net.IPAddress.HostToNetworkOrder(value);
-        }
-        var data = BitConverter.GetBytes(value);
-        WriteData(data);
-    }
+    //public void WriteValue(byte[] value, int offset, int count)
+    //{
+    //    WriteData(value, offset, count);
+    //}
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="value"></param>
-    /// <param name="hostToNetworkOrder">NET是小头结构，网络字节是大头结构，需要客户端和服务器约定好</param>
-    public void WriteValue(long value, bool hostToNetworkOrder)
-    {
-        if (hostToNetworkOrder)
-        {
-            value = System.Net.IPAddress.HostToNetworkOrder(value);
-        }
-        var data = BitConverter.GetBytes(value);
-        WriteData(data);
-    }
+    //public void WriteValue(short value)
+    //{
+    //    var data = BitConverter.GetBytes(value);
+    //    WriteData(data);
+    //}
 
-    /// <summary>
-    /// 文本全部转成UTF8，UTF8兼容性好
-    /// </summary>
-    /// <param name="value"></param>
-    public void WriteValue(string value)
-    {
-        var data = Encoding.UTF8.GetBytes(value);
-        WriteData(data);
-    }
+    //public void WriteValue(int value)
+    //{
+    //    var data = BitConverter.GetBytes(value);
+    //    WriteData(data);
+    //}
+
+    //public void WriteValue(long value)
+    //{
+    //    var data = BitConverter.GetBytes(value);
+    //    WriteData(data);
+    //}
+
+    //public void WriteValue(string value)
+    //{
+    //    var data = Encoding.UTF8.GetBytes(value);
+    //    WriteData(data);
+    //}
 }

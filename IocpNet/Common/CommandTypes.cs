@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common;
 
-public enum CommandTypes
+public enum CommandTypes : byte
 {
     None,
     Login,

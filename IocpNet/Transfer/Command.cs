@@ -11,101 +11,81 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
-public class Command : SerializableTagValues<ProtocolKey, string>
+public class Command
 {
-    public CommandTypes Type { get; private set; }
+    public int PacketLength { get; }
 
-    public override string LocalName => nameof(Command);
+    public CommandTypes Type { get; }
+    
+    byte[] Args { get; }
 
-    protected override Func<ProtocolKey, string> WriteTag => x => x.ToString();
+    public byte[] Data { get; }
 
-    protected override Func<string, List<string>> WriteValue => x => [x];
-
-    protected override Func<string, ProtocolKey> ReadTag => s => s.ToEnum<ProtocolKey>();
-
-    protected override Func<List<string>, string> ReadValue => s => s[0];
-
-    public Command(CommandTypes type)
+    public Command(CommandTypes type, OperateArgs? args, byte[] data, int dataOffset, int dataCount)
     {
         Type = type;
-        OnSerialize += Command_OnSerialize;
-        OnDeserialize += Command_OnDeserialize;
+        var str = args?.ToSsString();
+        Args = args?.ToSsBuffer() ?? [];
+        Data = new byte[dataCount];
+        Array.Copy(data, dataOffset, Data, 0, dataCount);
+        PacketLength
+            = sizeof(int) // total length
+            + sizeof(int) // args length
+            + sizeof(byte) // type
+            + Args.Length
+            + dataCount;
     }
 
-    public Command() : this(CommandTypes.None)
+    public Command(CommandTypes type, OperateArgs? args) : this(type, args, [], 0, 0)
     {
 
     }
 
-    private void Command_OnSerialize(SsSerializer serializer)
+    public Command(byte[] packet)
     {
-        serializer.WriteTag(nameof(Type), Type.ToString());
+        var offset = 0;
+        PacketLength = BitConverter.ToInt32(packet, offset);
+        offset += sizeof(int);
+        var argsLength = BitConverter.ToInt32(packet, offset);
+        offset += sizeof(int);
+        Type = (CommandTypes)packet[offset++];
+        Args = new byte[argsLength];
+        Array.Copy(packet, offset, Args, 0, argsLength);
+        offset += argsLength;
+        Data = new byte[PacketLength - offset];
+        Array.Copy(packet, offset, Data, 0, Data.Length);
     }
 
-    private void Command_OnDeserialize(SsDeserializer deserializer)
+    public byte[] GetPacket()
     {
-        Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<CommandTypes>());
+        var buffer = new byte[PacketLength];
+        var offset = 0;
+        Array.Copy(BitConverter.GetBytes(PacketLength), 0, buffer, 0, sizeof(int));
+        offset += sizeof(int);
+        Array.Copy(BitConverter.GetBytes(Args.Length), 0, buffer, offset, sizeof(int));
+        offset += sizeof(int);
+        buffer[offset++] = (byte)Type;
+        Array.Copy(Args, 0, buffer, offset, Args.Length);
+        offset += Args.Length;
+        Array.Copy(Data, 0, buffer, offset, Data.Length);
+        return buffer;
     }
 
-
-    public Command AppendSuccess()
+    public static bool FullPacket(byte[] packet)
     {
-        Map[ProtocolKey.CallbackCode] = ProtocolCode.Success.ToString();
-        return this;
-    }
-
-    public Command AppendFailure(ProtocolCode errorCode, string errorMessage)
-    {
-        Map[ProtocolKey.CallbackCode] = errorCode.ToString();
-        Map[ProtocolKey.ErrorMessage] = errorMessage;
-        return this;
-    }
-
-    public Command AppendValue(ProtocolKey commandKey, object? value)
-    {
-        Map[commandKey] = value?.ToString() ?? "";
-        return this;
-    }
-
-    public Command AppendOperateArgs(OperateArgs args)
-    {
-
-        Map[ProtocolKey.OperateArgs] = args.ToSs();
-        return this;
-    }
-
-    public OperateCallbackArgs GetOperateCallbackArgs()
-    {
-        return new OperateCallbackArgs().ParseSs(Map[ProtocolKey.OperateArgs]);
+        if (packet.Length < sizeof(int))
+            return false;
+        var packetLength = BitConverter.ToInt32(packet, 0);
+        return packet.Length == packetLength;
     }
 
     public OperateSendArgs GetOperateSendArgs()
     {
-        return new OperateSendArgs().ParseSs(Map[ProtocolKey.OperateArgs]);
+        return new OperateSendArgs().ParseSs(Args, 0, Args.Length);
     }
 
-    // HACK
-    public bool GetValueAsString(ProtocolKey key, out string value)
+    public OperateCallbackArgs GetOperateCallbackArgs()
     {
-        value = Map[key].ToString();
-        return true;
-    }
-
-    // HACK
-    public bool GetValueAsInt(ProtocolKey key, out int value)
-    {
-        return int.TryParse(Map[key].ToString(), out value);
-    }
-
-    // HACK
-    public bool GetValueAsLong(ProtocolKey key, out long value)
-    {
-        return long.TryParse(Map[key].ToString(), out value);
-    }
-
-    // HACK
-    public bool GetValueAsBool(ProtocolKey key, out bool value)
-    {
-        return bool.TryParse(Map[key].ToString(), out value);
+        return new OperateCallbackArgs().ParseSs(Args, 0, Args.Length);
     }
 }

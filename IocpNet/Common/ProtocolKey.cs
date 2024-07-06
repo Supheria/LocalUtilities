@@ -70,5 +70,8 @@ public enum ProtocolKey
     TimeStamp,
     OperateCallback,
     OperateArgs,
+    FileTransferArgs,
+    Md5Value,
+    SameVersion,
 }
 

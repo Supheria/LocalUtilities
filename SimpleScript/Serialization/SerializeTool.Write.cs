@@ -7,14 +7,13 @@ namespace LocalUtilities.SimpleScript.Serialization;
 
 partial class SerializeTool
 {
-    public static int ToSs<T>(this T obj, out byte[] buffer) where T : ISsSerializable
+    public static byte[] ToSsBuffer<T>(this T obj) where T : ISsSerializable
     {
         var str = FormatObject(obj, false);
-        buffer = Encoding.UTF8.GetBytes(str);
-        return buffer.Length;
+        return Encoding.UTF8.GetBytes(str);
     }
 
-    public static string ToSs<T>(this T obj) where T : ISsSerializable
+    public static string ToSsString<T>(this T obj) where T : ISsSerializable
     {
         return FormatObject(obj, false);
     }

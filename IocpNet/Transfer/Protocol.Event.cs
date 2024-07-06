@@ -1,4 +1,5 @@
-﻿using LocalUtilities.IocpNet.Common.OperateArgs;
+﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
@@ -20,9 +21,9 @@ partial class Protocol
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    public event IocpEventHandler<OperateSendArgs>? OnOperate;
+    public event IocpEventHandler<Command>? OnOperate;
 
-    public event IocpEventHandler<OperateCallbackArgs>? OnOperateCallback;
+    public event IocpEventHandler<Command>? OnOperateCallback;
 
     protected void HandleLog(string log)
     {
@@ -33,7 +34,19 @@ partial class Protocol
 
     protected void HandleException(Exception ex)
     {
-        HandleLog(ex.Message);
+        var errorCode = ex switch
+        {
+            IocpException iocp => iocp.ErrorCode,
+            _ => ProtocolCode.UnknowError,
+        };
+        var message = new StringBuilder()
+            .Append(SignTable.OpenBracket)
+            .Append(errorCode)
+            .Append(SignTable.CloseBracket)
+            .Append(SignTable.Space)
+            .Append(ex.Message)
+            .ToString();
+        HandleLog(message);
     }
 
     protected void HandleLogined()

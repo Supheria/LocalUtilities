@@ -1,4 +1,5 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using System;
@@ -9,33 +10,37 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public abstract class OperateArgs(OperateTypes type, string timeStamp,string args) : ISsSerializable
+public abstract class OperateArgs : SerializableTagValues<ProtocolKey, string>
 {
-    protected event SerializeHandler? OnSerialize;
+    public OperateTypes Type { get; private set; }
 
-    protected event DeserializeHandler? OnDeserialize;
+    public string TimeStamp { get; private set; }
 
-    public OperateTypes Type { get; private set; } = type;
+    protected override Func<ProtocolKey, string> WriteTag => x => x.ToString();
 
-    public string TimeStamp { get; private set; } = timeStamp;
+    protected override Func<string, List<string>> WriteValue => x => [x];
 
-    public string Args { get; private set; } = args;
+    protected override Func<string, ProtocolKey> ReadTag => s => s.ToEnum<ProtocolKey>();
 
-    public abstract string LocalName { get; }
+    protected override Func<List<string>, string> ReadValue => s => s[0];
 
-    public void Serialize(SsSerializer serializer)
+    public OperateArgs(OperateTypes type, string timeStamp)
+    {
+        Type = type;
+        TimeStamp = timeStamp;
+        OnSerialize += OperateArgs_OnSerialize;
+        OnDeserialize += OperateArgs_OnDeserialize;
+    }
+
+    private void OperateArgs_OnSerialize(SsSerializer serializer)
     {
         serializer.WriteTag(nameof(Type), Type.ToString());
         serializer.WriteTag(nameof(TimeStamp), TimeStamp);
-        serializer.WriteTag(nameof(Args), Args);
-        OnSerialize?.Invoke(serializer);
     }
 
-    public void Deserialize(SsDeserializer deserializer)
+    private void OperateArgs_OnDeserialize(SsDeserializer deserializer)
     {
         Type = deserializer.ReadTag(nameof(Type), s => s.ToEnum<OperateTypes>());
         TimeStamp = deserializer.ReadTag(nameof(TimeStamp));
-        Args = deserializer.ReadTag(nameof(Args));
-        OnDeserialize?.Invoke(deserializer);
     }
 }

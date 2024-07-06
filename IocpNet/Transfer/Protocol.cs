@@ -23,15 +23,14 @@ public abstract partial class Protocol : IDisposable
 
     public UserInfo? UserInfo { get; protected set; } = new();
 
-    public bool UseNetByteOrder { get; set; } = false;
-
     protected DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
     protected AsyncSendBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
     protected bool IsSendingAsync { get; set; } = false;
 
-    protected string RepoPath { get; set; } = "repo";
+    //protected string RepoPath { get; set; } = "repo";
+    protected abstract string RepoPath { get; set; }
 
     protected AutoDisposeFileStream AutoFile { get; } = new();
 
@@ -56,7 +55,7 @@ public abstract partial class Protocol : IDisposable
         SendBuffer.ClearAllPacket();
         IsSendingAsync = false;
         IsLogin = false;
-        AutoFile.DisposeFileStream();
+        AutoFile.Dispose();
         SocketInfo.Disconnect();
         DaemonThread?.Stop();
         GC.SuppressFinalize(this);
@@ -83,44 +82,33 @@ public abstract partial class Protocol : IDisposable
 
     private void ProcessReceive(SocketAsyncEventArgs receiveArgs)
     {
-        if (Socket is null ||
-            receiveArgs.Buffer is null ||
-            receiveArgs.BytesTransferred <= 0 ||
-            receiveArgs.SocketError is not SocketError.Success)
-            goto CLOSE;
-        SocketInfo.Active();
-        ReceiveBuffer.WriteData(receiveArgs.Buffer!, receiveArgs.Offset, receiveArgs.BytesTransferred);
-        // 按照长度分包
-        // 小于四个字节表示包头未完全接收，继续接收
-        while (ReceiveBuffer.DataCount > sizeof(int))
+        try
         {
-            var buffer = ReceiveBuffer.GetData();
-            var packetLength = BitConverter.ToInt32(buffer, 0);
-            if (UseNetByteOrder)
-                packetLength = IPAddress.NetworkToHostOrder(packetLength);
-            // 最大Buffer异常保护
-            // buffer = [totol legth] + [command length] + [command] + [data]
-            var offset = sizeof(int); // totol length
-            var commandLength = BitConverter.ToInt32(buffer, offset); //取出命令长度
-            offset += sizeof(int); // command length
-            var bytesMax = ConstTabel.DataBytesTransferredMax + commandLength + offset;
-            if (packetLength > bytesMax || ReceiveBuffer.DataCount > bytesMax)
-                goto CLOSE;
-            // 收到的数据没有达到包长度，继续接收
-            if (ReceiveBuffer.DataCount < packetLength)
-                goto RECEIVE;
-            var command = new Command().ParseSs(buffer, offset, commandLength);
-            offset += commandLength;
-            // 处理命令,offset + sizeof(int) + commandLen后面的为数据，数据的长度为count - sizeof(int) - sizeof(int) - length，注意是包的总长度－包长度所占的字节（sizeof(int)）－ 命令长度所占的字节（sizeof(int)） - 命令的长度
-            ProcessCommand(command, buffer, offset, packetLength - offset);
-            ReceiveBuffer.RemoveData(packetLength);
+            if (Socket is null ||
+                receiveArgs.Buffer is null ||
+                receiveArgs.BytesTransferred <= 0 ||
+                receiveArgs.SocketError is not SocketError.Success)
+                throw new IocpException(ProtocolCode.SocketClosed);
+            SocketInfo.Active();
+            ReceiveBuffer.WriteData(receiveArgs.Buffer!, receiveArgs.Offset, receiveArgs.BytesTransferred);
+            var packet = ReceiveBuffer.GetData();
+            while (Command.FullPacket(packet))
+            {
+                var command = new Command(packet);
+                if (command.Data.Length > ConstTabel.DataBytesTransferredMax)
+                    throw new IocpException(ProtocolCode.DataOutLimit);
+                ProcessCommand(command);
+                ReceiveBuffer.RemoveData(command.PacketLength);
+                packet = ReceiveBuffer.GetData();
+            }
+            ReceiveAsync();
+            return;
         }
-    RECEIVE:
-        ReceiveAsync();
-        return;
-    CLOSE:
-        Close();
-        return;
+        catch(Exception ex) 
+        {
+            HandleException(ex);
+            Close(); 
+        }
     }
 
     public void SendAsync()

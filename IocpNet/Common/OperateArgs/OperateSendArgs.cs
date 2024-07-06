@@ -24,18 +24,18 @@ public sealed class OperateSendArgs : OperateArgs
 
     public override string LocalName => nameof(OperateSendArgs);
 
-    private OperateSendArgs(OperateTypes type, string timeStamp,string args) : base(type, timeStamp, args)
+    private OperateSendArgs(OperateTypes type, string timeStamp) : base(type, timeStamp)
     {
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }
 
-    public OperateSendArgs(OperateTypes type, string args) : this(type, DateTime.Now.ToString(DateTimeFormat.Data), args)
+    public OperateSendArgs(OperateTypes type) : this(type, DateTime.Now.ToString(DateTimeFormat.Data))
     {
 
     }
 
-    public OperateSendArgs() : this(OperateTypes.None, "", "")
+    public OperateSendArgs() : this(OperateTypes.None, "")
     {
 
     }
@@ -99,5 +99,21 @@ public sealed class OperateSendArgs : OperateArgs
             .Append(Type)
             .ToString();
         OnLog?.Invoke(message);
+    }
+
+    public OperateSendArgs AppendArgs(ProtocolKey key, string args)
+    {
+        Map[key] = args;
+        return this;
+    }
+
+    public string GetArgs(ProtocolKey key)
+    {
+        return Map[key];
+    }
+
+    public T GetArgs<T>(ProtocolKey key) where T : ISsSerializable, new()
+    {
+        return new T().ParseSs(Map[key]);
     }
 }

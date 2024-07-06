@@ -34,4 +34,7 @@ public enum ProtocolCode
     HostHasStarted,
     HostNotStartYet,
     ArgumentNull,
+    SocketClosed,
+    DataOutLimit,
+    SameVersionAlreadyExist,
 }

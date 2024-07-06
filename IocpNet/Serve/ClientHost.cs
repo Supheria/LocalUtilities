@@ -34,35 +34,38 @@ public class ClientHost : Host
     public ClientHost()
     {
         HeartBeats.OnLog += HandleLog;
-        Operator.OnLog += HandleLog;
-        Upload.OnLog += HandleLog;
-        Download.OnLog += HandleLog;
         HeartBeats.OnLogined += () => OnConnected?.Invoke();
         HeartBeats.OnClosed += () => OnDisconnected?.Invoke();
+        Operator.OnLog += HandleLog;
         Operator.OnOperate += ReceiveOperate;
         Operator.OnOperateCallback += ReceiveOperateCallback;
+        Upload.OnLog += HandleLog;
         Upload.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
+        Download.OnLog += HandleLog;
         Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
     }
 
-    private void ReceiveOperate(OperateSendArgs sendArgs)
+    private void ReceiveOperate(Command command)
     {
+        var sendArgs = command.GetOperateSendArgs();
         switch (sendArgs.Type)
         {
             case OperateTypes.Message:
-                ReceiveMessage(sendArgs);
+                ReceiveMessage(sendArgs, command.Data);
                 break;
         }
     }
 
-    private void ReceiveMessage(OperateSendArgs sendArgs)
+    private void ReceiveMessage(OperateSendArgs sendArgs, byte[] data)
     {
-        HandleLog(sendArgs.Args);
-        var callbackArgs = new OperateCallbackArgs(sendArgs.Type, sendArgs.TimeStamp, ProtocolCode.Success);
-        Operator.OperateCallback(callbackArgs);
+        var message = Encoding.UTF8.GetString(data);
+        HandleLog(message);
+        var callbackArgs = new OperateCallbackArgs(sendArgs)
+            .AppendSuccess();
+        Operator.SendCommand(CommandTypes.OperateCallback, callbackArgs);
     }
 
-    private void ReceiveOperateCallback(OperateCallbackArgs args)
+    private void ReceiveOperateCallback(Command command)
     {
 
     }
@@ -129,7 +132,8 @@ public class ClientHost : Host
 
     public void SendMessage(string message)
     {
-        var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
-        Operator.SendCommandInWaiting(CommandTypes.Operate, sendArgs);
+        var sendArgs = new OperateSendArgs(OperateTypes.Message);
+        var data = Encoding.UTF8.GetBytes(message);
+        Operator.SendCommandInWaiting(CommandTypes.Operate, sendArgs, data, 0, data.Length);
     }
 }

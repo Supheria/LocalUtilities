@@ -1,43 +1,70 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
 public sealed class OperateCallbackArgs : OperateArgs
 {
-    public ProtocolCode CallbackCode { get; private set; }
-
-    public string ErrorMessage { get; private set; }
-
     public override string LocalName => nameof(OperateCallbackArgs);
 
-    public OperateCallbackArgs(OperateTypes type, string timeStamp, string args, ProtocolCode callbackCode, string errorMessage = "") : base(type, timeStamp, args)
-    {
-        CallbackCode = callbackCode;
-        ErrorMessage = errorMessage;
-        OnSerialize += OperateCallbackArgs_OnSerialize;
-        OnDeserialize += OperateCallbackArgs_OnDeserialize;
-    }
-
-    public OperateCallbackArgs(OperateTypes type, string timeStamp, ProtocolCode callbackCode, string errorMessage = "") : this(type, timeStamp, "", callbackCode, errorMessage)
+    private OperateCallbackArgs(OperateTypes type, string timeStamp) : base(type, timeStamp)
     {
 
     }
 
-    public OperateCallbackArgs() : this(OperateTypes.None, "", "", ProtocolCode.None)
+    public OperateCallbackArgs(OperateSendArgs sendArgs) : this(sendArgs.Type, sendArgs.TimeStamp)
     {
 
     }
 
-    private void OperateCallbackArgs_OnSerialize(SsSerializer serializer)
+    public OperateCallbackArgs() : this(OperateTypes.None, "")
     {
-        serializer.WriteTag(nameof(CallbackCode), CallbackCode.ToString());
-        serializer.WriteTag(nameof(ErrorMessage), ErrorMessage);
+
     }
 
-    private void OperateCallbackArgs_OnDeserialize(SsDeserializer deserializer)
+    public OperateCallbackArgs AppendSuccess()
     {
-        CallbackCode = deserializer.ReadTag(nameof(CallbackCode), s => s.ToEnum<ProtocolCode>());
-        ErrorMessage = deserializer.ReadTag(nameof(ErrorMessage));
+        Map[ProtocolKey.CallbackCode] = ProtocolCode.Success.ToString();
+        Map[ProtocolKey.ErrorMessage] = "";
+        return this;
+    }
+
+    public OperateCallbackArgs AppendFailure(Exception ex)
+    {
+        var errorCode = ex switch
+        {
+            IocpException iocp => iocp.ErrorCode,
+            _ => ProtocolCode.UnknowError,
+        };
+        Map[ProtocolKey.CallbackCode] = errorCode.ToString();
+        Map[ProtocolKey.ErrorMessage] = ex.Message;
+        return this;
+    }
+
+    public ProtocolCode GetCallbackCode()
+    {
+        return Map[ProtocolKey.CallbackCode].ToEnum<ProtocolCode>();
+    }
+
+    public string GetErrorMessage()
+    {
+        return Map[ProtocolKey.ErrorMessage];
+    }
+
+    public OperateCallbackArgs AppendArgs(ProtocolKey key, string args)
+    {
+        Map[key] = args;
+        return this;
+    }
+
+    public string GetArgs(ProtocolKey key)
+    {
+        return Map[key];
+    }
+
+    public T GetArgs<T>(ProtocolKey key) where T : ISsSerializable, new()
+    {
+        return new T().ParseSs(Map[key]);
     }
 }

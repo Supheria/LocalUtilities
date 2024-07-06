@@ -17,53 +17,45 @@ public class AsyncSendBufferManager(int bufferSize)
 
     List<SendBufferPacket> SendPacketList { get; } = [];
 
-    SendBufferPacket SendPacket { get; set; } = new();
-
-    object Locker { get; } = new();
-
-    public void StartPacket()
+    public void AppendPacket(byte[] packet)
     {
-        SendPacket = new()
+        var sendPacket = new SendBufferPacket()
         {
             Offset = DynamicBufferManager.DataCount,
-            Count = 0
         };
-    }
-
-    public void EndPacket()
-    {
-        SendPacket.Count = DynamicBufferManager.DataCount - SendPacket.Offset;
-        SendPacketList.Add(SendPacket);
+        DynamicBufferManager.WriteData(packet, 0, packet.Length);
+        sendPacket.Count = DynamicBufferManager.DataCount - sendPacket.Offset;
+        SendPacketList.Add(sendPacket);
     }
 
     public bool GetFirstPacket(out int offset, out int count)
     {
         // SendPacketList[0].Offset;清除了第一个包后，后续的包往前移，因此Offset都为0
-        offset = 0;
-        count = 0;
-        if (SendPacketList.Count <= 0)
-            return false;
-        count = SendPacketList[0].Count;
-        return true;
+        lock (SendPacketList)
+        {
+            offset = 0;
+            count = 0;
+            if (SendPacketList.Count <= 0)
+                return false;
+            count = SendPacketList[0].Count;
+            return true;
+        }
     }
 
     public void ClearFirstPacket()
     {
-        if (SendPacketList.Count <= 0)
-            return;
-        lock (Locker)
+        lock (SendPacketList)
         {
-            if (SendPacketList.Count is 0)
+            if (SendPacketList.Count <= 0)
                 return;
             DynamicBufferManager.RemoveData(SendPacketList[0].Count);
             SendPacketList.RemoveAt(0);
         }
-        return;
     }
 
     public void ClearAllPacket()
     {
-        lock (Locker)
+        lock (SendPacketList)
         {
             SendPacketList.Clear();
             DynamicBufferManager.RemoveData(DynamicBufferManager.DataCount);

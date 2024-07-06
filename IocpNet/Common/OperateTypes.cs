@@ -9,4 +9,5 @@ public enum OperateTypes
     UploadContinue,
     DownloadRequest,
     DownloadContinue,
+    Md5Validate,
 }

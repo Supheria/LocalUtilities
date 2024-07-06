@@ -34,30 +34,35 @@ public class ServerHost : Host
             protocol.OnOperate += ReceiveOperate;
             protocol.OnOperateCallback += ReceiveOperateCallback;
         }
+        else if (protocol.Type is ProtocolTypes.HeartBeats)
+            protocol.OnClosed += CloseAll;
         return true;
     CLOSE:
         protocol.Close();
         return false;
     }
 
-    private void ReceiveOperate(OperateSendArgs sendArgs)
+    private void ReceiveOperate(Command command)
     {
+        var sendArgs = command.GetOperateSendArgs();
         switch (sendArgs.Type)
         {
             case OperateTypes.Message:
-                ReceiveMessage(sendArgs);
+                ReceiveMessage(sendArgs, command.Data);
                 break;
         }
     }
 
-    private void ReceiveMessage(OperateSendArgs sendArgs)
+    private void ReceiveMessage(OperateSendArgs sendArgs, byte[] data)
     {
         try
         {
-            HandleLog(sendArgs.Args);
+            var message = Encoding.UTF8.GetString(data);
+            HandleLog(message);
             var protocol = Protocols[ProtocolTypes.Operator];
-            var callbackArgs = new OperateCallbackArgs(sendArgs.Type, sendArgs.TimeStamp, ProtocolCode.Success);
-            protocol.OperateCallback(callbackArgs);
+            var callbackArgs = new OperateCallbackArgs(sendArgs)
+                .AppendSuccess();
+            protocol.SendCommand(CommandTypes.OperateCallback, callbackArgs);
         }
         catch (Exception ex)
         {
@@ -65,7 +70,7 @@ public class ServerHost : Host
         }
     }
 
-    private void ReceiveOperateCallback(OperateCallbackArgs args)
+    private void ReceiveOperateCallback(Command command)
     {
 
     }
@@ -91,9 +96,10 @@ public class ServerHost : Host
     {
         try
         {
-            var sendArgs = new OperateSendArgs(OperateTypes.Message, message);
+            var sendArgs = new OperateSendArgs(OperateTypes.Message);
+            var data = Encoding.UTF8.GetBytes(message);
             var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommandInWaiting(CommandTypes.Operate, sendArgs);
+            protocol.SendCommandInWaiting(CommandTypes.Operate, sendArgs, data, 0, data.Length);
         }
         catch (Exception ex)
         {
