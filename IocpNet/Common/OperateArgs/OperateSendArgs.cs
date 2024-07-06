@@ -1,8 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.IocpNet.Transfer;
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 

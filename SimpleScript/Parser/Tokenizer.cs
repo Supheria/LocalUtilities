@@ -82,9 +82,9 @@ internal class Tokenizer
                         GetU8Char();
                         return false;
                     case SignTable.Quote:
-                    //case SignTable.Return:
-                    //case SignTable.NewLine:
-                    //case SignTable.Empty:
+                        //case SignTable.Return:
+                        //case SignTable.NewLine:
+                        //case SignTable.Empty:
                         //Composing.Append(GetChar());
                         Composed = new(Composing.ToString(), Line, Column, true);
                         State = States.None;

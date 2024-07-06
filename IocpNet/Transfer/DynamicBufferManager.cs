@@ -1,7 +1,4 @@
-﻿using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace LocalUtilities.IocpNet.Transfer;
+﻿namespace LocalUtilities.IocpNet.Transfer;
 
 public class DynamicBufferManager(int bufferSize)
 {

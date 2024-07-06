@@ -2,8 +2,6 @@
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
-using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -107,34 +105,15 @@ public class ServerHost : Host
         }
     }
 
-    //protected override void SendCommand(CommandSendArgs sendArgs)
-    //{
-    //    try
-    //    {
-    //        if (!Protocols.TryGetValue(sendArgs.ProtocolType, out var protocol))
-    //            throw IocpException.ArgumentNull(nameof(ProtocolTypes));
-    //        protocol.Operate(sendArgs);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        HandleException(ex);
-    //    }
-    //}
-
-    //protected override void HandleDownloadRequest(CommandReceiveArgs receiveArgs)
-    //{
-    //    try
-    //    {
-    //        if (!Protocols.TryGetValue(ProtocolTypes.Download, out var protocol))
-    //            throw IocpException.ArgumentNull(nameof(ProtocolTypes));
-    //        var requestArgs = new DownloadRequestArgs().ParseSsString(receiveArgs.Arg);
-    //        var continueArgs = protocol.StartDownloadContinue(requestArgs.DirName, requestArgs.FileName, requestArgs.StartTime);
-    //        var sendArgs = new CommandSendArgs(OperateTypes.DownloadContinue, ProtocolTypes.Download, continueArgs.ToSsString());
-    //        //Operate(sendArgs);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        HandleException(ex);
-    //    }
-    //}
+    public void UpdateUserList(List<string> userList)
+    {
+        try
+        {
+            var sendArgs = new OperateSendArgs(OperateTypes.UserList);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
 }

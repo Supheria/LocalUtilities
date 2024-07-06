@@ -1,13 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
@@ -16,7 +9,7 @@ public class Command
     public int PacketLength { get; }
 
     public CommandTypes Type { get; }
-    
+
     byte[] Args { get; }
 
     public byte[] Data { get; }

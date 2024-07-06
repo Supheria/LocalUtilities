@@ -2,10 +2,6 @@
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
-using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Text;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 
@@ -80,17 +76,6 @@ public class ClientHost : Host
         Download.Connect(Host, UserInfo);
     }
 
-    public void Disconnect()
-    {
-        Host = null;
-        UserInfo = null;
-        HeartBeats.Close();
-        Operator.Close();
-        Upload.Close();
-        Download.Close();
-        OnDisconnected?.Invoke();
-    }
-
     public void Close()
     {
         Host = null;
@@ -122,7 +107,7 @@ public class ClientHost : Host
         try
         {
             var fileName = Path.GetFileName(filePath)
-;            Download.DownLoad(dirName, fileName);
+; Download.DownLoad(dirName, fileName);
         }
         catch (Exception ex)
         {

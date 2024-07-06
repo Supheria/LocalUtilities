@@ -1,5 +1,4 @@
-﻿using LocalUtilities.IocpNet.Transfer;
-using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral.Convert;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;

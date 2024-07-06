@@ -2,10 +2,7 @@
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
-using System.IO;
-using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -237,7 +234,7 @@ public class ClientProtocol : Protocol
             return;
         }
         var data = new byte[fileArgs.PacketLength];
-        if (!AutoFile.Read(data, out var count)) 
+        if (!AutoFile.Read(data, out var count))
             throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
         HandleUploading(AutoFile.Length, AutoFile.Position);
         fileArgs.FileLength = AutoFile.Length;

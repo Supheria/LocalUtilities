@@ -1,11 +1,6 @@
 ﻿using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
@@ -50,7 +45,7 @@ public class FileTransferArgs(string dirName, string fileName, string md5Value) 
         FileName = deserializer.ReadTag(nameof(FileName));
         Md5Value = deserializer.ReadTag(nameof(Md5Value));
         FileLength = deserializer.ReadTag(nameof(FileLength), s => s.ToLong());
-        PacketLength = deserializer.ReadTag(nameof(PacketLength), s=>s.ToInt());
+        PacketLength = deserializer.ReadTag(nameof(PacketLength), s => s.ToInt());
         FilePosition = deserializer.ReadTag(nameof(FilePosition), s => s.ToLong());
     }
 }

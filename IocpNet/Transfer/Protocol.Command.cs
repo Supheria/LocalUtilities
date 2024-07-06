@@ -1,15 +1,8 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Common.OperateArgs;
-using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
@@ -38,7 +31,7 @@ partial class Protocol
             var command = new Command(type, args, buffer, offset, count);
             WriteCommand(command);
             SendAsync();
-        } 
+        }
         catch (Exception ex)
         {
             HandleException(ex);

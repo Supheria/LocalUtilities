@@ -1,6 +1,5 @@
 ﻿using LocalUtilities.FileHelper;
 using LocalUtilities.SimpleScript.Common;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serialization;

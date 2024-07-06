@@ -27,7 +27,7 @@ public class Server
         try
         {
             if (IsStart)
-                throw new IocpException(ProtocolCode.HostHasStarted);
+                throw new IocpException(ProtocolCode.ServerHasStarted);
             // 使用0.0.0.0作为绑定IP，则本机所有的IPv4地址都将绑定
             var localEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), port);
             Socket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -48,7 +48,7 @@ public class Server
         try
         {
             if (!IsStart)
-                throw new IocpException(ProtocolCode.HostNotStartYet);
+                throw new IocpException(ProtocolCode.ServerNotStartYet);
             foreach (var user in UserMap.Values)
                 user.CloseAll();
             Socket?.Close();

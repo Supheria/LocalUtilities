@@ -1,15 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Common.OperateArgs;
-using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
-using LocalUtilities.TypeToolKit.Text;
-using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
@@ -74,8 +64,9 @@ public abstract partial class Protocol : IDisposable
                     ProcessReceive(receiveArgs);
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
+            HandleException(ex);
             Close();
         }
     }
@@ -104,10 +95,10 @@ public abstract partial class Protocol : IDisposable
             ReceiveAsync();
             return;
         }
-        catch(Exception ex) 
+        catch (Exception ex)
         {
             HandleException(ex);
-            Close(); 
+            Close();
         }
     }
 
@@ -140,7 +131,7 @@ public abstract partial class Protocol : IDisposable
         SendAsync();
     }
 
-   
+
 
     public string GetFileRepoPath(string dirName, string fileName)
     {
