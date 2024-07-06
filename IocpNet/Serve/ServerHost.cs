@@ -2,6 +2,7 @@
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.TypeGeneral;
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -40,6 +41,23 @@ public class ServerHost : Host
         return false;
     }
 
+    public void Remove(ServerProtocol protocol)
+    {
+        if (Protocols.TryGetValue(protocol.Type, out var toCheck) && toCheck.TimeStamp == protocol.TimeStamp)
+            Protocols.TryRemove(protocol.Type, out _);
+        if (Protocols.Count is 0)
+            OnClearUp?.Invoke();
+    }
+
+    public void CloseAll()
+    {
+        foreach (var protocol in Protocols.Values)
+        {
+            lock (protocol)
+                protocol.Close();
+        }
+    }
+
     private void ReceiveOperate(Command command)
     {
         var sendArgs = command.GetOperateSendArgs();
@@ -73,31 +91,14 @@ public class ServerHost : Host
 
     }
 
-    public void Remove(ServerProtocol protocol)
-    {
-        if (Protocols.TryGetValue(protocol.Type, out var toCheck) && toCheck.TimeStamp == protocol.TimeStamp)
-            Protocols.TryRemove(protocol.Type, out _);
-        if (Protocols.Count is 0)
-            OnClearUp?.Invoke();
-    }
-
-    public void CloseAll()
-    {
-        foreach (var protocol in Protocols.Values)
-        {
-            lock (protocol)
-                protocol.Close();
-        }
-    }
-
     public void SendMessage(string message)
     {
         try
         {
-            var sendArgs = new OperateSendArgs(OperateTypes.Message);
-            var data = Encoding.UTF8.GetBytes(message);
+            var sendArgs = new OperateSendArgs(OperateTypes.Message)
+                .AppendArgs(ProtocolKey.Data, message);
             var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommandInWaiting(CommandTypes.Operate, sendArgs, data, 0, data.Length);
+            protocol.SendCommandInWaiting(CommandTypes.Operate, sendArgs);
         }
         catch (Exception ex)
         {
@@ -105,11 +106,14 @@ public class ServerHost : Host
         }
     }
 
-    public void UpdateUserList(List<string> userList)
+    public void UpdateUserList(string[] userList)
     {
         try
         {
-            var sendArgs = new OperateSendArgs(OperateTypes.UserList);
+            var sendArgs = new OperateSendArgs(OperateTypes.UserList)
+                .AppendArgs(ProtocolKey.Data, userList.ToArrayString());
+            var protocol = Protocols[ProtocolTypes.Operator];
+            protocol.SendCommand(CommandTypes.Operate, sendArgs);
         }
         catch (Exception ex)
         {

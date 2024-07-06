@@ -28,16 +28,21 @@ public class AsyncSendBufferManager(int bufferSize)
         SendPacketList.Add(sendPacket);
     }
 
-    public bool GetFirstPacket(out int offset, out int count)
+    public bool GetFirstPacket(out byte[] packet)
     {
         // SendPacketList[0].Offset;清除了第一个包后，后续的包往前移，因此Offset都为0
         lock (SendPacketList)
         {
-            offset = 0;
-            count = 0;
+            packet = [];
             if (SendPacketList.Count <= 0)
                 return false;
-            count = SendPacketList[0].Count;
+            var count = SendPacketList[0].Count;
+            //if (count < DynamicBufferManager.DataCount)
+            //    return false;
+            packet = new byte[count];
+            Array.Copy(DynamicBufferManager.GetData(), 0, packet, 0, count);
+            //DynamicBufferManager.RemoveData(SendPacketList[0].Count);
+            //SendPacketList.RemoveAt(0);
             return true;
         }
     }

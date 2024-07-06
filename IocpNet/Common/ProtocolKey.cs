@@ -9,5 +9,6 @@ public enum ProtocolKey
     FileTransferArgs,
     CallbackCode,
     ErrorMessage,
+    Data,
 }
 

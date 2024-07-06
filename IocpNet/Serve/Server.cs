@@ -101,6 +101,7 @@ public class Server
                     protocol.Close();
             }
             OnConnectionCountChange?.Invoke(UserMap.Sum(u => u.Value.Count));
+            BroadcastUserList();
         };
         protocol.OnClosed += () =>
         {
@@ -108,6 +109,7 @@ public class Server
                 return;
             user.Remove(protocol);
             OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
+            BroadcastUserList();
         };
         protocol.ProcessAccept(acceptArgs.AcceptSocket);
     ACCEPT:
@@ -140,5 +142,11 @@ public class Server
     {
         foreach (var user in UserMap.Values)
             user.SendMessage(message);
+    }
+
+    public void BroadcastUserList()
+    {
+        foreach (var user in UserMap.Values)
+            user.UpdateUserList(UserMap.Keys.ToArray());
     }
 }

@@ -19,14 +19,7 @@ partial class SerializeTool
 
     public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
     {
-        try
-        {
-            return FormatObjects(arrayName, items, false);
-        }
-        catch
-        {
-            return "";
-        }
+        return FormatObjects(arrayName, items, false);
     }
 
     public static void SaveToSimpleScript<T>(this T obj, bool writeIntoMultiLines) where T : ISsSerializable

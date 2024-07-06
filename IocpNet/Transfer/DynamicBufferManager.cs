@@ -23,9 +23,12 @@ public class DynamicBufferManager(int bufferSize)
 
     public byte[] GetData()
     {
-        var data = new byte[DataCount];
-        Array.Copy(Buffer, 0, data, 0, data.Length);
-        return data;
+        lock (Buffer)
+        {
+            var data = new byte[DataCount];
+            Array.Copy(Buffer, 0, data, 0, data.Length);
+            return data;
+        }
     }
 
     public void Clear()

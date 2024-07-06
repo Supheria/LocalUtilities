@@ -2,6 +2,7 @@
 using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.TypeGeneral;
 using System.Net;
 using System.Text;
 
@@ -14,6 +15,8 @@ public class ClientHost : Host
     public event IocpEventHandler? OnDisconnected;
 
     public event IocpEventHandler<string>? OnProcessing;
+
+    public event IocpEventHandler<string[]>? OnUpdateUserList;
 
     ClientProtocol HeartBeats { get; } = new(ProtocolTypes.HeartBeats);
 
@@ -41,31 +44,6 @@ public class ClientHost : Host
         Download.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
     }
 
-    private void ReceiveOperate(Command command)
-    {
-        var sendArgs = command.GetOperateSendArgs();
-        switch (sendArgs.Type)
-        {
-            case OperateTypes.Message:
-                ReceiveMessage(sendArgs, command.Data);
-                break;
-        }
-    }
-
-    private void ReceiveMessage(OperateSendArgs sendArgs, byte[] data)
-    {
-        var message = Encoding.UTF8.GetString(data);
-        HandleLog(message);
-        var callbackArgs = new OperateCallbackArgs(sendArgs)
-            .AppendSuccess();
-        Operator.SendCommand(CommandTypes.OperateCallback, callbackArgs);
-    }
-
-    private void ReceiveOperateCallback(Command command)
-    {
-
-    }
-
     public void Connect(string address, int port, string name, string password)
     {
         Host = new(IPAddress.Parse(address), port);
@@ -84,6 +62,61 @@ public class ClientHost : Host
         Operator.Dispose();
         Upload.Dispose();
         Download.Dispose();
+    }
+
+    private void ReceiveOperate(Command command)
+    {
+        var sendArgs = command.GetOperateSendArgs();
+        switch (sendArgs.Type)
+        {
+            case OperateTypes.Message:
+                ReceiveMessage(sendArgs);
+                break;
+            case OperateTypes.UserList:
+                UpdateUserList(sendArgs);
+                break;
+        }
+    }
+
+    private void ReceiveMessage(OperateSendArgs sendArgs)
+    {
+        try
+        {
+            var message = sendArgs.GetArgs(ProtocolKey.Data);
+            HandleLog(message);
+            var callbackArgs = new OperateCallbackArgs(sendArgs)
+                .AppendSuccess();
+            Operator.SendCommand(CommandTypes.OperateCallback, callbackArgs);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
+
+    private void UpdateUserList(OperateSendArgs sendArgs)
+    {
+        try
+        {
+            var userList = sendArgs.GetArgs(ProtocolKey.Data).ToArray();
+            OnUpdateUserList?.Invoke(userList);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
+
+    private void ReceiveOperateCallback(Command command)
+    {
+
+    }
+
+    public void SendMessage(string message)
+    {
+        var sendArgs = new OperateSendArgs(OperateTypes.Message);
+        var data = Encoding.UTF8.GetBytes(message);
+        Operator.SendCommandInWaiting(CommandTypes.Operate, sendArgs, data, 0, data.Length);
     }
 
     public void UploadFile(string dirName, string filePath)
@@ -113,12 +146,5 @@ public class ClientHost : Host
         {
             HandleException(ex);
         }
-    }
-
-    public void SendMessage(string message)
-    {
-        var sendArgs = new OperateSendArgs(OperateTypes.Message);
-        var data = Encoding.UTF8.GetBytes(message);
-        Operator.SendCommandInWaiting(CommandTypes.Operate, sendArgs, data, 0, data.Length);
     }
 }

@@ -104,11 +104,11 @@ public abstract partial class Protocol : IDisposable
 
     public void SendAsync()
     {
-        if (IsSendingAsync || Socket is null || !SendBuffer.GetFirstPacket(out var packetOffset, out var packetCount))
+        if (IsSendingAsync || Socket is null || !SendBuffer.GetFirstPacket(out var packet))
             return;
         IsSendingAsync = true;
         var sendArgs = new SocketAsyncEventArgs();
-        sendArgs.SetBuffer(SendBuffer.DynamicBufferManager.GetData(), packetOffset, packetCount);
+        sendArgs.SetBuffer(packet);
         sendArgs.Completed += (_, args) => ProcessSend(args);
         try
         {
@@ -127,7 +127,7 @@ public abstract partial class Protocol : IDisposable
         IsSendingAsync = false;
         if (sendArgs.SocketError is not SocketError.Success)
             return;
-        SendBuffer.ClearFirstPacket(); // 清除已发送的包
+        //SendBuffer.ClearFirstPacket(); // 清除已发送的包
         SendAsync();
     }
 
