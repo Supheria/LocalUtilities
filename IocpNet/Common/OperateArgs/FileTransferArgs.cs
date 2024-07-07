@@ -4,7 +4,7 @@ using LocalUtilities.TypeToolKit.Text;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public class FileTransferArgs(string dirName, string fileName, string md5Value) : ISsSerializable
+public class FileTransferArgs(string dirName, string fileName) : ISsSerializable
 {
     public DateTime StartTime { get; private set; } = DateTime.Now;
 
@@ -12,7 +12,7 @@ public class FileTransferArgs(string dirName, string fileName, string md5Value) 
 
     public string FileName { get; private set; } = fileName;
 
-    public string Md5Value { get; private set; } = md5Value;
+    public string Md5Value { get; set; } = "";
 
     public long FileLength { get; set; } = 0;
 
@@ -22,7 +22,7 @@ public class FileTransferArgs(string dirName, string fileName, string md5Value) 
 
     public string LocalName => nameof(FileTransferArgs);
 
-    public FileTransferArgs() : this("", "", "")
+    public FileTransferArgs() : this("", "")
     {
 
     }

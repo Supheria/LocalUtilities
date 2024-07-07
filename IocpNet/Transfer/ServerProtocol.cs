@@ -186,6 +186,7 @@ public class ServerProtocol : Protocol
         var filePath = GetFileRepoPath(fileArgs.DirName, fileArgs.FileName);
         if (!File.Exists(filePath))
             throw new IocpException(ProtocolCode.FileNotExist, filePath);
+        
         var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (fileStream.ToMd5HashString() == fileArgs.Md5Value)
         {

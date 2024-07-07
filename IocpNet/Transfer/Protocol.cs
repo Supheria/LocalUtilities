@@ -15,7 +15,7 @@ public abstract partial class Protocol : IDisposable
 
     protected DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
-    protected AsyncSendBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
+    protected DynamicBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
     protected bool IsSendingAsync { get; set; } = false;
 
@@ -42,7 +42,7 @@ public abstract partial class Protocol : IDisposable
         Socket?.Close();
         Socket = null;
         ReceiveBuffer.Clear();
-        SendBuffer.ClearAllPacket();
+        SendBuffer.Clear();
         IsSendingAsync = false;
         IsLogin = false;
         AutoFile.Dispose();
@@ -83,8 +83,15 @@ public abstract partial class Protocol : IDisposable
             SocketInfo.Active();
             ReceiveBuffer.WriteData(receiveArgs.Buffer!, receiveArgs.Offset, receiveArgs.BytesTransferred);
             var packet = ReceiveBuffer.GetData();
-            while (Command.FullPacket(packet))
+            while (packet.Length > sizeof(int))
             {
+                if (Command.OutOfLimit(packet))
+                {
+                    ReceiveBuffer.Clear();
+                    break;
+                }
+                if (!Command.FullPacket(packet))
+                    break;
                 var command = new Command(packet);
                 if (command.Data.Length > ConstTabel.DataBytesTransferredMax)
                     throw new IocpException(ProtocolCode.DataOutLimit);
@@ -102,18 +109,19 @@ public abstract partial class Protocol : IDisposable
         }
     }
 
-    public void SendAsync()
+    public void SendAsync(/*Command command*/)
     {
-        if (IsSendingAsync || Socket is null || !SendBuffer.GetFirstPacket(out var packet))
+        if (IsSendingAsync || Socket is null || SendBuffer.DataCount is 0/* || !SendBuffer.GetFirstPacket(out var packet)*/)
             return;
         IsSendingAsync = true;
         var sendArgs = new SocketAsyncEventArgs();
-        sendArgs.SetBuffer(packet);
+        sendArgs.SetBuffer(SendBuffer.GetData());
         sendArgs.Completed += (_, args) => ProcessSend(args);
         try
         {
             if (!Socket.SendAsync(sendArgs))
-                new Task(() => ProcessSend(sendArgs)).Start();
+                ProcessSend(sendArgs);
+            //Socket.SendAsync(sendArgs);
         }
         catch
         {
@@ -127,7 +135,7 @@ public abstract partial class Protocol : IDisposable
         IsSendingAsync = false;
         if (sendArgs.SocketError is not SocketError.Success)
             return;
-        //SendBuffer.ClearFirstPacket(); // 清除已发送的包
+        SendBuffer.Clear(); // 清除已发送的包
         SendAsync();
     }
 

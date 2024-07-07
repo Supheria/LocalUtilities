@@ -38,9 +38,9 @@ public class ClientProtocol : Protocol
     {
         try
         {
-            var commandComposer = new Command(CommandTypes.HeartBeats, null);
-            WriteCommand(commandComposer);
-            SendAsync();
+            var command = new Command(CommandTypes.HeartBeats, null);
+            WriteCommand(command);
+            SendAsync(/*commandComposer*/);
         }
         catch (Exception ex)
         {
@@ -65,7 +65,7 @@ public class ClientProtocol : Protocol
                 .AppendArgs(ProtocolKey.UserName, userInfo.Name ?? "")
                 .AppendArgs(ProtocolKey.Password, userInfo.Password)
                 .AppendArgs(ProtocolKey.ProtocolType, Type.ToString());
-            SendCommandInWaiting(CommandTypes.Login, sendArgs);
+            SendCommand(CommandTypes.Login, sendArgs);
             LoginDone?.WaitOne(ResetSpan);
             DaemonThread?.Start();
         }
@@ -132,8 +132,6 @@ public class ClientProtocol : Protocol
 
     private void DoLogin(Command command)
     {
-        if (!ReceiveCallback(command, out _))
-            return;
         IsLogin = true;
         LoginDone.Set();
         HandleLogined();
@@ -143,11 +141,16 @@ public class ClientProtocol : Protocol
     {
         try
         {
+            if (!AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.ProcessingFile);
             var filePath = GetFileRepoPath(dirName, fileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var fileArgs = new FileTransferArgs(dirName, fileName, fileStream.ToMd5HashString());
+            var fileArgs = new FileTransferArgs(dirName, fileName)
+            {
+                Md5Value = fileStream.ToMd5HashString()
+            };
             fileStream.Dispose();
             HandleUploadStart();
             var sendArgs = new OperateSendArgs(OperateTypes.UploadRequest)
@@ -168,7 +171,10 @@ public class ClientProtocol : Protocol
                 throw new IocpException(ProtocolCode.ProcessingFile);
             var filePath = GetFileRepoPath(dirName, fileName);
             var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            var fileArgs = new FileTransferArgs(dirName, fileName, fileStream.ToMd5HashString());
+            var fileArgs = new FileTransferArgs(dirName, fileName)
+            {
+                Md5Value = fileStream.ToMd5HashString()
+            };
             fileStream.Dispose();
             HandleDownloadStart();
             var sendArgs = new OperateSendArgs(OperateTypes.DownloadRequest)

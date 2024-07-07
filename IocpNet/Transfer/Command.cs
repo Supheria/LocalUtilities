@@ -69,7 +69,15 @@ public class Command
         if (packet.Length < sizeof(int))
             return false;
         var packetLength = BitConverter.ToInt32(packet, 0);
-        return packet.Length == packetLength;
+        return packet.Length >= packetLength;
+    }
+
+    public static bool OutOfLimit(byte[] packet)
+    {
+        var packetLength = BitConverter.ToInt32(packet, 0);
+        var argsLength = BitConverter.ToInt32(packet, sizeof(int));
+        var dataLenght = packetLength - argsLength - sizeof(int) - sizeof(int) - sizeof(byte);
+        return dataLenght > ConstTabel.DataBytesTransferredMax;
     }
 
     public OperateSendArgs GetOperateSendArgs()

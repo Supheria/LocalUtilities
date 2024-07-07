@@ -30,7 +30,7 @@ partial class Protocol
         {
             var command = new Command(type, args, buffer, offset, count);
             WriteCommand(command);
-            SendAsync();
+            SendAsync(/*command*/);
         }
         catch (Exception ex)
         {
@@ -63,7 +63,7 @@ partial class Protocol
         {
             var command = new Command(type, sendArgs, data, dataOffset, dataCount);
             WriteCommand(command);
-            SendAsync();
+            SendAsync(/*command*/);
         }
     }
 
@@ -108,7 +108,7 @@ partial class Protocol
 
     protected void WriteCommand(Command command)
     {
-        SendBuffer.AppendPacket(command.GetPacket());
+        SendBuffer.WriteData(command.GetPacket(), 0, command.PacketLength);
     }
 
     protected void HandleErrorCode(OperateCallbackArgs callbackArgs)
