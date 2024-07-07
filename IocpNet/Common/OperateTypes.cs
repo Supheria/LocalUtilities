@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.IocpNet.Common;
 
-public enum OperateTypes
+public enum OperateTypes : byte
 {
     None,
     Message,

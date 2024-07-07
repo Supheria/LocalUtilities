@@ -6,13 +6,11 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Common.OperateArgs;
 
-public sealed class OperateSendArgs : OperateArgs
+public sealed class CommandSend : Command
 {
     public IocpEventHandler? OnRetry;
 
     public event IocpEventHandler? OnWasted;
-
-    public LogHandler? OnLog;
 
     DaemonThread DaemonThread { get; }
 
@@ -20,28 +18,33 @@ public sealed class OperateSendArgs : OperateArgs
 
     int RetryTimes { get; set; } = 0;
 
-    public override string LocalName => nameof(OperateSendArgs);
-
-    private OperateSendArgs(OperateTypes type, string timeStamp) : base(type, timeStamp)
+    public CommandSend(CommandTypes commandType, OperateTypes operateType, byte[] data, int dataOffset, int dataCount) : base(Types.Send, DateTime.Now, commandType, operateType, data, dataOffset, dataCount)
     {
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }
 
-    public OperateSendArgs(OperateTypes type) : this(type, DateTime.Now.ToString(DateTimeFormat.Data))
+    public CommandSend(CommandTypes commandType, OperateTypes operateType) : base(Types.Send, DateTime.Now, commandType, operateType)
     {
-
+        DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
+        DaemonThread.Start();
     }
 
-    public OperateSendArgs() : this(OperateTypes.None, "")
+    public override CommandSend AppendArgs(ProtocolKey key, string args)
     {
-
+        base.AppendArgs(key, args);
+        return this;
     }
 
     private void Retry()
     {
         try
         {
+            if (OnRetry is null)
+            {
+                Waste();
+                return;
+            }
             if (--RetryTimesMax < 0)
             {
                 Waste();
@@ -50,13 +53,13 @@ public sealed class OperateSendArgs : OperateArgs
             }
             RetryTimes++;
             DaemonThread.Stop();
-            OnRetry?.Invoke();
+            OnRetry.Invoke();
             HandleOperateRetry();
             DaemonThread.Start();
         }
         catch (Exception ex)
         {
-            OnLog?.Invoke(ex.Message);
+            HandleLog(ex.Message);
             Waste();
             HandleOperateRetryFailed();
         }
@@ -75,14 +78,14 @@ public sealed class OperateSendArgs : OperateArgs
             .Append(StringTable.Retry)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(Type)
+            .Append(OperateType)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
             .Append(RetryTimes)
             .Append(SignTable.Space)
             .Append(StringTable.Times)
             .ToString();
-        OnLog?.Invoke(message);
+        HandleLog(message);
     }
 
     private void HandleOperateRetryFailed()
@@ -94,24 +97,8 @@ public sealed class OperateSendArgs : OperateArgs
             .Append(StringTable.Failed)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(Type)
+            .Append(OperateType)
             .ToString();
-        OnLog?.Invoke(message);
-    }
-
-    public OperateSendArgs AppendArgs(ProtocolKey key, string args)
-    {
-        Map[key] = args;
-        return this;
-    }
-
-    public string GetArgs(ProtocolKey key)
-    {
-        return Map[key];
-    }
-
-    public T GetArgs<T>(ProtocolKey key) where T : ISsSerializable, new()
-    {
-        return new T().ParseSs(Map[key]);
+        HandleLog(message);
     }
 }

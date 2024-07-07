@@ -66,27 +66,17 @@ public class ClientHost : Host
 
     private void ReceiveOperate(Command command)
     {
-        var sendArgs = command.GetOperateSendArgs();
-        switch (sendArgs.Type)
-        {
-            case OperateTypes.Message:
-                ReceiveMessage(sendArgs);
-                break;
-            case OperateTypes.UserList:
-                UpdateUserList(sendArgs);
-                break;
-        }
-    }
-
-    private void ReceiveMessage(OperateSendArgs sendArgs)
-    {
         try
         {
-            var message = sendArgs.GetArgs(ProtocolKey.Data);
-            HandleLog(message);
-            var callbackArgs = new OperateCallbackArgs(sendArgs)
-                .AppendSuccess();
-            Operator.SendCommand(CommandTypes.OperateCallback, callbackArgs);
+            switch (command.OperateType)
+            {
+                case OperateTypes.Message:
+                    ReceiveMessage(command);
+                    break;
+                case OperateTypes.UserList:
+                    UpdateUserList(command);
+                    break;
+            }
         }
         catch (Exception ex)
         {
@@ -94,17 +84,19 @@ public class ClientHost : Host
         }
     }
 
-    private void UpdateUserList(OperateSendArgs sendArgs)
+    private void ReceiveMessage(Command command)
     {
-        try
-        {
-            var userList = sendArgs.GetArgs(ProtocolKey.Data).ToArray();
-            OnUpdateUserList?.Invoke(userList);
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
+        var message = command.GetArgs(ProtocolKey.Message);
+        HandleLog(message);
+        var callbackArgs = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
+            .AppendSuccess();
+        Operator.SendCallback(callbackArgs);
+    }
+
+    private void UpdateUserList(Command command)
+    {
+        var userList = command.GetArgs(ProtocolKey.UserList).ToArray();
+        OnUpdateUserList?.Invoke(userList);
     }
 
     private void ReceiveOperateCallback(Command command)
@@ -114,9 +106,16 @@ public class ClientHost : Host
 
     public void SendMessage(string message)
     {
-        var sendArgs = new OperateSendArgs(OperateTypes.Message);
-        var data = Encoding.UTF8.GetBytes(message);
-        Operator.SendCommandInWaiting(CommandTypes.Operate, sendArgs, data, 0, data.Length);
+        try
+        {
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message)
+                .AppendArgs(ProtocolKey.Message, message);
+            Operator.SendCommand(commandSend, true);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     public void UploadFile(string dirName, string filePath)
@@ -139,8 +138,8 @@ public class ClientHost : Host
     {
         try
         {
-            var fileName = Path.GetFileName(filePath)
-; Download.DownLoad(dirName, fileName);
+            var fileName = Path.GetFileName(filePath);
+            Download.DownLoad(dirName, fileName);
         }
         catch (Exception ex)
         {

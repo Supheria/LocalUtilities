@@ -7,5 +7,5 @@ public enum CommandTypes : byte
     Operate,
     OperateCallback,
     HeartBeats,
-    TransferFile
+    TransferFile,
 }

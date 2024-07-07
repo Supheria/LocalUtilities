@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using System.Net.Sockets;
 
 namespace LocalUtilities.IocpNet.Transfer;
@@ -66,7 +67,7 @@ public abstract partial class Protocol : IDisposable
         }
         catch (Exception ex)
         {
-            HandleException(ex);
+            HandleException(nameof(ReceiveAsync), ex);
             Close();
         }
     }
@@ -92,11 +93,15 @@ public abstract partial class Protocol : IDisposable
                 }
                 if (!Command.FullPacket(packet))
                     break;
-                var command = new Command(packet);
-                if (command.Data.Length > ConstTabel.DataBytesTransferredMax)
-                    throw new IocpException(ProtocolCode.DataOutLimit);
-                ProcessCommand(command);
-                ReceiveBuffer.RemoveData(command.PacketLength);
+                var command = Command.GetCommand(packet, out var packetLength);
+                if (command is not null)
+                {
+                    command.OnLog += HandleLog;
+                    if (command.Data.Length > ConstTabel.DataBytesTransferredMax)
+                        throw new IocpException(ProtocolCode.DataOutLimit);
+                    ProcessCommand(command);
+                }
+                ReceiveBuffer.RemoveData(packetLength);
                 packet = ReceiveBuffer.GetData();
             }
             ReceiveAsync();
@@ -104,12 +109,12 @@ public abstract partial class Protocol : IDisposable
         }
         catch (Exception ex)
         {
-            HandleException(ex);
+            HandleException(nameof(ProcessReceive), ex);
             Close();
         }
     }
 
-    public void SendAsync(/*Command command*/)
+    private void SendAsync(/*Command command*/)
     {
         if (IsSendingAsync || Socket is null || SendBuffer.DataCount is 0/* || !SendBuffer.GetFirstPacket(out var packet)*/)
             return;
@@ -139,8 +144,6 @@ public abstract partial class Protocol : IDisposable
         SendAsync();
     }
 
-
-
     public string GetFileRepoPath(string dirName, string fileName)
     {
         var dir = Path.Combine(RepoPath, dirName);
@@ -152,7 +155,7 @@ public abstract partial class Protocol : IDisposable
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                HandleException(nameof(GetFileRepoPath), ex);
             }
         }
         return Path.Combine(dir, fileName);

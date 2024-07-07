@@ -1,4 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
 using System.Text;
@@ -26,7 +27,7 @@ partial class Protocol
 
     protected abstract string GetLog(string log);
 
-    protected void HandleException(Exception ex)
+    protected void HandleException(string funcName, Exception ex)
     {
         var errorCode = ex switch
         {
@@ -34,6 +35,9 @@ partial class Protocol
             _ => ProtocolCode.UnknowError,
         };
         var message = new StringBuilder()
+            .Append(funcName)
+            .Append(SignTable.Colon)
+            .Append(SignTable.Space)
             .Append(SignTable.OpenBracket)
             .Append(errorCode)
             .Append(SignTable.CloseBracket)

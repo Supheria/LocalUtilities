@@ -60,30 +60,29 @@ public class ServerHost : Host
 
     private void ReceiveOperate(Command command)
     {
-        var sendArgs = command.GetOperateSendArgs();
-        switch (sendArgs.Type)
-        {
-            case OperateTypes.Message:
-                ReceiveMessage(sendArgs, command.Data);
-                break;
-        }
-    }
-
-    private void ReceiveMessage(OperateSendArgs sendArgs, byte[] data)
-    {
         try
         {
-            var message = Encoding.UTF8.GetString(data);
-            HandleLog(message);
-            var protocol = Protocols[ProtocolTypes.Operator];
-            var callbackArgs = new OperateCallbackArgs(sendArgs)
-                .AppendSuccess();
-            protocol.SendCommand(CommandTypes.OperateCallback, callbackArgs);
+            switch (command.OperateType)
+            {
+                case OperateTypes.Message:
+                    ReceiveMessage(command);
+                    break;
+            }
         }
         catch (Exception ex)
         {
             HandleException(ex);
         }
+    }
+
+    private void ReceiveMessage(Command command)
+    {
+        var message = command.GetArgs(ProtocolKey.Message);
+        HandleLog(message);
+        var protocol = Protocols[ProtocolTypes.Operator];
+        var commandCallback = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
+            .AppendSuccess();
+        protocol.SendCallback(commandCallback);
     }
 
     private void ReceiveOperateCallback(Command command)
@@ -95,10 +94,10 @@ public class ServerHost : Host
     {
         try
         {
-            var sendArgs = new OperateSendArgs(OperateTypes.Message)
-                .AppendArgs(ProtocolKey.Data, message);
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message)
+                .AppendArgs(ProtocolKey.Message, message);
             var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommandInWaiting(CommandTypes.Operate, sendArgs);
+            protocol.SendCommand(commandSend, true);
         }
         catch (Exception ex)
         {
@@ -110,10 +109,10 @@ public class ServerHost : Host
     {
         try
         {
-            var sendArgs = new OperateSendArgs(OperateTypes.UserList)
-                .AppendArgs(ProtocolKey.Data, userList.ToArrayString());
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.UserList)
+                .AppendArgs(ProtocolKey.UserList, userList.ToArrayString());
             var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommand(CommandTypes.Operate, sendArgs);
+            protocol.SendCommand(commandSend, false);
         }
         catch (Exception ex)
         {

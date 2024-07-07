@@ -1,6 +1,8 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Common.OperateArgs;
+using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeToolKit.Text;
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -12,80 +14,68 @@ partial class Protocol
 
     protected Dictionary<CommandTypes, CommandHandler> Commands { get; } = [];
 
-    ConcurrentDictionary<string, OperateSendArgs> CommandWaitList { get; } = [];
+    ConcurrentDictionary<DateTime, CommandSend> CommandWaitList { get; } = [];
 
     public Protocol()
     {
         Commands[CommandTypes.Operate] = Operate;
         Commands[CommandTypes.OperateCallback] = OperateCallback;
     }
-    public void SendCommand(CommandTypes type, OperateArgs args)
-    {
-        SendCommand(type, args, [], 0, 0);
-    }
 
-    public void SendCommand(CommandTypes type, OperateArgs args, byte[] buffer, int offset, int count)
+    protected ValidateHandler FileValdate { get; } = (filePath) =>
     {
-        try
-        {
-            var command = new Command(type, args, buffer, offset, count);
-            WriteCommand(command);
-            SendAsync(/*command*/);
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
+        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var md5 = fileStream.ToMd5HashString();
+        fileStream.Dispose();
+        return md5;
+    };
 
     protected abstract void ProcessCommand(Command command);
 
-    public void SendCommandInWaiting(CommandTypes type, OperateSendArgs sendArgs)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="commandSend"></param>
+    /// <param name="doRetry"></param>
+    /// <exception cref="IocpException"></exception>
+    public void SendCommand(CommandSend commandSend, bool doRetry)
     {
-        SendCommandInWaiting(type, sendArgs, [], 0, 0);
-    }
-
-    public void SendCommandInWaiting(CommandTypes type, OperateSendArgs sendArgs, byte[] data, int dataOffset, int dataCount)
-    {
-        try
+        commandSend.OnLog += HandleLog;
+        commandSend.OnWasted += () => CommandWaitList.TryRemove(commandSend.TimeStamp, out _);
+        if (doRetry)
+            commandSend.OnRetry += sendCommend;
+        if (!CommandWaitList.TryAdd(commandSend.TimeStamp, commandSend))
+            throw new IocpException(ProtocolCode.CannotAddSendCommand);
+        sendCommend();
+        void sendCommend()
         {
-            sendArgs.OnLog += HandleLog;
-            sendArgs.OnRetry += operate;
-            sendArgs.OnWasted += () => CommandWaitList.TryRemove(sendArgs.TimeStamp, out _);
-            CommandWaitList.TryAdd(sendArgs.TimeStamp, sendArgs);
-            operate();
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-        void operate()
-        {
-            var command = new Command(type, sendArgs, data, dataOffset, dataCount);
-            WriteCommand(command);
-            SendAsync(/*command*/);
+            WriteCommand(commandSend);
+            SendAsync();
         }
     }
 
-    protected bool ReceiveCallback(Command command, out OperateCallbackArgs callbackArgs)
+    public void SendCallback(CommandCallback commandCallback)
     {
-        callbackArgs = new();
-        try
-        {
-            callbackArgs = command.GetOperateCallbackArgs();
-            if (!CommandWaitList.TryGetValue(callbackArgs.TimeStamp, out var sendArgs))
-                return false;
-            sendArgs.Waste();
-            if (callbackArgs.GetCallbackCode() is ProtocolCode.Success)
-                return true;
-            HandleErrorCode(callbackArgs);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-            return false;
-        }
+        WriteCommand(commandCallback);
+        SendAsync();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    /// <exception cref="IocpException"></exception>
+    protected void ReceiveCallback(Command command)
+    {
+        if (command is not CommandCallback commandCallback)
+            throw new IocpException(ProtocolCode.ArgumentError);
+        if (!CommandWaitList.TryGetValue(commandCallback.TimeStamp, out var commandSend))
+            throw new IocpException(ProtocolCode.CannotFindSourceSendCommand);
+        commandSend.Waste();
+        var callbackCode = commandCallback.GetCallbackCode();
+        if (callbackCode is not ProtocolCode.Success)
+            throw new IocpException(callbackCode, commandCallback.GetErrorMessage());
     }
 
     private void Operate(Command command)
@@ -97,32 +87,18 @@ partial class Protocol
     {
         try
         {
-            if (ReceiveCallback(command, out _))
-                OnOperateCallback?.Invoke(command);
+            ReceiveCallback(command);
+            OnOperateCallback?.Invoke(command);
         }
         catch (Exception ex)
         {
-            HandleException(ex);
+            HandleException(nameof(OperateCallback), ex);
         }
     }
 
-    protected void WriteCommand(Command command)
+    private void WriteCommand(Command command)
     {
-        SendBuffer.WriteData(command.GetPacket(), 0, command.PacketLength);
-    }
-
-    protected void HandleErrorCode(OperateCallbackArgs callbackArgs)
-    {
-        var log = new StringBuilder()
-            .Append(SignTable.OpenBracket)
-            .Append(callbackArgs.GetCallbackCode())
-            .Append(SignTable.CloseBracket)
-            .Append(SignTable.Space)
-            .Append(callbackArgs.Type)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
-            .Append(callbackArgs.GetErrorMessage())
-            .ToString();
-        HandleLog(log);
+        var packet = command.GetPacket();
+        SendBuffer.WriteData(packet, 0, packet.Length);
     }
 }

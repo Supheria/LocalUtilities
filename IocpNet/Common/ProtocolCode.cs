@@ -18,5 +18,8 @@ public enum ProtocolCode
     SocketClosed,
     DataOutLimit,
     ServerNotStartYet,
-    ServerHasStarted
+    ServerHasStarted,
+    ArgumentError,
+    CannotFindSourceSendCommand,
+    CannotAddSendCommand,
 }
