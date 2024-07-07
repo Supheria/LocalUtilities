@@ -1,10 +1,9 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.TypeGeneral;
 using System.Net;
-using System.Text;
 
 namespace LocalUtilities.IocpNet.Serve;
 
@@ -86,7 +85,7 @@ public class ClientHost : Host
 
     private void ReceiveMessage(Command command)
     {
-        var message = command.GetArgs(ProtocolKey.Message);
+        var message = ReadU8Buffer(command.Data);
         HandleLog(message);
         var callbackArgs = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
             .AppendSuccess();
@@ -95,7 +94,7 @@ public class ClientHost : Host
 
     private void UpdateUserList(Command command)
     {
-        var userList = command.GetArgs(ProtocolKey.UserList).ToArray();
+        var userList = ReadU8Buffer(command.Data).ToArray();
         OnUpdateUserList?.Invoke(userList);
     }
 
@@ -108,8 +107,8 @@ public class ClientHost : Host
     {
         try
         {
-            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message)
-                .AppendArgs(ProtocolKey.Message, message);
+            var count = WriteU8Buffer(message, out var data);
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
             Operator.SendCommand(commandSend, true);
         }
         catch (Exception ex)

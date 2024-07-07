@@ -10,7 +10,5 @@ public enum ProtocolKey
     CallbackCode,
     ErrorMessage,
     TimeStamp,
-    Message,
-    UserList,
 }
 

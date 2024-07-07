@@ -1,5 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Common.OperateArgs;
+using LocalUtilities.IocpNet.Transfer.Packet;
 using System.Net.Sockets;
 
 namespace LocalUtilities.IocpNet.Transfer;

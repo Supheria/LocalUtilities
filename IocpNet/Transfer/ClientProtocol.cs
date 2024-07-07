@@ -1,11 +1,8 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Common.OperateArgs;
-using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.EventProcess;
 using LocalUtilities.TypeToolKit.Text;
-using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -71,7 +68,7 @@ public class ClientProtocol : Protocol
         catch (Exception ex)
         {
             Close();
-            HandleException(nameof(Connect),ex);
+            HandleException(nameof(Connect), ex);
             // TODO: log fail
         }
         void connect()

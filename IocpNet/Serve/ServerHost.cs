@@ -1,7 +1,7 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.TypeGeneral;
 using System.Collections.Concurrent;
 using System.Text;
@@ -77,7 +77,7 @@ public class ServerHost : Host
 
     private void ReceiveMessage(Command command)
     {
-        var message = command.GetArgs(ProtocolKey.Message);
+        var message = ReadU8Buffer(command.Data);
         HandleLog(message);
         var protocol = Protocols[ProtocolTypes.Operator];
         var commandCallback = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
@@ -94,8 +94,8 @@ public class ServerHost : Host
     {
         try
         {
-            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message)
-                .AppendArgs(ProtocolKey.Message, message);
+            var count = WriteU8Buffer(message, out var data);
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
             var protocol = Protocols[ProtocolTypes.Operator];
             protocol.SendCommand(commandSend, true);
         }
@@ -109,8 +109,8 @@ public class ServerHost : Host
     {
         try
         {
-            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.UserList)
-                .AppendArgs(ProtocolKey.UserList, userList.ToArrayString());
+            var count = WriteU8Buffer(userList.ToArrayString(), out var data);
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.UserList, data, 0, count);
             var protocol = Protocols[ProtocolTypes.Operator];
             protocol.SendCommand(commandSend, false);
         }

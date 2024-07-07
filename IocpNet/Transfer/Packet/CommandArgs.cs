@@ -1,8 +1,8 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 
-namespace LocalUtilities.IocpNet.Common.OperateArgs;
+namespace LocalUtilities.IocpNet.Transfer.Packet;
 
 public class CommandArgs : SerializableTagValues<ProtocolKey, string>
 {

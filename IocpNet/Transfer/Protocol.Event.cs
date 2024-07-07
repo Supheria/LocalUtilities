@@ -1,6 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Common.OperateArgs;
 using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.TypeGeneral;
 using System.Text;
 

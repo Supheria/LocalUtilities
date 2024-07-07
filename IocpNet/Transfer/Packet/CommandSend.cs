@@ -1,10 +1,9 @@
-﻿using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
-namespace LocalUtilities.IocpNet.Common.OperateArgs;
+namespace LocalUtilities.IocpNet.Transfer.Packet;
 
 public sealed class CommandSend : Command
 {

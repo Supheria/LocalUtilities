@@ -2,7 +2,7 @@
 using LocalUtilities.TypeGeneral.Convert;
 using LocalUtilities.TypeToolKit.Text;
 
-namespace LocalUtilities.IocpNet.Common.OperateArgs;
+namespace LocalUtilities.IocpNet.Transfer.Packet;
 
 public class FileTransferArgs(string dirName, string fileName) : ISsSerializable
 {

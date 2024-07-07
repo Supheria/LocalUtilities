@@ -2,7 +2,7 @@
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.SimpleScript.Serialization;
 
-namespace LocalUtilities.IocpNet.Common.OperateArgs;
+namespace LocalUtilities.IocpNet.Transfer.Packet;
 
 public class Command
 {

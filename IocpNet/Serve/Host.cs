@@ -30,4 +30,15 @@ public abstract class Host
     {
         HandleLog(ex.Message);
     }
+
+    protected static int WriteU8Buffer(string str, out byte[] buffer)
+    {
+        buffer  = Encoding.UTF8.GetBytes(str);
+        return buffer.Length;
+    }
+
+    protected static string ReadU8Buffer(byte[] buffer)
+    {
+        return Encoding.UTF8.GetString(buffer);
+    }
 }

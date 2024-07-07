@@ -1,10 +1,9 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace LocalUtilities.IocpNet.Common.OperateArgs;
+namespace LocalUtilities.IocpNet.Transfer.Packet;
 
 public sealed class CommandCallback : Command
 {
