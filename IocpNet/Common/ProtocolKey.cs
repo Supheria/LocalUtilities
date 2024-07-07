@@ -10,5 +10,7 @@ public enum ProtocolKey
     CallbackCode,
     ErrorMessage,
     TimeStamp,
+    Receiver,
+    Sender,
 }
 

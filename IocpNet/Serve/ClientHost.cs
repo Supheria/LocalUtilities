@@ -85,11 +85,17 @@ public class ClientHost : Host
 
     private void ReceiveMessage(Command command)
     {
-        var message = ReadU8Buffer(command.Data);
-        HandleLog(message);
-        var callbackArgs = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
-            .AppendSuccess();
-        Operator.SendCallback(callbackArgs);
+        try
+        {
+            HandleMessage(command);
+            var callbackArgs = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
+                .AppendSuccess();
+            Operator.SendCallback(callbackArgs);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void UpdateUserList(Command command)
@@ -100,15 +106,30 @@ public class ClientHost : Host
 
     private void ReceiveOperateCallback(Command command)
     {
-
+        try
+        {
+            switch (command.OperateType)
+            {
+                case OperateTypes.Message:
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
-    public void SendMessage(string message)
+    public void SendMessage(string message, string userName)
     {
         try
         {
+            if (UserInfo is null)
+                throw new IocpException(ProtocolCode.EmptyUserInfo);
             var count = WriteU8Buffer(message, out var data);
-            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
+            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message, data, 0, count)
+                .AppendArgs(ProtocolKey.Receiver, userName)
+                .AppendArgs(ProtocolKey.Sender, UserInfo.Name);
             Operator.SendCommand(commandSend, true);
         }
         catch (Exception ex)

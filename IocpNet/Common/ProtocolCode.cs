@@ -22,4 +22,5 @@ public enum ProtocolCode
     ArgumentError,
     CannotFindSourceSendCommand,
     CannotAddSendCommand,
+    UserNotExist,
 }

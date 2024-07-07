@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer;
+using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Collections.Concurrent;
@@ -81,40 +82,63 @@ public class Server
         if (acceptArgs.AcceptSocket is null)
             goto ACCEPT;
         var protocol = new ServerProtocol();
-        protocol.OnLogined += () =>
-        {
-            if (protocol.UserInfo is null || protocol.UserInfo.Name is "")
-            {
-                protocol.Close();
-                return;
-            }
-            if (UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
-                user.Add(protocol);
-            else
-            {
-                user = new();
-                user.OnLog += HandleLog;
-                user.OnClearUp += () => UserMap.TryRemove(user.Name, out _);
-                if (!user.Add(protocol))
-                    return;
-                if (!UserMap.TryAdd(user.Name, user))
-                    protocol.Close();
-            }
-            OnConnectionCountChange?.Invoke(UserMap.Sum(u => u.Value.Count));
-            BroadcastUserList();
-        };
-        protocol.OnClosed += () =>
-        {
-            if (protocol.UserInfo is null || protocol.UserInfo.Name is "" || !UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
-                return;
-            user.Remove(protocol);
-            OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
-            BroadcastUserList();
-        };
+        protocol.OnLogined += () => AddProtocol(protocol);
+        protocol.OnClosed += () => RemoveProtocol(protocol);
         protocol.ProcessAccept(acceptArgs.AcceptSocket);
     ACCEPT:
         if (acceptArgs.SocketError is SocketError.Success)
             AcceptAsync(acceptArgs);
+    }
+
+    private void AddProtocol(ServerProtocol protocol)
+    {
+        if (protocol.UserInfo is null || protocol.UserInfo.Name is "")
+        {
+            protocol.Close();
+            return;
+        }
+        if (UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
+        {
+            user.Add(protocol);
+            HandleUpdateConnection();
+            return;
+        }
+        user = new();
+        user.OnLog += HandleLog;
+        user.OnOperate += HandleOperate;
+        user.OnClearUp += () =>
+        {
+            UserMap.TryRemove(user.Name, out _);
+            BroadcastUserList();
+        };
+        if (!user.Add(protocol))
+            return;
+        if (!UserMap.TryAdd(user.Name, user))
+            protocol.Close();
+        HandleUpdateConnection();
+    }
+
+    private void RemoveProtocol(ServerProtocol protocol)
+    {
+        if (protocol.UserInfo is null || protocol.UserInfo.Name is "" || !UserMap.TryGetValue(protocol.UserInfo.Name, out var user))
+            return;
+        user.Remove(protocol);
+        HandleUpdateConnection();
+    }
+
+    private void HandleOperate(Command command)
+    {
+        try
+        {
+            var receiver = command.GetArgs(ProtocolKey.Receiver);
+            if (!UserMap.TryGetValue(receiver, out var user))
+                throw new IocpException(ProtocolCode.UserNotExist);
+            user.DoOperate(command);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     public void HandleLog(string log)
@@ -148,5 +172,11 @@ public class Server
     {
         foreach (var user in UserMap.Values)
             user.UpdateUserList(UserMap.Keys.ToArray());
+    }
+
+    public void HandleUpdateConnection()
+    {
+        OnConnectionCountChange?.Invoke(UserMap.Sum(g => g.Value.Count));
+        BroadcastUserList();
     }
 }

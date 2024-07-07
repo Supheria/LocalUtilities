@@ -26,4 +26,5 @@ internal class SignTable
     internal const char CloseParenthesis = ')';
     internal const char Slash = '/';
     internal const char Comma = ',';
+    internal const char Sub = '-';
 }

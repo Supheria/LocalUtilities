@@ -10,6 +10,8 @@ namespace LocalUtilities.IocpNet.Serve;
 
 public class ServerHost : Host
 {
+    public IocpEventHandler<Command>? OnOperate;
+
     public IocpEventHandler? OnClearUp;
 
     ConcurrentDictionary<ProtocolTypes, ServerProtocol> Protocols { get; } = [];
@@ -60,29 +62,30 @@ public class ServerHost : Host
 
     private void ReceiveOperate(Command command)
     {
-        try
+        switch (command.OperateType)
         {
-            switch (command.OperateType)
-            {
-                case OperateTypes.Message:
-                    ReceiveMessage(command);
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
+            case OperateTypes.Message:
+                ReceiveMessage(command);
+                break;
         }
     }
 
     private void ReceiveMessage(Command command)
     {
-        var message = ReadU8Buffer(command.Data);
-        HandleLog(message);
-        var protocol = Protocols[ProtocolTypes.Operator];
-        var commandCallback = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
-            .AppendSuccess();
-        protocol.SendCallback(commandCallback);
+        try
+        {
+            var receiver = command.GetArgs(ProtocolKey.Receiver);
+            if (receiver != Name)
+                OnOperate?.Invoke(command);
+            HandleMessage(command);
+            var commandCallback = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
+                .AppendSuccess();
+            Protocols[ProtocolTypes.Operator].SendCallback(commandCallback);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void ReceiveOperateCallback(Command command)
@@ -98,6 +101,33 @@ public class ServerHost : Host
             var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
             var protocol = Protocols[ProtocolTypes.Operator];
             protocol.SendCommand(commandSend, true);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
+
+    public void DoOperate(Command command)
+    {
+        switch (command.OperateType)
+        {
+            case OperateTypes.Message:
+                SendMessage(command);
+                break;
+        }
+    }
+
+    private void SendMessage(Command command)
+    {
+        try
+        {
+            var data = command.Data;
+            var commandSend = new CommandSend(CommandTypes.Operate, command.OperateType, data, 0, data.Length)
+                .AppendArgs(ProtocolKey.Receiver, command.GetArgs(ProtocolKey.Receiver))
+                .AppendArgs(ProtocolKey.Sender, command.GetArgs(ProtocolKey.Sender));
+            Protocols[ProtocolTypes.Operator].SendCommand(commandSend, true);
+
         }
         catch (Exception ex)
         {

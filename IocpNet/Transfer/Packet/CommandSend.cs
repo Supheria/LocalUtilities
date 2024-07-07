@@ -9,6 +9,8 @@ public sealed class CommandSend : Command
 {
     public IocpEventHandler? OnRetry;
 
+    public IocpEventHandler? OnRetryFaild;
+
     public event IocpEventHandler? OnWasted;
 
     DaemonThread DaemonThread { get; }
@@ -47,6 +49,7 @@ public sealed class CommandSend : Command
             if (--RetryTimesMax < 0)
             {
                 Waste();
+                OnRetryFaild?.Invoke();
                 HandleOperateRetryFailed();
                 return;
             }
