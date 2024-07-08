@@ -20,14 +20,6 @@ partial class Protocol
         Commands[CommandTypes.OperateCallback] = OperateCallback;
     }
 
-    protected ValidateHandler FileValdate { get; } = (filePath) =>
-    {
-        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var md5 = fileStream.ToMd5HashString();
-        fileStream.Dispose();
-        return md5;
-    };
-
     protected abstract void ProcessCommand(CommandReceiver receiver);
 
     /// <summary>

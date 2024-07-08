@@ -1,8 +1,11 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
+using System.IO;
+using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -154,35 +157,15 @@ public class ClientProtocol : Protocol
         }
     }
 
-    //public void Upload(string dirName, string fileName, bool canRename)
+    //protected async Task<string> FileValdate(string filePath)
     //{
-    //    try
-    //    {
-    //        if (!AutoFile.IsExpired)
-    //            throw new IocpException(ProtocolCode.ProcessingFile);
-    //        var filePath = GetFileRepoPath(dirName, fileName);
-    //        if (!File.Exists(filePath))
-    //            throw new IocpException(ProtocolCode.FileNotExist, filePath);
-    //        FileValdate.BeginInvoke(filePath, (result) =>
-    //        {
-    //            var md5Value = FileValdate.EndInvoke(result);
-    //            var fileArgs = new FileTransferArgs(dirName, fileName)
-    //            {
-    //                Md5Value = md5Value
-    //            };
-    //            HandleUploadStart();
-    //            var sendArgs = new CommandSendArgs(OperateTypes.UploadRequest)
-    //                .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
-    //            SendCommandInWaiting(CommandTypes.TransferFile, sendArgs);
-    //        }, null);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        HandleException(ex);
-    //    }
+    //    var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+    //    var md5 = fileStream.ToMd5HashString();
+    //    fileStream.Dispose();
+    //    return md5;
     //}
 
-    public void Upload(string dirName, string fileName)
+    public async void UploadAsync(string dirName, string fileName)
     {
         try
         {
@@ -191,12 +174,15 @@ public class ClientProtocol : Protocol
             var filePath = GetFileRepoPath(dirName, fileName);
             if (!File.Exists(filePath))
                 throw new IocpException(ProtocolCode.FileNotExist, filePath);
-            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var task = Task.Run(() =>
+            {
+                using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                return fileStream.ToMd5HashString();
+            });
             var fileArgs = new FileTransferArgs(dirName, fileName)
             {
-                Md5Value = fileStream.ToMd5HashString()
+                Md5Value = await task,
             };
-            fileStream.Dispose();
             HandleUploadStart();
             var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.UploadRequest)
                 .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
@@ -208,19 +194,22 @@ public class ClientProtocol : Protocol
         }
     }
 
-    public void DownLoad(string dirName, string fileName)
+    public async void DownLoadAsync(string dirName, string fileName)
     {
         try
         {
             if (!AutoFile.IsExpired)
                 throw new IocpException(ProtocolCode.ProcessingFile);
             var filePath = GetFileRepoPath(dirName, fileName);
-            var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+            var task = Task.Run(() =>
+            {
+                using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
+                return fileStream.ToMd5HashString();
+            });
             var fileArgs = new FileTransferArgs(dirName, fileName)
             {
-                Md5Value = fileStream.ToMd5HashString()
+                Md5Value = await task,
             };
-            fileStream.Dispose();
             HandleDownloadStart();
             var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.DownloadRequest)
                 .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
@@ -234,27 +223,41 @@ public class ClientProtocol : Protocol
 
     private void DoTransferFile(CommandReceiver receiver)
     {
+        ReceiveCallback(receiver);
+        switch (receiver.OperateType)
+        {
+            case OperateTypes.UploadRequest:
+                DoUploadRequest(receiver);
+                break;
+            case OperateTypes.UploadContinue:
+                DoUploadContinue(receiver);
+                break;
+            case OperateTypes.UploadFinish:
+                DoUploadFinish(receiver);
+                break;
+            case OperateTypes.DownloadRequest:
+                DoDownloadRequest(receiver);
+                break;
+            case OperateTypes.DownloadContinue:
+                DoDownloadContinue(receiver);
+                break;
+        }
+    }
+
+    private void DoUploadRequest(CommandReceiver receiver)
+    {
         try
         {
-            ReceiveCallback(receiver);
-            switch (receiver.OperateType)
-            {
-                case OperateTypes.UploadRequest:
-                    DoUploadRequest(receiver);
-                    break;
-                case OperateTypes.UploadContinue:
-                    DoUploadContinue(receiver);
-                    break;
-                case OperateTypes.UploadFinish:
-                    DoUploadFinish(receiver);
-                    break;
-                case OperateTypes.DownloadRequest:
-                    DoDownloadRequest(receiver);
-                    break;
-                case OperateTypes.DownloadContinue:
-                    DoDownloadContinue(receiver);
-                    break;
-            }
+            var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
+            var filePath = GetFileRepoPath(fileArgs.DirName, fileArgs.FileName);
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (!AutoFile.Relocate(fileStream))
+                throw new IocpException(ProtocolCode.ProcessingFile);
+            fileArgs.FileLength = AutoFile.Length;
+            fileArgs.PacketLength = AutoFile.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : AutoFile.Length;
+            var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.UploadContinue)
+                .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
+            SendCommand(sender);
         }
         catch (Exception ex)
         {
@@ -262,80 +265,94 @@ public class ClientProtocol : Protocol
         }
     }
 
-    private void DoUploadRequest(CommandReceiver receiver)
-    {
-        var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
-        var filePath = GetFileRepoPath(fileArgs.DirName, fileArgs.FileName);
-        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (!AutoFile.Relocate(fileStream))
-            throw new IocpException(ProtocolCode.ProcessingFile);
-        fileArgs.FileLength = AutoFile.Length;
-        fileArgs.PacketLength = AutoFile.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : AutoFile.Length;
-        var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.UploadContinue)
-            .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
-        SendCommand(sender);
-    }
-
     private void DoUploadContinue(CommandReceiver receiver)
     {
-        var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
-        if (AutoFile.IsExpired)
-            throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
-        var data = new byte[fileArgs.PacketLength];
-        if (!AutoFile.Read(data, out var count))
-            throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
-        HandleUploading(AutoFile.Length, AutoFile.Position);
-        fileArgs.FileLength = AutoFile.Length;
-        fileArgs.FilePosition = AutoFile.Position;
-        var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.UploadContinue, data, 0, count)
-            .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
-        SendCommand(sender);
+        try
+        {
+            var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
+            var data = new byte[fileArgs.PacketLength];
+            if (!AutoFile.Read(data, out var count))
+                throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
+            HandleUploading(AutoFile.Length, AutoFile.Position);
+            fileArgs.FileLength = AutoFile.Length;
+            fileArgs.FilePosition = AutoFile.Position;
+            var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.UploadContinue, data, 0, count)
+                .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
+            SendCommand(sender);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void DoUploadFinish(CommandReceiver receiver)
     {
-        AutoFile.Dispose();
-        var startTime = DateTime.FromBinary(BitConverter.ToInt64(receiver.Data));
-        HandleUploaded(startTime);
+        try
+        {
+            AutoFile.Dispose();
+            var startTime = DateTime.FromBinary(BitConverter.ToInt64(receiver.Data));
+            HandleUploaded(startTime);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private void DoDownloadRequest(CommandReceiver receiver)
     {
-        var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
-        var filePath = GetFileRepoPath(fileArgs.DirName, fileArgs.FileName);
-        File.Delete(filePath);
-        var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-        if (!AutoFile.Relocate(fileStream))
-            throw new IocpException(ProtocolCode.ProcessingFile);
-        var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.DownloadContinue)
-            .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
-        SendCommand(sender);
-    }
-
-    private void DoDownloadContinue(CommandReceiver receiver)
-    {
-        var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
-        if (AutoFile.IsExpired)
-            throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
-        AutoFile.Write(receiver.Data);
-        // simple validation
-        if (AutoFile.Position != fileArgs.FilePosition)
-            throw new IocpException(ProtocolCode.NotSameVersion);
-        fileArgs.FilePosition = AutoFile.Position;
-        if (AutoFile.Position < fileArgs.FileLength)
+        try
         {
-            HandleDownloading(fileArgs.FileLength, AutoFile.Position);
+            var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
+            var filePath = GetFileRepoPath(fileArgs.DirName, fileArgs.FileName);
+            File.Delete(filePath);
+            var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+            if (!AutoFile.Relocate(fileStream))
+                throw new IocpException(ProtocolCode.ProcessingFile);
             var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.DownloadContinue)
                 .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
             SendCommand(sender);
         }
-        else
+        catch (Exception ex)
         {
-            AutoFile.Dispose();
-            HandleDownloaded(fileArgs.StartTime);
-            var startTime = BitConverter.GetBytes(fileArgs.StartTime.ToBinary());
-            var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.DownloadFinish, startTime, 0, startTime.Length);
-            SendCommand(sender);
+            HandleException(ex);
+        }
+    }
+
+    private void DoDownloadContinue(CommandReceiver receiver)
+    {
+        try
+        {
+            var fileArgs = receiver.GetArgs<FileTransferArgs>(ProtocolKey.FileTransferArgs);
+            if (AutoFile.IsExpired)
+                throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
+            AutoFile.Write(receiver.Data);
+            // simple validation
+            if (AutoFile.Position != fileArgs.FilePosition)
+                throw new IocpException(ProtocolCode.NotSameVersion);
+            fileArgs.FilePosition = AutoFile.Position;
+            if (AutoFile.Position < fileArgs.FileLength)
+            {
+                HandleDownloading(fileArgs.FileLength, AutoFile.Position);
+                var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.DownloadContinue)
+                    .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString());
+                SendCommand(sender);
+            }
+            else
+            {
+                AutoFile.Dispose();
+                HandleDownloaded(fileArgs.StartTime);
+                var startTime = BitConverter.GetBytes(fileArgs.StartTime.ToBinary());
+                var sender = new CommandSender(DateTime.Now, CommandTypes.TransferFile, OperateTypes.DownloadFinish, startTime, 0, startTime.Length);
+                SendCommand(sender);
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
         }
     }
 

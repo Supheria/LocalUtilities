@@ -129,7 +129,7 @@ public class ClientHost : Host
             var localPath = Upload.GetFileRepoPath(dirName, fileName);
             if (!File.Exists(localPath))
                 File.Copy(filePath, localPath);
-            Upload.Upload(dirName, fileName);
+            Upload.UploadAsync(dirName, fileName);
         }
         catch (Exception ex)
         {
@@ -142,7 +142,7 @@ public class ClientHost : Host
         try
         {
             var fileName = Path.GetFileName(filePath);
-            Download.DownLoad(dirName, fileName);
+            Download.DownLoadAsync(dirName, fileName);
         }
         catch (Exception ex)
         {
