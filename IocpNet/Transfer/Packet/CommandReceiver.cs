@@ -2,7 +2,6 @@
 using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
-using System.Reflection.Emit;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Transfer.Packet;

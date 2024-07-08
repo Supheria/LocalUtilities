@@ -3,7 +3,6 @@ using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer.Packet;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
-using Microsoft.VisualBasic.Logging;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Serve;
@@ -35,7 +34,7 @@ public abstract class Host
 
     protected static int WriteU8Buffer(string str, out byte[] buffer)
     {
-        buffer  = Encoding.UTF8.GetBytes(str);
+        buffer = Encoding.UTF8.GetBytes(str);
         return buffer.Length;
     }
 

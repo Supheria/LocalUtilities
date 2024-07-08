@@ -1,6 +1,5 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.SimpleScript.Serialization;
 
 namespace LocalUtilities.IocpNet.Transfer.Packet;
 
