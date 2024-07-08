@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.IocpNet.Common;
 using LocalUtilities.IocpNet.Protocol;
+using LocalUtilities.SimpleScript.Serialization;
 using LocalUtilities.TypeGeneral;
 using System.Text;
 
@@ -7,32 +8,52 @@ namespace LocalUtilities.IocpNet.Transfer.Packet;
 
 public sealed class CommandSender : Command
 {
-    public IocpEventHandler? OnRetry;
-
-    public IocpEventHandler? OnRetryFaild;
+    public IocpEventHandler? OnWaitingCallbackFailed;
 
     public event IocpEventHandler? OnWasted;
 
     DaemonThread? DaemonThread { get; set; }
 
-    int RetryTimesMax { get; set; } = ConstTabel.OperateRetryTimes;
-
-    int RetryTimes { get; set; } = 0;
-
-    public CommandSender(DateTime timeStamp, bool needWaitingCallback, CommandTypes commandType, OperateTypes operateType, byte[] data, int dataOffset, int dataCount) : base(timeStamp, needWaitingCallback, commandType, operateType, data, dataOffset, dataCount)
+    public CommandSender(DateTime timeStamp, CommandTypes commandType, OperateTypes operateType, byte[] data, int dataOffset, int dataCount)
     {
-
+        TimeStamp = timeStamp;
+        CommandType = commandType;
+        OperateType = operateType;
+        Data = new byte[dataCount];
+        Array.Copy(data, dataOffset, Data, 0, dataCount);
     }
 
-    public CommandSender(DateTime timeStamp, bool needWaitingCallback, CommandTypes commandType, OperateTypes operateType) : base(timeStamp, needWaitingCallback, commandType, operateType)
+    public CommandSender(DateTime timeStamp, CommandTypes commandType, OperateTypes operateType)
     {
-
+        TimeStamp = timeStamp;
+        CommandType = commandType;
+        OperateType = operateType;
     }
 
-    public void StartWaitingCallback()
+    public byte[] GetPacket()
     {
-        DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
-        DaemonThread.Start();
+        var args = Args.ToSsBuffer();
+        var PacketLength = HeadLength + args.Length + Data.Length;
+        var buffer = new byte[PacketLength];
+        var offset = 0;
+        Array.Copy(BitConverter.GetBytes(PacketLength), 0, buffer, 0, sizeof(int));
+        offset += sizeof(int);
+        Array.Copy(BitConverter.GetBytes(args.Length), 0, buffer, offset, sizeof(int));
+        offset += sizeof(int);
+        buffer[offset++] = (byte)CommandType;
+        buffer[offset++] = (byte)OperateType;
+        Array.Copy(BitConverter.GetBytes(TimeStamp.ToBinary()), 0, buffer, offset, sizeof(long));
+        offset += sizeof(long);
+        Array.Copy(args, 0, buffer, offset, args.Length);
+        offset += args.Length;
+        Array.Copy(Data, 0, buffer, offset, Data.Length);
+        return buffer;
+    }
+
+    public CommandSender AppendArgs(ProtocolKey key, string args)
+    {
+        Args[key] = args;
+        return this;
     }
 
     public CommandSender AppendSuccess()
@@ -54,40 +75,18 @@ public sealed class CommandSender : Command
         return this;
     }
 
-    public new CommandSender AppendArgs(ProtocolKey key, string args)
+    public void StartWaitingCallback()
     {
-        base.AppendArgs(key, args);
-        return this;
+        DaemonThread = new(ConstTabel.WaitingCallbackMilliseconds, WaitingFailed);
+        DaemonThread.Start();
     }
 
-    private void Retry()
+    private void WaitingFailed()
     {
-        try
-        {
-            if (OnRetry is null)
-            {
-                Waste();
-                return;
-            }
-            if (--RetryTimesMax < 0)
-            {
-                Waste();
-                OnRetryFaild?.Invoke();
-                HandleOperateRetryFailed();
-                return;
-            }
-            RetryTimes++;
-            DaemonThread?.Stop();
-            OnRetry.Invoke();
-            HandleOperateRetry();
-            DaemonThread?.Start();
-        }
-        catch (Exception ex)
-        {
-            HandleLog(ex.Message);
-            Waste();
-            HandleOperateRetryFailed();
-        }
+        Waste();
+        OnWaitingCallbackFailed?.Invoke();
+        HandleWaitingCallbackFailed();
+        return;
     }
 
     public void Waste()
@@ -96,31 +95,17 @@ public sealed class CommandSender : Command
         OnWasted?.Invoke();
     }
 
-    private void HandleOperateRetry()
+    private void HandleWaitingCallbackFailed()
     {
         var message = new StringBuilder()
             .Append(SignTable.OpenBracket)
-            .Append(StringTable.Retry)
-            .Append(SignTable.CloseBracket)
-            .Append(SignTable.Space)
-            .Append(OperateType)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
-            .Append(RetryTimes)
-            .Append(SignTable.Space)
-            .Append(StringTable.Times)
-            .ToString();
-        HandleLog(message);
-    }
-
-    private void HandleOperateRetryFailed()
-    {
-        var message = new StringBuilder()
-            .Append(SignTable.OpenBracket)
-            .Append(StringTable.Retry)
+            .Append(StringTable.WaitingCallback)
             .Append(SignTable.Space)
             .Append(StringTable.Failed)
             .Append(SignTable.CloseBracket)
+            .Append(SignTable.Space)
+            .Append(CommandType)
+            .Append(SignTable.Comma)
             .Append(SignTable.Space)
             .Append(OperateType)
             .ToString();

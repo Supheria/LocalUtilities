@@ -16,9 +16,9 @@ partial class Protocol
 
     public event IocpEventHandler<string>? OnProcessing;
 
-    public event IocpEventHandler<Command>? OnOperate;
+    public event IocpEventHandler<CommandReceiver>? OnOperate;
 
-    public event IocpEventHandler<Command>? OnOperateCallback;
+    public event IocpEventHandler<CommandReceiver>? OnOperateCallback;
 
     protected void HandleLog(string log)
     {
@@ -27,7 +27,7 @@ partial class Protocol
 
     protected abstract string GetLog(string log);
 
-    protected void HandleException(string funcName, Exception ex)
+    protected void HandleException(Exception ex)
     {
         var errorCode = ex switch
         {
@@ -35,9 +35,6 @@ partial class Protocol
             _ => ProtocolCode.UnknowError,
         };
         var message = new StringBuilder()
-            .Append(funcName)
-            .Append(SignTable.Colon)
-            .Append(SignTable.Space)
             .Append(SignTable.OpenBracket)
             .Append(errorCode)
             .Append(SignTable.CloseBracket)

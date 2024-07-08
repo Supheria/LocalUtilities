@@ -20,6 +20,12 @@ public abstract class SerializableTagValues<TKey, TValue> : ISsSerializable wher
 
     protected abstract Func<List<string>, TValue> ReadValue { get; }
 
+    public TValue this[TKey key]
+    {
+        get => Map[key];
+        set => Map[key] = value;
+    }
+
     public void Serialize(SsSerializer serializer)
     {
         serializer.WriteTagValuesArray("", Map, WriteTag, WriteValue);

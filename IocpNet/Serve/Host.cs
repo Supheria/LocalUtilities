@@ -44,16 +44,16 @@ public abstract class Host
         return Encoding.UTF8.GetString(buffer);
     }
 
-    protected void HandleMessage(Command command)
+    protected void HandleMessage(CommandReceiver receiver)
     {
         var str = new StringBuilder()
-            .Append(command.GetArgs(ProtocolKey.Sender))
+            .Append(receiver.GetArgs(ProtocolKey.SendUser))
             .Append(SignTable.Sub)
             .Append(SignTable.Greater)
             .Append(UserInfo?.Name)
             .Append(SignTable.Colon)
             .Append(SignTable.Space)
-            .Append(ReadU8Buffer(command.Data))
+            .Append(ReadU8Buffer(receiver.Data))
             .ToString();
         OnLog?.Invoke(str);
     }

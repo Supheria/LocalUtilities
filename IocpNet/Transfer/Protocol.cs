@@ -67,7 +67,7 @@ public abstract partial class Protocol : IDisposable
         }
         catch (Exception ex)
         {
-            HandleException(nameof(ReceiveAsync), ex);
+            HandleException(ex);
             Close();
         }
     }
@@ -86,14 +86,14 @@ public abstract partial class Protocol : IDisposable
             var packet = ReceiveBuffer.GetData();
             while (packet.Length > sizeof(int))
             {
-                if (Command.OutOfLimit(packet))
+                if (CommandReceiver.OutOfLimit(packet))
                 {
                     ReceiveBuffer.Clear();
                     break;
                 }
-                if (!Command.FullPacket(packet))
+                if (!CommandReceiver.FullPacket(packet))
                     break;
-                var receiver = Command.GetReceiver(packet, out var packetLength);
+                var receiver = new CommandReceiver(packet, out var packetLength);
                 if (receiver is not null)
                 {
                     receiver.OnLog += HandleLog;
@@ -109,7 +109,7 @@ public abstract partial class Protocol : IDisposable
         }
         catch (Exception ex)
         {
-            HandleException(nameof(ProcessReceive), ex);
+            HandleException(ex);
             Close();
         }
     }
@@ -155,7 +155,7 @@ public abstract partial class Protocol : IDisposable
             }
             catch (Exception ex)
             {
-                HandleException(nameof(GetFileRepoPath), ex);
+                HandleException(ex);
             }
         }
         return Path.Combine(dir, fileName);

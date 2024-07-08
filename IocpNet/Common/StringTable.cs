@@ -6,4 +6,6 @@ public class StringTable
     public const string Times = "times";
     public const string Failed = "failed";
     public const string Null = "Null";
+    public const string WaitingCallback = "waiting callback";
+    public const string Host = "Host";
 }

@@ -10,13 +10,13 @@ namespace LocalUtilities.IocpNet.Serve;
 
 public class ServerHost : Host
 {
-    public IocpEventHandler<Command>? OnOperate;
+    public IocpEventHandler<CommandReceiver>? OnOperate;
 
     public IocpEventHandler? OnClearUp;
 
     ConcurrentDictionary<ProtocolTypes, ServerProtocol> Protocols { get; } = [];
 
-    public string Name => UserInfo?.Name ?? "";
+    public string UserName => UserInfo?.Name ?? "";
 
     public int Count => Protocols.Count;
 
@@ -32,7 +32,7 @@ public class ServerHost : Host
         protocol.OnLog += HandleLog;
         if (protocol.Type is ProtocolTypes.Operator)
         {
-            protocol.OnOperate += ReceiveOperate;
+            protocol.OnOperate += DoOperate;
             protocol.OnOperateCallback += ReceiveOperateCallback;
         }
         else if (protocol.Type is ProtocolTypes.HeartBeats)
@@ -60,35 +60,48 @@ public class ServerHost : Host
         }
     }
 
-    private void ReceiveOperate(Command command)
+    public void DoOperate(CommandReceiver receiver)
     {
-        switch (command.OperateType)
-        {
-            case OperateTypes.Message:
-                ReceiveMessage(command);
-                break;
-        }
-    }
-
-    private void ReceiveMessage(Command command)
-    {
+        var sender = new CommandSender(receiver.TimeStamp, CommandTypes.OperateCallback, receiver.OperateType);
         try
         {
-            var receiver = command.GetArgs(ProtocolKey.Receiver);
-            if (receiver != Name)
-                OnOperate?.Invoke(command);
-            HandleMessage(command);
-            var commandCallback = new CommandReceiver(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
-                .AppendSuccess();
-            Protocols[ProtocolTypes.Operator].SendCallback(commandCallback);
+            switch (receiver.OperateType)
+            {
+                case OperateTypes.Message:
+                    DoMessage(receiver);
+                    break;
+            }
         }
         catch (Exception ex)
         {
             HandleException(ex);
+            if (Protocols.TryGetValue(ProtocolTypes.Operator, out var protocol))
+                protocol.CallbackFailure(sender, ex);
         }
     }
 
-    private void ReceiveOperateCallback(Command command)
+    private void DoMessage(CommandReceiver receiver)
+    {
+        var userName = receiver.GetArgs(ProtocolKey.ReceiveUser);
+        if (userName != UserName)
+        {
+            OnOperate?.Invoke(receiver);
+            var sender = new CommandSender(receiver.TimeStamp, CommandTypes.OperateCallback, receiver.OperateType);
+            Protocols[ProtocolTypes.Operator].CallbackSuccess(sender);
+        }
+        else
+        {
+            HandleMessage(receiver);
+            var data = receiver.Data;
+            var sender = new CommandSender(DateTime.Now, CommandTypes.Operate, receiver.OperateType, data, 0, data.Length)
+                .AppendArgs(ProtocolKey.ReceiveUser, receiver.GetArgs(ProtocolKey.ReceiveUser))
+                .AppendArgs(ProtocolKey.SendUser, receiver.GetArgs(ProtocolKey.SendUser));
+            Protocols[ProtocolTypes.Operator].SendCommand(sender);
+        }
+        // TODO: make callback by receive user's client
+    }
+
+    private void ReceiveOperateCallback(CommandReceiver receiver)
     {
 
     }
@@ -98,36 +111,10 @@ public class ServerHost : Host
         try
         {
             var count = WriteU8Buffer(message, out var data);
-            var commandSend = new CommandSender(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
-            var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommand(commandSend, true);
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
-
-    public void DoOperate(Command command)
-    {
-        switch (command.OperateType)
-        {
-            case OperateTypes.Message:
-                SendMessage(command);
-                break;
-        }
-    }
-
-    private void SendMessage(Command command)
-    {
-        try
-        {
-            var data = command.Data;
-            var commandSend = new CommandSender(CommandTypes.Operate, command.OperateType, data, 0, data.Length)
-                .AppendArgs(ProtocolKey.Receiver, command.GetArgs(ProtocolKey.Receiver))
-                .AppendArgs(ProtocolKey.Sender, command.GetArgs(ProtocolKey.Sender));
-            Protocols[ProtocolTypes.Operator].SendCommand(commandSend, true);
-
+            var sender = new CommandSender(DateTime.Now, CommandTypes.Operate, OperateTypes.Message, data, 0, count)
+                .AppendArgs(ProtocolKey.ReceiveUser, UserName)
+                .AppendArgs(ProtocolKey.SendUser, StringTable.Host);
+            Protocols[ProtocolTypes.Operator].SendCommand(sender);
         }
         catch (Exception ex)
         {
@@ -140,9 +127,8 @@ public class ServerHost : Host
         try
         {
             var count = WriteU8Buffer(userList.ToArrayString(), out var data);
-            var commandSend = new CommandSender(CommandTypes.Operate, OperateTypes.UserList, data, 0, count);
-            var protocol = Protocols[ProtocolTypes.Operator];
-            protocol.SendCommand(commandSend, false);
+            var sender = new CommandSender(DateTime.Now, CommandTypes.Operate, OperateTypes.UpdateUserList, data, 0, count);
+            Protocols[ProtocolTypes.Operator].SendCommand(sender);
         }
         catch (Exception ex)
         {

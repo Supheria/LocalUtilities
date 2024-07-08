@@ -4,9 +4,11 @@ public enum OperateTypes : byte
 {
     None,
     Message,
-    UserList,
+    UpdateUserList,
     UploadRequest,
     UploadContinue,
+    UploadFinish,
     DownloadRequest,
     DownloadContinue,
+    DownloadFinish,
 }

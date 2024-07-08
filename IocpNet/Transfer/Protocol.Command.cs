@@ -39,21 +39,30 @@ partial class Protocol
     public void SendCommand(CommandSender sender)
     {
         sender.OnLog += HandleLog;
-        if (sender.NeedWaitingCallback)
-        {
-            sender.OnWasted += () => CommandWaitList.TryRemove(sender.TimeStamp, out _);
-            sender.OnRetry += sendCommend;
-            if (!CommandWaitList.TryAdd(sender.TimeStamp, sender))
-                throw new IocpException(ProtocolCode.CannotAddSendCommand);
-            sender.StartWaitingCallback();
-        }
-        sendCommend();
-        void sendCommend()
-        {
-            var packet = sender.GetPacket();
-            SendBuffer.WriteData(packet, 0, packet.Length);
-            SendAsync();
-        }
+        sender.OnWasted += () => CommandWaitList.TryRemove(sender.TimeStamp, out _);
+        if (!CommandWaitList.TryAdd(sender.TimeStamp, sender))
+            throw new IocpException(ProtocolCode.CannotAddSendCommand);
+        sender.StartWaitingCallback();
+        HandleSendCommand(sender);
+    }
+
+    public void CallbackSuccess(CommandSender sender)
+    {
+        sender.AppendSuccess();
+        HandleSendCommand(sender);
+    }
+
+    public void CallbackFailure(CommandSender sender, Exception ex)
+    {
+        sender.AppendFailure(ex);
+        HandleSendCommand(sender);
+    }
+
+    private void HandleSendCommand(CommandSender sender)
+    {
+        var packet = sender.GetPacket();
+        SendBuffer.WriteData(packet, 0, packet.Length);
+        SendAsync();
     }
 
     /// <summary>
@@ -64,12 +73,9 @@ partial class Protocol
     /// <exception cref="IocpException"></exception>
     protected void ReceiveCallback(CommandReceiver receiver)
     {
-        if (receiver.NeedWaitingCallback)
-        {
-            if (!CommandWaitList.TryGetValue(receiver.TimeStamp, out var commandSend))
-                throw new IocpException(ProtocolCode.CannotFindSourceSendCommand);
-            commandSend.Waste();
-        }
+        if (!CommandWaitList.TryGetValue(receiver.TimeStamp, out var commandSend))
+            throw new IocpException(ProtocolCode.CannotFindSourceSendCommand);
+        commandSend.Waste();
         var callbackCode = receiver.GetCallbackCode();
         if (callbackCode is not ProtocolCode.Success)
             throw new IocpException(callbackCode, receiver.GetErrorMessage());
@@ -89,7 +95,7 @@ partial class Protocol
         }
         catch (Exception ex)
         {
-            HandleException(nameof(OperateCallback), ex);
+            HandleException(ex);
         }
     }
 }

@@ -9,13 +9,13 @@ public class ConstTabel
 
     public const int DataBytesTransferredMax = 1024 * 1024;
 
-    public const int SocketTimeoutMilliseconds = 200 * 1000;
+    public const int SocketTimeoutMilliseconds = 20 * 1000;
 
-    public const int HeartBeatsInterval = 100 * 1000;
+    public const int HeartBeatsInterval = 10 * 1000;
 
     public const int FileStreamExpireMilliseconds = 5 * 1000;
 
-    public const int OperateRetryInterval = 3 * 1000;
+    public const int WaitingCallbackMilliseconds = 3 * 1000;
 
     public const int OperateRetryTimes = 3;
 

@@ -108,12 +108,12 @@ public class Server
         user.OnOperate += HandleOperate;
         user.OnClearUp += () =>
         {
-            UserMap.TryRemove(user.Name, out _);
+            UserMap.TryRemove(user.UserName, out _);
             BroadcastUserList();
         };
         if (!user.Add(protocol))
             return;
-        if (!UserMap.TryAdd(user.Name, user))
+        if (!UserMap.TryAdd(user.UserName, user))
             protocol.Close();
         HandleUpdateConnection();
     }
@@ -126,14 +126,14 @@ public class Server
         HandleUpdateConnection();
     }
 
-    private void HandleOperate(Command command)
+    private void HandleOperate(CommandReceiver receiver)
     {
         try
         {
-            var receiver = command.GetArgs(ProtocolKey.Receiver);
-            if (!UserMap.TryGetValue(receiver, out var user))
+            var userName = receiver.GetArgs(ProtocolKey.ReceiveUser);
+            if (!UserMap.TryGetValue(userName, out var user))
                 throw new IocpException(ProtocolCode.UserNotExist);
-            user.DoOperate(command);
+            user.DoOperate(receiver);
         }
         catch (Exception ex)
         {

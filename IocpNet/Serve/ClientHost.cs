@@ -35,8 +35,8 @@ public class ClientHost : Host
         HeartBeats.OnLogined += () => OnConnected?.Invoke();
         HeartBeats.OnClosed += () => OnDisconnected?.Invoke();
         Operator.OnLog += HandleLog;
-        Operator.OnOperate += ReceiveOperate;
-        Operator.OnOperateCallback += ReceiveOperateCallback;
+        Operator.OnOperate += DoOperate;
+        Operator.OnOperateCallback += DoOperateCallback;
         Upload.OnLog += HandleLog;
         Upload.OnProcessing += (speed) => OnProcessing?.Invoke(speed);
         Download.OnLog += HandleLog;
@@ -63,52 +63,35 @@ public class ClientHost : Host
         Download.Dispose();
     }
 
-    private void ReceiveOperate(Command command)
+    private void DoOperate(CommandReceiver receiver)
     {
+        var sender = new CommandSender(receiver.TimeStamp, CommandTypes.OperateCallback, receiver.OperateType);
         try
         {
-            switch (command.OperateType)
+            switch (receiver.OperateType)
             {
                 case OperateTypes.Message:
-                    ReceiveMessage(command);
+                    HandleMessage(receiver);
                     break;
-                case OperateTypes.UserList:
-                    UpdateUserList(command);
+                case OperateTypes.UpdateUserList:
+                    var userList = ReadU8Buffer(receiver.Data).ToArray();
+                    OnUpdateUserList?.Invoke(userList);
                     break;
             }
+            Operator.CallbackSuccess(sender);
         }
         catch (Exception ex)
         {
             HandleException(ex);
+            Operator.CallbackFailure(sender, ex);
         }
     }
 
-    private void ReceiveMessage(Command command)
+    private void DoOperateCallback(CommandReceiver receiver)
     {
         try
         {
-            HandleMessage(command);
-            var callbackArgs = new CommandReceiver(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
-                .AppendSuccess();
-            Operator.SendCallback(callbackArgs);
-        }
-        catch (Exception ex)
-        {
-            HandleException(ex);
-        }
-    }
-
-    private void UpdateUserList(Command command)
-    {
-        var userList = ReadU8Buffer(command.Data).ToArray();
-        OnUpdateUserList?.Invoke(userList);
-    }
-
-    private void ReceiveOperateCallback(Command command)
-    {
-        try
-        {
-            switch (command.OperateType)
+            switch (receiver.OperateType)
             {
                 case OperateTypes.Message:
                     break;
@@ -127,10 +110,10 @@ public class ClientHost : Host
             if (UserInfo is null)
                 throw new IocpException(ProtocolCode.EmptyUserInfo);
             var count = WriteU8Buffer(message, out var data);
-            var commandSend = new CommandSender(CommandTypes.Operate, OperateTypes.Message, data, 0, count)
-                .AppendArgs(ProtocolKey.Receiver, userName)
-                .AppendArgs(ProtocolKey.Sender, UserInfo.Name);
-            Operator.SendCommand(commandSend, true);
+            var sender = new CommandSender(DateTime.Now, CommandTypes.Operate, OperateTypes.Message, data, 0, count)
+                .AppendArgs(ProtocolKey.ReceiveUser, userName)
+                .AppendArgs(ProtocolKey.SendUser, UserInfo.Name);
+            Operator.SendCommand(sender);
         }
         catch (Exception ex)
         {
