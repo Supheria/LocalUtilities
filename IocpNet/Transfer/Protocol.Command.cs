@@ -8,11 +8,11 @@ namespace LocalUtilities.IocpNet.Transfer;
 
 partial class Protocol
 {
-    protected delegate void CommandHandler(Command command);
+    protected delegate void CommandHandler(CommandReceiver receiver);
 
     protected Dictionary<CommandTypes, CommandHandler> Commands { get; } = [];
 
-    ConcurrentDictionary<DateTime, CommandSend> CommandWaitList { get; } = [];
+    ConcurrentDictionary<DateTime, CommandSender> CommandWaitList { get; } = [];
 
     public Protocol()
     {
@@ -28,75 +28,68 @@ partial class Protocol
         return md5;
     };
 
-    protected abstract void ProcessCommand(Command command);
+    protected abstract void ProcessCommand(CommandReceiver receiver);
 
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="commandSend"></param>
+    /// <param name="sender"></param>
     /// <param name="doRetry"></param>
     /// <exception cref="IocpException"></exception>
-    public void SendCommand(CommandSend commandSend, bool doRetry)
+    public void SendCommand(CommandSender sender)
     {
-        commandSend.OnLog += HandleLog;
-        commandSend.OnWasted += () => CommandWaitList.TryRemove(commandSend.TimeStamp, out _);
-        if (doRetry)
-            commandSend.OnRetry += sendCommend;
-        if (!CommandWaitList.TryAdd(commandSend.TimeStamp, commandSend))
-            throw new IocpException(ProtocolCode.CannotAddSendCommand);
+        sender.OnLog += HandleLog;
+        if (sender.NeedWaitingCallback)
+        {
+            sender.OnWasted += () => CommandWaitList.TryRemove(sender.TimeStamp, out _);
+            sender.OnRetry += sendCommend;
+            if (!CommandWaitList.TryAdd(sender.TimeStamp, sender))
+                throw new IocpException(ProtocolCode.CannotAddSendCommand);
+            sender.StartWaitingCallback();
+        }
         sendCommend();
         void sendCommend()
         {
-            WriteCommand(commandSend);
+            var packet = sender.GetPacket();
+            SendBuffer.WriteData(packet, 0, packet.Length);
             SendAsync();
         }
     }
 
-    public void SendCallback(CommandCallback commandCallback)
-    {
-        WriteCommand(commandCallback);
-        SendAsync();
-    }
-
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="command"></param>
+    /// <param name="receiver"></param>
     /// <returns></returns>
     /// <exception cref="IocpException"></exception>
-    protected void ReceiveCallback(Command command)
+    protected void ReceiveCallback(CommandReceiver receiver)
     {
-        if (command is not CommandCallback commandCallback)
-            throw new IocpException(ProtocolCode.ArgumentError);
-        if (!CommandWaitList.TryGetValue(commandCallback.TimeStamp, out var commandSend))
-            throw new IocpException(ProtocolCode.CannotFindSourceSendCommand);
-        commandSend.Waste();
-        var callbackCode = commandCallback.GetCallbackCode();
+        if (receiver.NeedWaitingCallback)
+        {
+            if (!CommandWaitList.TryGetValue(receiver.TimeStamp, out var commandSend))
+                throw new IocpException(ProtocolCode.CannotFindSourceSendCommand);
+            commandSend.Waste();
+        }
+        var callbackCode = receiver.GetCallbackCode();
         if (callbackCode is not ProtocolCode.Success)
-            throw new IocpException(callbackCode, commandCallback.GetErrorMessage());
+            throw new IocpException(callbackCode, receiver.GetErrorMessage());
     }
 
-    private void Operate(Command command)
+    private void Operate(CommandReceiver receiver)
     {
-        OnOperate?.Invoke(command);
+        OnOperate?.Invoke(receiver);
     }
 
-    private void OperateCallback(Command command)
+    private void OperateCallback(CommandReceiver receiver)
     {
         try
         {
-            ReceiveCallback(command);
-            OnOperateCallback?.Invoke(command);
+            ReceiveCallback(receiver);
+            OnOperateCallback?.Invoke(receiver);
         }
         catch (Exception ex)
         {
             HandleException(nameof(OperateCallback), ex);
         }
-    }
-
-    private void WriteCommand(Command command)
-    {
-        var packet = command.GetPacket();
-        SendBuffer.WriteData(packet, 0, packet.Length);
     }
 }

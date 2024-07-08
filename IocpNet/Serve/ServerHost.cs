@@ -78,7 +78,7 @@ public class ServerHost : Host
             if (receiver != Name)
                 OnOperate?.Invoke(command);
             HandleMessage(command);
-            var commandCallback = new CommandCallback(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
+            var commandCallback = new CommandReceiver(command.TimeStamp, CommandTypes.OperateCallback, command.OperateType)
                 .AppendSuccess();
             Protocols[ProtocolTypes.Operator].SendCallback(commandCallback);
         }
@@ -98,7 +98,7 @@ public class ServerHost : Host
         try
         {
             var count = WriteU8Buffer(message, out var data);
-            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
+            var commandSend = new CommandSender(CommandTypes.Operate, OperateTypes.Message, data, 0, count);
             var protocol = Protocols[ProtocolTypes.Operator];
             protocol.SendCommand(commandSend, true);
         }
@@ -123,7 +123,7 @@ public class ServerHost : Host
         try
         {
             var data = command.Data;
-            var commandSend = new CommandSend(CommandTypes.Operate, command.OperateType, data, 0, data.Length)
+            var commandSend = new CommandSender(CommandTypes.Operate, command.OperateType, data, 0, data.Length)
                 .AppendArgs(ProtocolKey.Receiver, command.GetArgs(ProtocolKey.Receiver))
                 .AppendArgs(ProtocolKey.Sender, command.GetArgs(ProtocolKey.Sender));
             Protocols[ProtocolTypes.Operator].SendCommand(commandSend, true);
@@ -140,7 +140,7 @@ public class ServerHost : Host
         try
         {
             var count = WriteU8Buffer(userList.ToArrayString(), out var data);
-            var commandSend = new CommandSend(CommandTypes.Operate, OperateTypes.UserList, data, 0, count);
+            var commandSend = new CommandSender(CommandTypes.Operate, OperateTypes.UserList, data, 0, count);
             var protocol = Protocols[ProtocolTypes.Operator];
             protocol.SendCommand(commandSend, false);
         }

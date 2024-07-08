@@ -29,7 +29,7 @@ public class FileTransferArgs(string dirName, string fileName) : ISsSerializable
 
     public void Serialize(SsSerializer serializer)
     {
-        serializer.WriteTag(nameof(StartTime), StartTime.ToString(DateTimeFormat.Data));
+        serializer.WriteTag(nameof(StartTime), StartTime.ToBinary().ToString());
         serializer.WriteTag(nameof(DirName), DirName);
         serializer.WriteTag(nameof(FileName), FileName);
         serializer.WriteTag(nameof(Md5Value), Md5Value);
@@ -40,7 +40,7 @@ public class FileTransferArgs(string dirName, string fileName) : ISsSerializable
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        StartTime = deserializer.ReadTag(nameof(StartTime), s => s.ToDateTime(DateTimeFormat.Data));
+        StartTime = deserializer.ReadTag(nameof(StartTime), s => DateTime.FromBinary(s.ToLong()));
         DirName = deserializer.ReadTag(nameof(DirName));
         FileName = deserializer.ReadTag(nameof(FileName));
         Md5Value = deserializer.ReadTag(nameof(Md5Value));

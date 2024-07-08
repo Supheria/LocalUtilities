@@ -93,13 +93,13 @@ public abstract partial class Protocol : IDisposable
                 }
                 if (!Command.FullPacket(packet))
                     break;
-                var command = Command.GetCommand(packet, out var packetLength);
-                if (command is not null)
+                var receiver = Command.GetReceiver(packet, out var packetLength);
+                if (receiver is not null)
                 {
-                    command.OnLog += HandleLog;
-                    if (command.Data.Length > ConstTabel.DataBytesTransferredMax)
+                    receiver.OnLog += HandleLog;
+                    if (receiver.Data.Length > ConstTabel.DataBytesTransferredMax)
                         throw new IocpException(ProtocolCode.DataOutLimit);
-                    ProcessCommand(command);
+                    ProcessCommand(receiver);
                 }
                 ReceiveBuffer.RemoveData(packetLength);
                 packet = ReceiveBuffer.GetData();

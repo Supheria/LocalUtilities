@@ -19,7 +19,6 @@ public enum ProtocolCode
     DataOutLimit,
     ServerNotStartYet,
     ServerHasStarted,
-    ArgumentError,
     CannotFindSourceSendCommand,
     CannotAddSendCommand,
     UserNotExist,

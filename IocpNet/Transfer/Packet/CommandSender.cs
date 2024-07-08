@@ -5,7 +5,7 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Transfer.Packet;
 
-public sealed class CommandSend : Command
+public sealed class CommandSender : Command
 {
     public IocpEventHandler? OnRetry;
 
@@ -13,25 +13,48 @@ public sealed class CommandSend : Command
 
     public event IocpEventHandler? OnWasted;
 
-    DaemonThread DaemonThread { get; }
+    DaemonThread? DaemonThread { get; set; }
 
     int RetryTimesMax { get; set; } = ConstTabel.OperateRetryTimes;
 
     int RetryTimes { get; set; } = 0;
 
-    public CommandSend(CommandTypes commandType, OperateTypes operateType, byte[] data, int dataOffset, int dataCount) : base(Types.Send, DateTime.Now, commandType, operateType, data, dataOffset, dataCount)
+    public CommandSender(DateTime timeStamp, bool needWaitingCallback, CommandTypes commandType, OperateTypes operateType, byte[] data, int dataOffset, int dataCount) : base(timeStamp, needWaitingCallback, commandType, operateType, data, dataOffset, dataCount)
+    {
+
+    }
+
+    public CommandSender(DateTime timeStamp, bool needWaitingCallback, CommandTypes commandType, OperateTypes operateType) : base(timeStamp, needWaitingCallback, commandType, operateType)
+    {
+
+    }
+
+    public void StartWaitingCallback()
     {
         DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
         DaemonThread.Start();
     }
 
-    public CommandSend(CommandTypes commandType, OperateTypes operateType) : base(Types.Send, DateTime.Now, commandType, operateType)
+    public CommandSender AppendSuccess()
     {
-        DaemonThread = new(ConstTabel.OperateRetryInterval, Retry);
-        DaemonThread.Start();
+        AppendArgs(ProtocolKey.CallbackCode, ProtocolCode.Success.ToString());
+        AppendArgs(ProtocolKey.ErrorMessage, "");
+        return this;
     }
 
-    public override CommandSend AppendArgs(ProtocolKey key, string args)
+    public CommandSender AppendFailure(Exception ex)
+    {
+        var errorCode = ex switch
+        {
+            IocpException iocp => iocp.ErrorCode,
+            _ => ProtocolCode.UnknowError,
+        };
+        AppendArgs(ProtocolKey.CallbackCode, errorCode.ToString());
+        AppendArgs(ProtocolKey.ErrorMessage, ex.Message);
+        return this;
+    }
+
+    public new CommandSender AppendArgs(ProtocolKey key, string args)
     {
         base.AppendArgs(key, args);
         return this;
@@ -54,10 +77,10 @@ public sealed class CommandSend : Command
                 return;
             }
             RetryTimes++;
-            DaemonThread.Stop();
+            DaemonThread?.Stop();
             OnRetry.Invoke();
             HandleOperateRetry();
-            DaemonThread.Start();
+            DaemonThread?.Start();
         }
         catch (Exception ex)
         {
@@ -69,7 +92,7 @@ public sealed class CommandSend : Command
 
     public void Waste()
     {
-        DaemonThread.Dispose();
+        DaemonThread?.Dispose();
         OnWasted?.Invoke();
     }
 

@@ -43,15 +43,15 @@ public class ServerProtocol : Protocol
         ReceiveAsync();
     }
 
-    protected override void ProcessCommand(Command command)
+    protected override void ProcessCommand(CommandReceiver receiverr)
     {
         try
         {
-            if (!CheckLogin(command.CommandType)) //检测登录
+            if (!CheckLogin(receiverr.CommandType)) //检测登录
                 throw new IocpException(ProtocolCode.NotLogined);
-            if (!Commands.TryGetValue(command.CommandType, out var doCommand))
+            if (!Commands.TryGetValue(receiverr.CommandType, out var doCommand))
                 throw new IocpException(ProtocolCode.UnknownCommand);
-            doCommand(command);
+            doCommand(receiverr);
         }
         catch (Exception ex)
         {
@@ -67,14 +67,14 @@ public class ServerProtocol : Protocol
             return IsLogin;
     }
 
-    private void DoLogin(Command command)
+    private void DoLogin(CommandReceiver receiver)
     {
-        var commandCallback = new CommandCallback(command.TimeStamp, command.CommandType, command.OperateType);
+        var sender = new CommandSender(receiver.TimeStamp, false, receiver.CommandType, receiver.OperateType);
         try
         {
-            var name = command.GetArgs(ProtocolKey.UserName);
-            var password = command.GetArgs(ProtocolKey.Password);
-            var type = command.GetArgs(ProtocolKey.ProtocolType).ToEnum<ProtocolTypes>();
+            var name = receiver.GetArgs(ProtocolKey.UserName);
+            var password = receiver.GetArgs(ProtocolKey.Password);
+            var type = receiver.GetArgs(ProtocolKey.ProtocolType).ToEnum<ProtocolTypes>();
             if (type is ProtocolTypes.None || Type is not ProtocolTypes.None && Type != type)
                 throw new IocpException(ProtocolCode.WrongProtocolType);
             Type = type;
@@ -84,42 +84,42 @@ public class ServerProtocol : Protocol
             UserInfo = new(name, password);
             IsLogin = true;
             HandleLogined();
-            commandCallback.AppendSuccess();
+            sender.AppendSuccess();
         }
         catch (Exception ex)
         {
             HandleException(nameof(DoLogin), ex);
-            commandCallback.AppendFailure(ex);
+            sender.AppendFailure(ex);
         }
-        SendCallback(commandCallback);
+        SendCommand(sender);
     }
 
-    public void DoTransferFile(Command command)
+    public void DoTransferFile(CommandReceiver receiver)
     {
         try
         {
-            switch (command.OperateType)
+            switch (receiver.OperateType)
             {
                 case OperateTypes.UploadRequest:
-                    DoUploadRequest(command);
+                    DoUploadRequest(receiver);
                     return;
                 case OperateTypes.UploadContinue:
-                    DoUploadContinue(command);
+                    DoUploadContinue(receiver);
                     return;
                 case OperateTypes.DownloadRequest:
-                    DoDownloadRequest(command);
+                    DoDownloadRequest(receiver);
                     return;
                 case OperateTypes.DownloadContinue:
-                    DoDownloadContinue(command);
+                    DoDownloadContinue(receiver);
                     return;
             }
         }
         catch (Exception ex)
         {
             HandleException(nameof(DoTransferFile), ex);
-            var commandCallback = new CommandCallback(command.TimeStamp, command.CommandType, command.OperateType)
+            var sender = new CommandSender(receiver.TimeStamp, false, receiver.CommandType, receiver.OperateType)
                 .AppendFailure(ex);
-            SendCallback(commandCallback);
+            SendCommand(sender);
         }
     }
 
@@ -142,7 +142,7 @@ public class ServerProtocol : Protocol
         if (!AutoFile.Relocate(fileStream))
             throw new IocpException(ProtocolCode.ProcessingFile);
         HandleUploadStart();
-        var commandCallback = new CommandCallback(command.TimeStamp, command.CommandType, command.OperateType)
+        var commandCallback = new CommandReceiver(command.TimeStamp, command.CommandType, command.OperateType)
             .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString())
             .AppendSuccess();
         SendCallback(commandCallback);
@@ -164,7 +164,7 @@ public class ServerProtocol : Protocol
         }
         else
             HandleUploading(fileArgs.FileLength, AutoFile.Position);
-        var commandCallback = new CommandCallback(command.TimeStamp, command.CommandType, command.OperateType)
+        var commandCallback = new CommandReceiver(command.TimeStamp, command.CommandType, command.OperateType)
             .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString())
             .AppendSuccess();
         SendCallback(commandCallback);
@@ -188,7 +188,7 @@ public class ServerProtocol : Protocol
         HandleDownloadStart();
         fileArgs.FileLength = AutoFile.Length;
         fileArgs.PacketLength = AutoFile.Length > ConstTabel.DataBytesTransferredMax ? ConstTabel.DataBytesTransferredMax : AutoFile.Length;
-        var commandCallback = new CommandCallback(command.TimeStamp, command.CommandType, command.OperateType)
+        var commandCallback = new CommandReceiver(command.TimeStamp, command.CommandType, command.OperateType)
             .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString())
             .AppendSuccess();
         SendCallback(commandCallback);
@@ -211,7 +211,7 @@ public class ServerProtocol : Protocol
             throw new IocpException(ProtocolCode.FileExpired, fileArgs.FileName);
         HandleDownloading(AutoFile.Length, AutoFile.Position);
         fileArgs.FilePosition = AutoFile.Position;
-        var commandCallback = new CommandCallback(command.TimeStamp, command.CommandType, command.OperateType, data, 0, count)
+        var commandCallback = new CommandReceiver(command.TimeStamp, command.CommandType, command.OperateType, data, 0, count)
             .AppendArgs(ProtocolKey.FileTransferArgs, fileArgs.ToSsString())
             .AppendSuccess();
         SendCallback(commandCallback);
