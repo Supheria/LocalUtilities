@@ -1,39 +1,119 @@
-﻿namespace LocalUtilities.TypeToolKit.EventProcess;
+﻿using System.Collections.Concurrent;
+
+namespace LocalUtilities.TypeToolKit.EventProcess;
 
 public partial class EventHub
 {
-    Dictionary<Enum, Delegate?> EventMap { get; } = [];
+    ConcurrentDictionary<Enum, Delegate> EventMap { get; } = [];
 
-    private void OnAddingListener(Enum eventType, Delegate callback)
+    public bool TryAddListener(Enum eventType, Callback callback)
     {
-        if (!EventMap.TryGetValue(eventType, out var exist))
-            EventMap.Add(eventType, null);
-        if (exist is not null && exist.GetType() != callback.GetType())
-            throw EventCallbackException.CallbackWrongType(eventType, exist, callback);
+        try
+        {
+            var success = EventMap.TryAdd(eventType, callback);
+            if (!EventMap.TryGetValue(eventType, out var exist))
+                return false;
+            if (success)
+                return true;
+            EventMap[eventType] = (Callback)exist + callback;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
-    private void OnRemovingListener(Enum eventType, Delegate callback)
+    public bool TryAddListener<TArgs>(Enum eventType, Callback<TArgs> callback)
     {
-        if (!EventMap.TryGetValue(eventType, out var exist))
-            throw EventCallbackException.EventNotExisted(eventType);
-        if (exist is null)
-            throw EventCallbackException.CallbackEmpty(eventType, callback);
-        if (exist.GetType() != callback.GetType())
-            throw EventCallbackException.CallbackWrongType(eventType, exist, callback);
+        try
+        {
+            var success = EventMap.TryAdd(eventType, callback);
+            if (!EventMap.TryGetValue(eventType, out var exist))
+                return false;
+            if (success)
+                return true;
+            EventMap[eventType] = (Callback<TArgs>)exist + callback;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
-    private void OnRemovedListener(Enum eventType)
+    public bool TryRemoveListener(Enum eventType, Callback callback)
     {
-        if (EventMap[eventType] is null)
-            EventMap.Remove(eventType);
+        try
+        {
+            if (!EventMap.TryGetValue(eventType, out var exist))
+                return false;
+            exist = (Callback)exist - callback;
+            if (exist is null)
+                return EventMap.TryRemove(eventType, out _);
+            EventMap[eventType] = exist;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    public bool TryRemoveListener<TArgs>(Enum eventType, Callback<TArgs> callback)
+    {
+        try
+        {
+            if (!EventMap.TryGetValue(eventType, out var exist))
+                return false;
+            exist = (Callback<TArgs>)exist - callback;
+            if (exist is null)
+                return EventMap.TryRemove(eventType, out _);
+            EventMap[eventType] = exist;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public bool TryBroadcast(Enum eventType)
+    {
+        try
+        {
+            if (!EventMap.TryGetValue(eventType, out var callback))
+                return false;
+            callback.DynamicInvoke();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public bool TryBroadcast<TArgs>(Enum eventType, TArgs args)
+    {
+        try
+        {
+            if (!EventMap.TryGetValue(eventType, out var callback))
+                return false;
+            callback.DynamicInvoke(args);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public void ClearListener(Enum eventType)
     {
-        EventMap.Remove(eventType);
+        EventMap.TryRemove(eventType, out _);
     }
 
-    public List<KeyValuePair<Enum, Delegate?>> GetEventList()
+    public List<KeyValuePair<Enum, Delegate>> GetEventList()
     {
         return EventMap.ToList();
     }
