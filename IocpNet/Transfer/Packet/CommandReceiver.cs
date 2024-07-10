@@ -14,8 +14,8 @@ public sealed class CommandReceiver : Command
         var offset = sizeof(int);
         var argsLength = BitConverter.ToInt32(packet, offset);
         offset += sizeof(int);
-        CommandType = (CommandTypes)packet[offset++];
-        OperateType = (OperateTypes)packet[offset++];
+        CommandCode = packet[offset++];
+        OperateCode = packet[offset++];
         TimeStamp = DateTime.FromBinary(BitConverter.ToInt64(packet, offset));
         offset += sizeof(long);
         Args = new CommandArgs().ParseSs(packet, offset, argsLength);
@@ -40,31 +40,13 @@ public sealed class CommandReceiver : Command
         return dataLenght > ConstTabel.DataBytesTransferredMax;
     }
 
-    public string GetArgs(ProtocolKey key)
+    public string GetArgs(string key)
     {
         return Args[key];
     }
 
-    public T GetArgs<T>(ProtocolKey key) where T : ISsSerializable, new()
+    public T GetArgs<T>(string key) where T : ISsSerializable, new()
     {
         return new T().ParseSs(Args[key]);
-    }
-
-    public ProtocolCode GetCallbackCode()
-    {
-        return GetArgs(ProtocolKey.CallbackCode).ToEnum<ProtocolCode>();
-    }
-
-    public string GetErrorMessage()
-    {
-        return new StringBuilder()
-            .Append(SignTable.OpenParenthesis)
-            .Append(CommandType)
-            .Append(SignTable.Comma)
-            .Append(SignTable.Space)
-            .Append(OperateType)
-            .Append(SignTable.CloseParenthesis)
-            .Append(GetArgs(ProtocolKey.ErrorMessage))
-            .ToString();
     }
 }

@@ -17,6 +17,8 @@ public class ConstTabel
 
     public const int WaitingCallbackMilliseconds = 3 * 1000;
 
+    public const int BlockkMilliseconds = 1000;
+
     public const int OperateRetryTimes = 3;
 
     public const int OneKB = 1024;

@@ -3,30 +3,30 @@ using LocalUtilities.IocpNet.Protocol;
 
 namespace LocalUtilities.IocpNet.Transfer.Packet;
 
-public abstract class Command
+public abstract class Command : INetLogger
 {
-    public event LogHandler? OnLog;
+    protected const int HeadLength
+        = sizeof(int) // total length
+        + sizeof(int) // args length
+        + sizeof(byte) // command code
+        + sizeof(byte) // operate code
+        + sizeof(long) // time stamp
+        ;
+
+    public NetEventHandler<string>? OnLog { get; set; }
 
     public DateTime TimeStamp { get; protected init; } = new();
 
-    public CommandTypes CommandType { get; protected init; } = CommandTypes.None;
+    public byte CommandCode { get; protected init; } = byte.MinValue;
 
-    public OperateTypes OperateType { get; protected init; } = OperateTypes.None;
+    public byte OperateCode { get; protected init; } = byte.MinValue;
 
     protected CommandArgs Args { get; init; } = new();
 
     public byte[] Data { get; protected init; } = [];
 
-    protected void HandleLog(string message)
+    public string GetLog(string message)
     {
-        OnLog?.Invoke(message);
+        return message;
     }
-
-    protected const int HeadLength
-        = sizeof(int) // total length
-        + sizeof(int) // args length
-        + sizeof(byte) // command type
-        + sizeof(byte) // operate type
-        + sizeof(long) // time stamp
-        ;
 }

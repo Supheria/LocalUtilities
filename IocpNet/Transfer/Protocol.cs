@@ -1,36 +1,32 @@
 ﻿using LocalUtilities.IocpNet.Common;
+using LocalUtilities.IocpNet.Protocol;
 using LocalUtilities.IocpNet.Transfer.Packet;
+using System.Net;
 using System.Net.Sockets;
 
 namespace LocalUtilities.IocpNet.Transfer;
 
-public abstract partial class Protocol : IDisposable
+public abstract class Protocol : INetLogger
 {
+    public event NetEventHandler? OnDisposed;
+
+    public event NetEventHandler<CommandReceiver>? OnReceiveCommand;
+
+    public NetEventHandler<string>? OnLog { get; set; }
+
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
+    
+    DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
+    
+    DynamicBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
-    protected bool IsLogin { get; set; } = false;
+    bool IsSendingAsync { get; set; } = false;
 
-    public UserInfo? UserInfo { get; protected set; } = new();
-
-    protected DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
-
-    protected DynamicBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
-
-    protected bool IsSendingAsync { get; set; } = false;
-
-    //protected string RepoPath { get; set; } = "repo";
-    protected abstract string RepoPath { get; set; }
-
-    protected AutoDisposeFileStream AutoFile { get; } = new();
-
-    protected DaemonThread? DaemonThread { get; init; }
-
-    public void Close()
+    public string GetLog(string message)
     {
-        HandleClosed();
-        Dispose();
+        return message;
     }
 
     public void Dispose()
@@ -45,11 +41,8 @@ public abstract partial class Protocol : IDisposable
         ReceiveBuffer.Clear();
         SendBuffer.Clear();
         IsSendingAsync = false;
-        IsLogin = false;
-        AutoFile.Dispose();
         SocketInfo.Disconnect();
-        DaemonThread?.Stop();
-        GC.SuppressFinalize(this);
+        OnDisposed?.Invoke();
     }
 
     protected void ReceiveAsync()
@@ -67,8 +60,8 @@ public abstract partial class Protocol : IDisposable
         }
         catch (Exception ex)
         {
-            HandleException(ex);
-            Close();
+            this.HandleException(ex);
+            Dispose();
         }
     }
 
@@ -96,10 +89,10 @@ public abstract partial class Protocol : IDisposable
                 var receiver = new CommandReceiver(packet, out var packetLength);
                 if (receiver is not null)
                 {
-                    receiver.OnLog += HandleLog;
+                    receiver.OnLog += this.HandleLog;
                     if (receiver.Data.Length > ConstTabel.DataBytesTransferredMax)
                         throw new IocpException(ProtocolCode.DataOutLimit);
-                    ProcessCommand(receiver);
+                    OnReceiveCommand?.Invoke(receiver);
                 }
                 ReceiveBuffer.RemoveData(packetLength);
                 packet = ReceiveBuffer.GetData();
@@ -109,28 +102,34 @@ public abstract partial class Protocol : IDisposable
         }
         catch (Exception ex)
         {
-            HandleException(ex);
-            Close();
+            this.HandleException(ex);
+            Dispose();
         }
     }
 
-    private void SendAsync(/*Command command*/)
+    public void SendCommand(CommandSender sender)
     {
-        if (IsSendingAsync || Socket is null || SendBuffer.DataCount is 0/* || !SendBuffer.GetFirstPacket(out var packet)*/)
-            return;
-        IsSendingAsync = true;
-        var sendArgs = new SocketAsyncEventArgs();
-        sendArgs.SetBuffer(SendBuffer.GetData());
-        sendArgs.Completed += (_, args) => ProcessSend(args);
+        var packet = sender.GetPacket();
+        SendBuffer.WriteData(packet, 0, packet.Length);
+        SendAsync();
+    }
+
+    private void SendAsync()
+    {
         try
         {
+            if (IsSendingAsync || Socket is null || SendBuffer.DataCount is 0)
+                return;
+            IsSendingAsync = true;
+            var sendArgs = new SocketAsyncEventArgs();
+            sendArgs.SetBuffer(SendBuffer.GetData());
+            sendArgs.Completed += (_, args) => ProcessSend(args);
             if (!Socket.SendAsync(sendArgs))
                 ProcessSend(sendArgs);
-            //Socket.SendAsync(sendArgs);
         }
         catch
         {
-            Close();
+            Dispose();
         }
     }
 
@@ -142,22 +141,5 @@ public abstract partial class Protocol : IDisposable
             return;
         SendBuffer.Clear(); // 清除已发送的包
         SendAsync();
-    }
-
-    public string GetFileRepoPath(string dirName, string fileName)
-    {
-        var dir = Path.Combine(RepoPath, dirName);
-        if (!Directory.Exists(dir))
-        {
-            try
-            {
-                Directory.CreateDirectory(dir);
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-            }
-        }
-        return Path.Combine(dir, fileName);
     }
 }

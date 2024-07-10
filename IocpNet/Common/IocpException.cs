@@ -1,10 +1,12 @@
-﻿namespace LocalUtilities.IocpNet.Common;
+﻿using LocalUtilities.IocpNet.Transfer;
 
-public class IocpException(ProtocolCode errorCode, string message) : Exception(message)
+namespace LocalUtilities.IocpNet.Common;
+
+public class IocpException(Enum errorCode, string message) : Exception(message)
 {
-    public ProtocolCode ErrorCode { get; } = errorCode;
+    public Enum ErrorCode { get; } = errorCode;
 
-    public IocpException(ProtocolCode errorCode) : this(errorCode, "")
+    public IocpException(Enum errorCode) : this(errorCode, "")
     {
 
     }

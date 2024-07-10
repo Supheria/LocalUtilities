@@ -2,15 +2,16 @@
 
 public class DaemonThread
 {
-    System.Timers.Timer Timer { get; } = new()
-    {
-        Enabled = false,
-        AutoReset = true,
-    };
+    System.Timers.Timer Timer { get; set; } 
 
     public DaemonThread(int timeoutMilliseconds, Action processDaemon)
     {
-        Timer.Interval = timeoutMilliseconds;
+        Timer = new()
+        {
+            Enabled = false,
+            AutoReset = true,
+            Interval = timeoutMilliseconds,
+        };
         Timer.Elapsed += (_, _) => processDaemon();
     }
 

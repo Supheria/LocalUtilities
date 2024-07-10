@@ -6,28 +6,28 @@ using System.Text;
 
 namespace LocalUtilities.IocpNet.Transfer.Packet;
 
-public sealed class CommandSender : Command
+public class CommandSender : Command
 {
-    public IocpEventHandler? OnWaitingCallbackFailed;
+    public NetEventHandler? OnWaitingCallbackFailed;
 
-    public event IocpEventHandler? OnWasted;
+    public event NetEventHandler? OnWasted;
 
     DaemonThread? DaemonThread { get; set; }
 
-    public CommandSender(DateTime timeStamp, CommandTypes commandType, OperateTypes operateType, byte[] data, int dataOffset, int dataCount)
+    public CommandSender(DateTime timeStamp, byte commandCode, byte operateCode, byte[] data, int dataOffset, int dataCount)
     {
         TimeStamp = timeStamp;
-        CommandType = commandType;
-        OperateType = operateType;
+        CommandCode = commandCode;
+        OperateCode = operateCode;
         Data = new byte[dataCount];
         Array.Copy(data, dataOffset, Data, 0, dataCount);
     }
 
-    public CommandSender(DateTime timeStamp, CommandTypes commandType, OperateTypes operateType)
+    public CommandSender(DateTime timeStamp, byte commandCode, byte operateCode)
     {
         TimeStamp = timeStamp;
-        CommandType = commandType;
-        OperateType = operateType;
+        CommandCode = commandCode;
+        OperateCode = operateCode;
     }
 
     public byte[] GetPacket()
@@ -40,8 +40,8 @@ public sealed class CommandSender : Command
         offset += sizeof(int);
         Array.Copy(BitConverter.GetBytes(args.Length), 0, buffer, offset, sizeof(int));
         offset += sizeof(int);
-        buffer[offset++] = (byte)CommandType;
-        buffer[offset++] = (byte)OperateType;
+        buffer[offset++] = CommandCode;
+        buffer[offset++] = OperateCode;
         Array.Copy(BitConverter.GetBytes(TimeStamp.ToBinary()), 0, buffer, offset, sizeof(long));
         offset += sizeof(long);
         Array.Copy(args, 0, buffer, offset, args.Length);
@@ -50,28 +50,9 @@ public sealed class CommandSender : Command
         return buffer;
     }
 
-    public CommandSender AppendArgs(ProtocolKey key, string args)
+    public CommandSender AppendArgs(string key, string args)
     {
         Args[key] = args;
-        return this;
-    }
-
-    public CommandSender AppendSuccess()
-    {
-        AppendArgs(ProtocolKey.CallbackCode, ProtocolCode.Success.ToString());
-        AppendArgs(ProtocolKey.ErrorMessage, "");
-        return this;
-    }
-
-    public CommandSender AppendFailure(Exception ex)
-    {
-        var errorCode = ex switch
-        {
-            IocpException iocp => iocp.ErrorCode,
-            _ => ProtocolCode.UnknowError,
-        };
-        AppendArgs(ProtocolKey.CallbackCode, errorCode.ToString());
-        AppendArgs(ProtocolKey.ErrorMessage, ex.Message);
         return this;
     }
 
@@ -104,11 +85,11 @@ public sealed class CommandSender : Command
             .Append(StringTable.Failed)
             .Append(SignTable.CloseBracket)
             .Append(SignTable.Space)
-            .Append(CommandType)
+            .Append(CommandCode)
             .Append(SignTable.Comma)
             .Append(SignTable.Space)
-            .Append(OperateType)
+            .Append(OperateCode)
             .ToString();
-        HandleLog(message);
+        this.HandleLog(message);
     }
 }

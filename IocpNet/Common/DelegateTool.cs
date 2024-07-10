@@ -1,9 +1,5 @@
 ﻿namespace LocalUtilities.IocpNet.Protocol;
 
-public delegate void LogHandler(string log);
+public delegate void NetEventHandler();
 
-public delegate void IocpEventHandler();
-
-public delegate void IocpEventHandler<TArgs>(TArgs args);
-
-public delegate string ValidateHandler(string filePath);
+public delegate void NetEventHandler<TArgs>(TArgs args);
