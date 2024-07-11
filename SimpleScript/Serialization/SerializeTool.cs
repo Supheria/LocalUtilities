@@ -67,7 +67,7 @@ public static partial class SerializeTool
         return obj;
     }
 
-    private static ICollection<T> ParseToArray<T>(string arrayName, byte[] buffer, int offset, int count) where T : ISsSerializable, new()
+    private static List<T> ParseToArray<T>(string arrayName, byte[] buffer, int offset, int count) where T : ISsSerializable, new()
     {
         var list = new List<T>();
         var elements = new Tokenizer(buffer, offset, count).Elements.Property[arrayName];
