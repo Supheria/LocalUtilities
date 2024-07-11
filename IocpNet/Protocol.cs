@@ -1,10 +1,7 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.IocpNet.Transfer.Packet;
-using System.Net;
 using System.Net.Sockets;
 
-namespace LocalUtilities.IocpNet.Transfer;
+namespace LocalUtilities.IocpNet;
 
 public abstract class Protocol : INetLogger
 {
@@ -17,10 +14,10 @@ public abstract class Protocol : INetLogger
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
-    
-    DynamicBufferManager ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
-    
-    DynamicBufferManager SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
+
+    DynamicBuffer ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
+
+    DynamicBuffer SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
     bool IsSendingAsync { get; set; } = false;
 
@@ -73,7 +70,7 @@ public abstract class Protocol : INetLogger
                 receiveArgs.Buffer is null ||
                 receiveArgs.BytesTransferred <= 0 ||
                 receiveArgs.SocketError is not SocketError.Success)
-                throw new IocpException(ProtocolCode.SocketClosed);
+                throw new NetException(ProtocolCode.SocketClosed);
             SocketInfo.Active();
             ReceiveBuffer.WriteData(receiveArgs.Buffer!, receiveArgs.Offset, receiveArgs.BytesTransferred);
             var packet = ReceiveBuffer.GetData();
@@ -91,7 +88,7 @@ public abstract class Protocol : INetLogger
                 {
                     receiver.OnLog += this.HandleLog;
                     if (receiver.Data.Length > ConstTabel.DataBytesTransferredMax)
-                        throw new IocpException(ProtocolCode.DataOutLimit);
+                        throw new NetException(ProtocolCode.DataOutLimit);
                     OnReceiveCommand?.Invoke(receiver);
                 }
                 ReceiveBuffer.RemoveData(packetLength);

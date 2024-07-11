@@ -1,7 +1,4 @@
-﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Protocol;
-
-namespace LocalUtilities.IocpNet.Transfer.Packet;
+﻿namespace LocalUtilities.IocpNet.Common;
 
 public abstract class Command : INetLogger
 {

@@ -1,15 +1,8 @@
 ﻿using LocalUtilities.IocpNet.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using LocalUtilities.IocpNet.Transfer.Packet;
-using LocalUtilities.TypeGeneral;
+using System.Net.Sockets;
 
-namespace LocalUtilities.IocpNet.Transfer;
+namespace LocalUtilities.IocpNet;
 
 public class ClientProtocol : Protocol
 {

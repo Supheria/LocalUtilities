@@ -1,10 +1,6 @@
-﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
-using System.Text;
+﻿using LocalUtilities.SimpleScript.Serialization;
 
-namespace LocalUtilities.IocpNet.Transfer.Packet;
+namespace LocalUtilities.IocpNet.Common;
 
 public sealed class CommandReceiver : Command
 {

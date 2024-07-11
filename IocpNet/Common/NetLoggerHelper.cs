@@ -1,12 +1,6 @@
-﻿using LocalUtilities.IocpNet.Transfer;
-using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeGeneral.Convert;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.IocpNet.Common;
 
@@ -21,8 +15,8 @@ public static class NetLoggerHelper
     {
         var errorCode = ex switch
         {
-            IocpException iocp => iocp.ErrorCode.ToWholeString(),
-            _ => StringTable.Null,
+            NetException iocp => iocp.ErrorCode.ToWholeString(),
+            _ => "UnknownError"
         };
         var message = new StringBuilder()
             .Append(SignTable.OpenBracket)

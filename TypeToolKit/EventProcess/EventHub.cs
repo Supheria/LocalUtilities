@@ -59,7 +59,7 @@ public partial class EventHub
             return false;
         }
     }
-    
+
     public bool TryRemoveListener<TArgs>(Enum eventType, Callback<TArgs> callback)
     {
         try

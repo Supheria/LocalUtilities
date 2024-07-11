@@ -1,19 +1,9 @@
-﻿using LocalUtilities.IocpNet.Common;
-using LocalUtilities.IocpNet.Protocol;
-using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral;
-using System.Text;
+﻿using LocalUtilities.SimpleScript.Serialization;
 
-namespace LocalUtilities.IocpNet.Transfer.Packet;
+namespace LocalUtilities.IocpNet.Common;
 
 public class CommandSender : Command
 {
-    public NetEventHandler? OnWaitingCallbackFailed;
-
-    public event NetEventHandler? OnWasted;
-
-    DaemonThread? DaemonThread { get; set; }
-
     public CommandSender(DateTime timeStamp, byte commandCode, byte operateCode, byte[] data, int dataOffset, int dataCount)
     {
         TimeStamp = timeStamp;
@@ -54,42 +44,5 @@ public class CommandSender : Command
     {
         Args[key] = args;
         return this;
-    }
-
-    public void StartWaitingCallback()
-    {
-        DaemonThread = new(ConstTabel.WaitingCallbackMilliseconds, WaitingFailed);
-        DaemonThread.Start();
-    }
-
-    private void WaitingFailed()
-    {
-        Waste();
-        OnWaitingCallbackFailed?.Invoke();
-        HandleWaitingCallbackFailed();
-        return;
-    }
-
-    public void Waste()
-    {
-        DaemonThread?.Dispose();
-        OnWasted?.Invoke();
-    }
-
-    private void HandleWaitingCallbackFailed()
-    {
-        var message = new StringBuilder()
-            .Append(SignTable.OpenBracket)
-            .Append(StringTable.WaitingCallback)
-            .Append(SignTable.Space)
-            .Append(StringTable.Failed)
-            .Append(SignTable.CloseBracket)
-            .Append(SignTable.Space)
-            .Append(CommandCode)
-            .Append(SignTable.Comma)
-            .Append(SignTable.Space)
-            .Append(OperateCode)
-            .ToString();
-        this.HandleLog(message);
     }
 }

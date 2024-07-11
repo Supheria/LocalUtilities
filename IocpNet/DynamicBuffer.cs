@@ -1,6 +1,6 @@
-﻿namespace LocalUtilities.IocpNet.Transfer;
+﻿namespace LocalUtilities.IocpNet;
 
-public class DynamicBufferManager(int bufferSize)
+public class DynamicBuffer(int bufferSize)
 {
     byte[] Buffer { get; set; } = new byte[bufferSize];
 

@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.IocpNet.Transfer;
+﻿namespace LocalUtilities.IocpNet;
 
 public enum ProtocolCode
 {

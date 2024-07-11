@@ -1,7 +1,6 @@
 ﻿using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeGeneral.Convert;
 
-namespace LocalUtilities.IocpNet.Transfer.Packet;
+namespace LocalUtilities.IocpNet.Common;
 
 public class CommandArgs : SerializableTagValues<string, string>
 {
