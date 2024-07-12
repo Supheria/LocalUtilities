@@ -17,10 +17,6 @@ public abstract class Protocol : INetLogger
 
     DynamicBuffer ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
 
-    DynamicBuffer SendBuffer { get; } = new(ConstTabel.InitialBufferSize);
-
-    bool IsSendingAsync { get; set; } = false;
-
     public string GetLog(string message)
     {
         return message;
@@ -36,8 +32,6 @@ public abstract class Protocol : INetLogger
         Socket?.Close();
         Socket = null;
         ReceiveBuffer.Clear();
-        SendBuffer.Clear();
-        IsSendingAsync = false;
         SocketInfo.Disconnect();
         OnDisposed?.Invoke();
     }
@@ -76,19 +70,12 @@ public abstract class Protocol : INetLogger
             var packet = ReceiveBuffer.GetData();
             while (packet.Length > sizeof(int))
             {
-                if (CommandReceiver.OutOfLimit(packet))
-                {
-                    ReceiveBuffer.Clear();
-                    break;
-                }
                 if (!CommandReceiver.FullPacket(packet))
                     break;
                 var receiver = new CommandReceiver(packet, out var packetLength);
                 if (receiver is not null)
                 {
                     receiver.OnLog += this.HandleLog;
-                    if (receiver.Data.Length > ConstTabel.DataBytesTransferredMax)
-                        throw new NetException(ProtocolCode.DataOutLimit);
                     OnReceiveCommand?.Invoke(receiver);
                 }
                 ReceiveBuffer.RemoveData(packetLength);
@@ -104,39 +91,12 @@ public abstract class Protocol : INetLogger
         }
     }
 
-    public void SendCommand(CommandSender sender)
+    public void SendAsync(CommandSender sender)
     {
-        var packet = sender.GetPacket();
-        SendBuffer.WriteData(packet, 0, packet.Length);
-        SendAsync();
-    }
-
-    private void SendAsync()
-    {
-        try
-        {
-            if (IsSendingAsync || Socket is null || SendBuffer.DataCount is 0)
-                return;
-            IsSendingAsync = true;
-            var sendArgs = new SocketAsyncEventArgs();
-            sendArgs.SetBuffer(SendBuffer.GetData());
-            sendArgs.Completed += (_, args) => ProcessSend(args);
-            if (!Socket.SendAsync(sendArgs))
-                ProcessSend(sendArgs);
-        }
-        catch
-        {
-            Dispose();
-        }
-    }
-
-    private void ProcessSend(SocketAsyncEventArgs sendArgs)
-    {
-        SocketInfo.Active();
-        IsSendingAsync = false;
-        if (sendArgs.SocketError is not SocketError.Success)
+        if (Socket is null)
             return;
-        SendBuffer.Clear(); // 清除已发送的包
-        SendAsync();
+        var sendArgs = new SocketAsyncEventArgs();
+        sendArgs.SetBuffer(sender.GetPacket());
+        Socket.SendAsync(sendArgs);
     }
 }

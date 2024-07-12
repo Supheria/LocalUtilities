@@ -28,14 +28,6 @@ public sealed class CommandReceiver : Command
         return packet.Length >= packetLength;
     }
 
-    public static bool OutOfLimit(byte[] packet)
-    {
-        var packetLength = BitConverter.ToInt32(packet, 0);
-        var argsLength = BitConverter.ToInt32(packet, sizeof(int));
-        var dataLenght = packetLength - argsLength - HeadLength;
-        return dataLenght > ConstTabel.DataBytesTransferredMax;
-    }
-
     public string GetArgs(string key)
     {
         return Args[key];
