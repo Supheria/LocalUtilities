@@ -65,7 +65,7 @@ public abstract class SerializableTagValues<TKey, TValue> : ISsSerializable, IDi
 
     public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        return TryGetValue(key, out value);
+        return Map.TryGetValue(key, out value);
     }
 
     public void Add(KeyValuePair<TKey, TValue> item)

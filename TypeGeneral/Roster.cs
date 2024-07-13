@@ -3,8 +3,12 @@ using System.Collections;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection<TItem>, IEnumerable where TSignature : notnull where TItem : RosterItem<TSignature>, new()
+public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection<TItem> where TSignature : notnull where TItem : RosterItem<TSignature>, new()
 {
+    protected event SerializeHandler? OnSerialize;
+
+    protected event DeserializeHandler? OnDeserialize;
+
     public abstract string LocalName { get; }
 
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
@@ -35,19 +39,15 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
         }
     }
 
-    protected abstract void SerializeRoster(SsSerializer serializer);
-
-    protected abstract void DeserializeRoster(SsDeserializer deserializer);
-
     public void Serialize(SsSerializer serializer)
     {
-        SerializeRoster(serializer);
+        OnSerialize?.Invoke(serializer);
         serializer.WriteObjects(LocalName, RosterMap.Values);
     }
 
     public void Deserialize(SsDeserializer deserializer)
     {
-        DeserializeRoster(deserializer);
+        OnDeserialize?.Invoke(deserializer);
         RosterList = deserializer.ReadObjects<TItem>(LocalName);
     }
 
@@ -92,6 +92,6 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return GetEnumerator();
+        return RosterMap.Values.GetEnumerator();
     }
 }

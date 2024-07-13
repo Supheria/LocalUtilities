@@ -77,9 +77,13 @@ public static partial class SerializeTool
             throw SsParseExceptions.MultiAssignment(arrayName);
         if (elements[0] is ElementScope scope)
         {
-            var item = new T();
-            new SsDeserializer(item).Deserialize(scope.Property);
-            list.Add(item);
+            try
+            {
+                var item = new T();
+                new SsDeserializer(item).Deserialize(scope.Property);
+                list.Add(item);
+            }
+            catch { }
         }
         else if (elements[0] is ElementArray array)
         {

@@ -17,6 +17,12 @@ partial class SerializeTool
         return FormatObject(obj, false);
     }
 
+    public static byte[] ToSsBuffer<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
+    {
+        var str = FormatObjects(arrayName, items, false);
+        return Encoding.UTF8.GetBytes(str);
+    }
+
     public static string ToSsString<T>(this ICollection<T> items, string arrayName) where T : ISsSerializable, new()
     {
         return FormatObjects(arrayName, items, false);

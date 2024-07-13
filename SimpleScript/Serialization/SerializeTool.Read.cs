@@ -17,7 +17,12 @@ partial class SerializeTool
         return ParseToObject(obj, buffer, 0, buffer.Length);
     }
 
-    public static List<T> ParseSs<T>(this string str, string arrayName) where T : ISsSerializable, new()
+    public static List<T> ParseSs<T>(string arrayName, byte[] buffer, int offset, int count) where T : ISsSerializable, new()
+    {
+        return ParseToArray<T>(arrayName, buffer, offset, count);
+    }
+
+    public static List<T> ParseSs<T>(string arrayName, string str) where T : ISsSerializable, new()
     {
         var buffer = Encoding.UTF8.GetBytes(str);
         return ParseToArray<T>(arrayName, buffer, 0, buffer.Length);

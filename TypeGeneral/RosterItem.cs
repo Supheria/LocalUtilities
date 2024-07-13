@@ -2,11 +2,9 @@
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class RosterItem<TSignature>(TSignature signature) : ISsSerializable where TSignature : notnull
+public abstract class RosterItem<TSignature> : ISsSerializable where TSignature : notnull
 {
-    public TSignature Signature { get; protected set; } = signature;
-
-    public TSignature SetSignature { set => Signature = value; }
+    public abstract TSignature Signature { get; }
 
     public abstract string LocalName { get; }
 
