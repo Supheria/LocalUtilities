@@ -27,4 +27,7 @@ public class SignTable
     public const char Slash = '/';
     public const char Comma = ',';
     public const char Sub = '-';
+    public const char Semicolon = ';';
+    public const char Asterisk = '*';
+    public const char SingleQuote = '\'';
 }

@@ -56,15 +56,15 @@ public static class DoubleEx
         return 0;
     }
 
-    public static bool ApproxOperatorTo(this double value1, OperatorType type, double value2)
+    public static bool ApproxOperatorTo(this double value1, OperatorTypes type, double value2)
     {
         return type switch
         {
-            OperatorType.Equal => value1.ApproxEqualTo(value2),
-            OperatorType.LessThan => value1.ApproxLessThan(value2),
-            OperatorType.GreaterThan => value1.ApproxGreaterThan(value2),
-            OperatorType.LessThanOrEqualTo => value1.ApproxLessThanOrEqualTo(value2),
-            OperatorType.GreaterThanOrEqualTo => value1.ApproxGreaterThanOrEqualTo(value2),
+            OperatorTypes.Equal => value1.ApproxEqualTo(value2),
+            OperatorTypes.LessThan => value1.ApproxLessThan(value2),
+            OperatorTypes.GreaterThan => value1.ApproxGreaterThan(value2),
+            OperatorTypes.LessThanOrEqualTo => value1.ApproxLessThanOrEqualTo(value2),
+            OperatorTypes.GreaterThanOrEqualTo => value1.ApproxGreaterThanOrEqualTo(value2),
             _ => throw new InvalidOperationException(),
         };
     }
