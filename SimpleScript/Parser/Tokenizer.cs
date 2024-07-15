@@ -5,7 +5,7 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;
 
-internal class Tokenizer
+public class Tokenizer
 {
     private enum States
     {
@@ -34,10 +34,16 @@ internal class Tokenizer
 
     internal ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
 
-    internal Tokenizer(byte[] buffer, int offset, int count)
+    public Tokenizer(byte[] buffer, int offset, int count)
     {
         Buffer = new byte[count];
         Array.Copy(buffer, offset, Buffer, 0, count);
+        Tokenize();
+    }
+
+    public Tokenizer(string str)
+    {
+        Buffer = Encoding.UTF8.GetBytes(str);
         Tokenize();
     }
 

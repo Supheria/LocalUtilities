@@ -30,20 +30,20 @@ public class Edge(Coordinate starter, Coordinate ender)
         return false;
     }
 
-    public List<string> ToStringArray()
-    {
-        return [Starter.ToString(), Ender.ToString()];
-    }
+    //public List<string> ToStringArray()
+    //{
+    //    return [Starter.ToString(), Ender.ToString()];
+    //}
 
     public override string ToString()
     {
         return $"{Starter}=>{Ender})";
     }
 
-    public static Edge Parse(List<string> array)
-    {
-        if (array.Count is not 2)
-            return new(new(), new());
-        return new(Coordinate.Parse(array[0]), Coordinate.Parse(array[1]));
-    }
+    //public static Edge Parse(List<string> array)
+    //{
+    //    if (array.Count is not 2)
+    //        return new(new(), new());
+    //    return new(Coordinate.Parse(array[0]), Coordinate.Parse(array[1]));
+    //}
 }

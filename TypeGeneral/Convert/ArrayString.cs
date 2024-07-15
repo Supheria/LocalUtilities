@@ -1,7 +1,8 @@
-﻿using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.TypeGeneral.Convert;
+using System.Collections;
 using System.Text;
 
-namespace LocalUtilities.TypeGeneral;
+namespace LocalUtilities.TypeGeneral.Convert;
 
 public static class ArrayString
 {
@@ -34,11 +35,21 @@ public static class ArrayString
         return array.ToArrayString();
     }
 
-    public static string ToArrayString<T>(this ICollection<T> array)
+    public static string ToArrayString(this ICollection array)
     {
-        return new StringBuilder()
-            .AppendJoin(Splitter, array.Select(x => x?.ToString() ?? ""))
-            .ToString();
+        if (array.Count is 0)
+            return "";
+        var sb = new StringBuilder();
+        var enumer = array.GetEnumerator();
+        enumer.MoveNext();
+        sb.Append(enumer.Current);
+        for (var i = 1; i < array.Count; ++i)
+        {
+            enumer.MoveNext();
+            sb.Append(Splitter)
+                .Append(enumer.Current);
+        }
+        return sb.ToString();
     }
 
     public static string ToArrayString<T1, T2>(this (T1 item1, T2 item2) pair)

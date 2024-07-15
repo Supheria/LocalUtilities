@@ -1,12 +1,13 @@
-﻿using LocalUtilities.TypeToolKit.Mathematic;
+﻿using LocalUtilities.TypeGeneral.Convert;
+using LocalUtilities.TypeToolKit.Mathematic;
 
 namespace LocalUtilities.TypeGeneral;
 
-public class Coordinate(int x, int y)
+public class Coordinate(int x, int y) : IArrayStringConvertable
 {
-    public int X { get; } = x;
+    public int X { get; private set; } = x;
 
-    public int Y { get; } = y;
+    public int Y { get; private set; } = y;
 
     public Coordinate() : this(0, 0)
     {
@@ -57,19 +58,25 @@ public class Coordinate(int x, int y)
         return this == obj;
     }
 
-    public override string ToString()
+    public string ToArrayString()
     {
         return (X, Y).ToArrayString();
     }
 
-    public static Coordinate Parse(string str)
+    public void ParseArrayString(string str)
     {
         var array = str.ToArray();
         if (array.Length is not 2 ||
             !int.TryParse(array[0], out var x) ||
             !int.TryParse(array[1], out var y))
-            return new();
-        return new(x, y);
+            return;
+        X = x;
+        Y = y;
+    }
+
+    public override string ToString()
+    {
+        return ToArrayString();
     }
 
     public static implicit operator PointF(Coordinate? coordinate)

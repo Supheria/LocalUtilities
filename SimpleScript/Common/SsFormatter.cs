@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Text;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace LocalUtilities.SimpleScript.Common;
 
@@ -105,15 +106,6 @@ public static class SsFormatter
             .AppendNewLine(writeIntoMultiLines);
     }
 
-    public static StringBuilder AppendArrayStart(this StringBuilder sb, int level, string? tag, bool writeIntoMultiLines)
-    {
-        sb.AppendTab(level, writeIntoMultiLines);
-        if (tag is not null)
-            sb.Append(tag.ToQuoted());
-        return sb.Append(SignTable.OpenBrace)
-            .AppendNewLine(writeIntoMultiLines);
-    }
-
     public static StringBuilder AppendArrayEnd(this StringBuilder sb, int level, bool writeIntoMultiLines)
     {
         return sb.AppendTab(level, writeIntoMultiLines)
@@ -191,5 +183,42 @@ public static class SsFormatter
             .AppendTab(level, writeIntoMultiLines)
             .Append(SignTable.CloseBrace)
             .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendName(this StringBuilder sb, int level, string name, bool writeIntoMultiLines)
+    {
+        return sb.AppendTab(level, writeIntoMultiLines)
+           .Append(name.ToQuoted())
+           .Append(SignTable.Equal);
+    }
+
+    public static StringBuilder AppendStart(this StringBuilder sb, bool  writeIntoMultiLines)
+    {
+        return sb.Append(SignTable.OpenBrace)
+            .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendArrayStart(this StringBuilder sb, int level, string? tag, bool writeIntoMultiLines)
+    {
+        sb.AppendTab(level, writeIntoMultiLines);
+        if (tag is not null)
+            sb.Append(tag.ToQuoted());
+        return sb.Append(SignTable.OpenBrace)
+            .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendEnd(this StringBuilder sb, int level, bool writeIntoMultiLines)
+    {
+        return sb.AppendTab(level, writeIntoMultiLines)
+            .Append(SignTable.CloseBrace)
+            .AppendNewLine(writeIntoMultiLines);
+    }
+
+    public static StringBuilder AppendValue(this StringBuilder sb, int level, string value, bool writeIntoMultiLines)
+    {
+        sb.Append(value.ToQuoted());
+        if (value is not "")
+            sb.Append(SignTable.Space);
+        return sb.AppendNewLine(writeIntoMultiLines);
     }
 }
