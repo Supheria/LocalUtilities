@@ -105,10 +105,12 @@ public static class SsFormatter
             .AppendNewLine(writeIntoMultiLines);
     }
 
-    public static StringBuilder AppendArrayStart(this StringBuilder sb, int level, bool writeIntoMultiLines)
+    public static StringBuilder AppendArrayStart(this StringBuilder sb, int level, string? tag, bool writeIntoMultiLines)
     {
-        return sb.AppendTab(level, writeIntoMultiLines)
-            .Append(SignTable.OpenBrace)
+        sb.AppendTab(level, writeIntoMultiLines);
+        if (tag is not null)
+            sb.Append(tag.ToQuoted());
+        return sb.Append(SignTable.OpenBrace)
             .AppendNewLine(writeIntoMultiLines);
     }
 

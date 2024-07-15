@@ -21,7 +21,7 @@ public class ElementArray(Word name, Word @operator, Word tag, int level) : Elem
             .AppendNameStart(Level, Name.Text, true)
             .AppendJoin(SignTable.Empty, Properties, (sb, elements) =>
             {
-                sb.AppendArrayStart(Level, true)
+                sb.AppendArrayStart(Level, null, true)
                 .AppendJoin(SignTable.Empty, elements.Values.ToList(), (sb, property) =>
                 {
                     sb.Append(property.ToString());

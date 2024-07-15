@@ -71,7 +71,7 @@ public class SsSerializer(object obj, SsWriter writer) : SsSerializeBase(obj)
         Writer.AppendNameStart(arrayName);
         foreach (var obj in array)
         {
-            Writer.AppendArrayStart();
+            Writer.AppendArrayStart(null);
             obj.Serialize(this);
             Writer.AppendArrayEnd();
         }
