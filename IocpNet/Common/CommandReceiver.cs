@@ -1,4 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.SimpleScript;
 
 namespace LocalUtilities.IocpNet.Common;
 
@@ -14,7 +14,7 @@ public sealed class CommandReceiver : Command
         OperateCode = packet[offset++];
         TimeStamp = DateTime.FromBinary(BitConverter.ToInt64(packet, offset));
         offset += sizeof(long);
-        Args = new CommandArgs().ParseSs(packet, offset, argsLength);
+        Args = SerializeTool.Deserialize<Dictionary<string, byte[]>>(packet, offset, argsLength, null) ?? [];
         offset += argsLength;
         Data = new byte[packetLength - offset];
         Array.Copy(packet, offset, Data, 0, Data.Length);
@@ -28,13 +28,9 @@ public sealed class CommandReceiver : Command
         return packet.Length >= packetLength;
     }
 
-    public string GetArgs(string key)
+    public T? GetArgs<T>(string key)
     {
-        return Args[key];
-    }
-
-    public T GetArgs<T>(string key) where T : ISsSerializable, new()
-    {
-        return new T().ParseSs(Args[key]);
+        var buffer = Args[key];
+        return SerializeTool.Deserialize<T>(buffer, 0, buffer.Length, null);
     }
 }

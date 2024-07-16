@@ -1,12 +1,7 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral.Convert;
+﻿namespace LocalUtilities.TypeGeneral;
 
-namespace LocalUtilities.TypeGeneral;
-
-public class FontData(string localName) : ISsSerializable
+public class FontData(string localName)
 {
-    public string LocalName => localName;
-
     public string FamilyName { get; set; } = "黑体";
 
     public float Size { get; set; } = 15f;
@@ -23,21 +18,5 @@ public class FontData(string localName) : ISsSerializable
     public static implicit operator Font(FontData data)
     {
         return new(data.FamilyName, data.Size, data.Style, data.Unit);
-    }
-
-    public void Serialize(SsSerializer serializer)
-    {
-        serializer.WriteTag(nameof(FamilyName), FamilyName);
-        serializer.WriteTag(nameof(Size), Size.ToString());
-        serializer.WriteTag(nameof(Style), Style.ToString());
-        serializer.WriteTag(nameof(Unit), Unit.ToString());
-    }
-
-    public void Deserialize(SsDeserializer deserializer)
-    {
-        FamilyName = deserializer.ReadTag(nameof(FamilyName));
-        Size = deserializer.ReadTag(nameof(Size), float.Parse);
-        Style = (FontStyle)deserializer.ReadTag(nameof(Style), s => s.ToEnum(typeof(FontStyle)) ?? FontStyle.Regular);
-        Unit = (GraphicsUnit)deserializer.ReadTag(nameof(Unit), s => s.ToEnum(typeof(GraphicsUnit)) ?? GraphicsUnit.Pixel);
     }
 }

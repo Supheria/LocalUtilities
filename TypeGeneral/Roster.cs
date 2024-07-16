@@ -1,18 +1,13 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.SimpleScript;
 using System.Collections;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection<TItem> where TSignature : notnull where TItem : RosterItem<TSignature>, new()
+public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : RosterItem<TSignature>, new()
 {
-    protected event SerializeHandler? OnSerialize;
-
-    protected event DeserializeHandler? OnDeserialize;
-
-    public abstract string LocalName { get; }
-
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
+    [SsIgnore]
     public List<TItem> RosterList
     {
         get => RosterMap.Values.ToList();
@@ -24,6 +19,7 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
         }
     }
 
+    [SsIgnore]
     public TItem? this[TSignature signature]
     {
         get
@@ -37,18 +33,6 @@ public abstract class Roster<TSignature, TItem>() : ISsSerializable, ICollection
                 return;
             RosterMap[signature] = value;
         }
-    }
-
-    public void Serialize(SsSerializer serializer)
-    {
-        OnSerialize?.Invoke(serializer);
-        serializer.WriteObjects(LocalName, RosterMap.Values);
-    }
-
-    public void Deserialize(SsDeserializer deserializer)
-    {
-        OnDeserialize?.Invoke(deserializer);
-        RosterList = deserializer.ReadObjects<TItem>(LocalName);
     }
 
     public int Count => RosterMap.Count;

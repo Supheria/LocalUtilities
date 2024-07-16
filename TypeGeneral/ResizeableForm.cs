@@ -1,19 +1,26 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
-using LocalUtilities.TypeGeneral.Convert;
+﻿using LocalUtilities.FileHelper;
+using LocalUtilities.SimpleScript;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class ResizeableForm : Form, ISsSerializable
+public abstract class ResizeableForm : Form, IInitializeable
 {
+
+    protected delegate FormData SerializeHandler();
+
+    protected delegate FormData DeserializeHandler();
+
+    protected delegate void DrawClientHandler();
+
     protected event SerializeHandler? OnSaveForm;
 
     protected event DeserializeHandler? OnLoadForm;
 
-    protected event OnComponentRunning? OnDrawClient;
+    protected event DrawClientHandler? OnDrawClient;
 
-    public abstract string LocalName { get; }
+    public abstract string InitializeName { get; }
 
-    public string? IniFilePath { get; set; }
+    public string IniFileExtension { get; } = "form";
 
     bool Resizing { get; set; } = false;
 
@@ -30,6 +37,23 @@ public abstract class ResizeableForm : Form, ISsSerializable
     protected int ClientWidth => ClientRectangle.Width;
 
     protected int ClientHeight => ClientRectangle.Height;
+
+    protected class FormData
+    {
+        public Size MinimumSize { get; set; }
+
+        public Size Size { get; set; }
+
+        public Point Location { get; set; }
+
+        public FormWindowState WindowState { get; set; }
+
+        public int Padding { get; set; }
+
+        public FontData LabelFontData { get; set; } = new();
+
+        public FontData ContentFontData { get; set; } = new();
+    }
 
     public ResizeableForm()
     {
@@ -77,29 +101,39 @@ public abstract class ResizeableForm : Form, ISsSerializable
 
     private void ResizeableForm_Load(object? sender, EventArgs e)
     {
-        if (IniFilePath is null || IniFilePath is "")
-            _ = this.LoadFromSimpleScript();
-        else
+        try
         {
-            try
-            {
-                _ = this.LoadFromSimpleScript(IniFilePath);
-            }
-            catch
-            {
-                _ = this.LoadFromSimpleScript();
-            }
+            var formData = OnLoadForm?.Invoke() ?? SerializeTool.DeserializeFile<FormData>(this.GetInitializeFilePath(), InitializeName);
+            if (formData is null)
+                return;
+            MinimumSize = formData.MinimumSize;
+            Size = formData.Size;
+            Location = formData.Location;
+            WindowState = formData.WindowState;
+            Padding = formData.Padding;
+            LabelFontData = formData.LabelFontData;
+            ContentFontData = formData.ContentFontData;
+
         }
+        catch { }
         DrawClient();
     }
 
     private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
-
-        if (IniFilePath is null || IniFilePath is "")
-            this.SaveToSimpleScript(true);
-        else
-            this.SaveToSimpleScript(true, IniFilePath);
+        try
+        {
+            var formData = OnSaveForm?.Invoke() ?? new();
+            formData.MinimumSize = MinimumSize;
+            formData.Size = Size;
+            formData.Location = Location;
+            formData.WindowState = WindowState;
+            formData.Padding = Padding;
+            formData.LabelFontData = LabelFontData;
+            formData.ContentFontData = ContentFontData;
+            formData.SerializeFile(true, this.GetInitializeFilePath(), InitializeName);
+        }
+        catch { }
     }
 
     protected void InvokeAsync(Action process)
@@ -108,29 +142,5 @@ public abstract class ResizeableForm : Form, ISsSerializable
             BeginInvoke(process);
         else
             Invoke(process);
-    }
-
-    public void Serialize(SsSerializer serializer)
-    {
-        serializer.WriteTag(nameof(MinimumSize), MinimumSize.ToArrayString());
-        serializer.WriteTag(nameof(Size), Size.ToArrayString());
-        serializer.WriteTag(nameof(Location), Location.ToArrayString());
-        serializer.WriteTag(nameof(WindowState), WindowState.ToString());
-        serializer.WriteTag(nameof(Padding), Padding.ToString());
-        serializer.WriteObject(LabelFontData);
-        serializer.WriteObject(ContentFontData);
-        OnSaveForm?.Invoke(serializer);
-    }
-
-    public void Deserialize(SsDeserializer deserializer)
-    {
-        MinimumSize = deserializer.ReadTag(nameof(MinimumSize), s => s.ToSize());
-        Size = deserializer.ReadTag(nameof(Size), s => s.ToSize());
-        Location = deserializer.ReadTag(nameof(Location), s => s.ToPoint());
-        WindowState = (FormWindowState)deserializer.ReadTag(nameof(WindowState), s => s.ToEnum(typeof(FormWindowState)) ?? FormWindowState.Normal);
-        Padding = deserializer.ReadTag(nameof(Padding), int.Parse);
-        deserializer.ReadObject(LabelFontData);
-        deserializer.ReadObject(ContentFontData);
-        OnLoadForm?.Invoke(deserializer);
     }
 }

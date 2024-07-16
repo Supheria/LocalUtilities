@@ -1,4 +1,4 @@
-﻿using LocalUtilities.TypeGeneral.Convert;
+﻿using LocalUtilities.SimpleScript.Data.Convert;
 using LocalUtilities.TypeToolKit.Mathematic;
 
 namespace LocalUtilities.TypeGeneral;

@@ -1,11 +1,10 @@
-﻿using LocalUtilities.SimpleScript.Common;
-using LocalUtilities.SimpleScript.Data;
+﻿using LocalUtilities.SimpleScript.Data;
 using LocalUtilities.TypeGeneral;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;
 
-public class Tokenizer
+internal class Tokenizer
 {
     private enum States
     {
@@ -32,18 +31,12 @@ public class Tokenizer
 
     StringBuilder Composing { get; } = new();
 
-    public ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
+    public Element Element { get; } = new(/*null, */new(), new(), new(), -1);
 
     public Tokenizer(byte[] buffer, int offset, int count)
     {
         Buffer = new byte[count];
         Array.Copy(buffer, offset, Buffer, 0, count);
-        Tokenize();
-    }
-
-    public Tokenizer(string str)
-    {
-        Buffer = Encoding.UTF8.GetBytes(str);
         Tokenize();
     }
 
@@ -63,13 +56,13 @@ public class Tokenizer
                 Tree = tree;
         }
         if (Tree.From is not null)
-            throw new SsParseExceptions($"interruption at line({Line}), column({Column})");
+            throw new SsParseException($"interruption at line({Line}), column({Column})");
         AddToken();
         void AddToken()
         {
             var token = Tree.Submit();
             if (token is not null)
-                Elements.Append(token);
+                Element.Append(token);
         }
     }
 

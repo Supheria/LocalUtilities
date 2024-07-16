@@ -1,8 +1,8 @@
-﻿using LocalUtilities.TypeGeneral.Convert;
+﻿using LocalUtilities.SimpleScript.Data.Convert;
 using System.Collections;
 using System.Text;
 
-namespace LocalUtilities.TypeGeneral.Convert;
+namespace LocalUtilities.SimpleScript.Data.Convert;
 
 public static class ArrayString
 {
@@ -20,14 +20,14 @@ public static class ArrayString
         return ToArrayString(item1?.ToString(), item2?.ToString());
     }
 
+    public static string ToArrayString<T1, T2, T3>(T1 item1, T2 item2, T3 item3)
+    {
+        return ToArrayString(item1?.ToString(), item2?.ToString(), item3?.ToString());
+    }
+
     public static string ToArrayString<T1, T2, T3, T4>(T1 item1, T2 item2, T3 item3, T4 item4)
     {
         return ToArrayString(item1?.ToString(), item2?.ToString(), item3?.ToString(), item4?.ToString());
-    }
-
-    public static string ToArrayString<T>(params T[] array)
-    {
-        return array.ToArrayString();
     }
 
     public static string ToArrayString(params string?[] array)

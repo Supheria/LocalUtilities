@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeGeneral.Convert;
+﻿namespace LocalUtilities.SimpleScript.Data.Convert;
 
 public static class PointConverter
 {

@@ -1,4 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Serialization;
+﻿using LocalUtilities.SimpleScript;
 
 namespace LocalUtilities.IocpNet.Common;
 
@@ -22,7 +22,7 @@ public class CommandSender : Command
 
     public byte[] GetPacket()
     {
-        var args = Args.ToSsBuffer();
+        var args = Args.Serialize(null);
         var PacketLength = HeadLength + args.Length + Data.Length;
         var buffer = new byte[PacketLength];
         var offset = 0;
@@ -40,9 +40,10 @@ public class CommandSender : Command
         return buffer;
     }
 
-    public CommandSender AppendArgs(string key, string args)
+    public CommandSender AppendArgs(string key, object? obj)
     {
-        Args[key] = args;
+        var buffer = obj?.Serialize(null) ?? [];
+        Args[key] = buffer;
         return this;
     }
 }
