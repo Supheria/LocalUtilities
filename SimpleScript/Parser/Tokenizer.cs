@@ -32,7 +32,7 @@ public class Tokenizer
 
     StringBuilder Composing { get; } = new();
 
-    internal ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
+    public ElementScope Elements { get; } = new(/*null, */new(), new(), new(), -1);
 
     public Tokenizer(byte[] buffer, int offset, int count)
     {

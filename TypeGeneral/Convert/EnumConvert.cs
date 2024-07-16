@@ -5,23 +5,23 @@ namespace LocalUtilities.TypeGeneral.Convert;
 
 public static class EnumConvert
 {
-    public static T? ToEnum<T>(this string str) where T : Enum
+    public static object? ToEnum(this string str, Type type)
     {
         try
         {
-            if (Enum.TryParse(typeof(T), str, true, out var result))
-                return (T)result;
+            if (Enum.TryParse(type, str, true, out var result))
+                return result;
         }
         catch { }
-        return default;
+        return null;
     }
 
-    public static T? DescriptionToEnum<T>(this string? str, T @default) where T : Enum
+    public static object? DescriptionToEnum(this string? str, Type type)
     {
         if (str is null)
-            return @default;
+            return null;
         var map = new Dictionary<string, string>();
-        var fieldinfos = typeof(T).GetFields();
+        var fieldinfos = type.GetFields();
         foreach (FieldInfo field in fieldinfos)
         {
             var atts = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
@@ -30,8 +30,8 @@ public static class EnumConvert
             map[((DescriptionAttribute)atts[0]).Description] = field.Name;
         }
         if (!map.TryGetValue(str, out var e))
-            return @default;
-        return e.ToEnum<T>();
+            return null;
+        return e.ToEnum(type);
     }
 
     public static string GetDescription<T>(this T @enum) where T : Enum

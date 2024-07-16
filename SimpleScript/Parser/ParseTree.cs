@@ -27,7 +27,7 @@ internal class ParseTree
 
     Word Tag { get; set; } = new();
 
-    List<Element> Arrays { get; } = [];
+    List<Element> Array { get; } = [];
 
     Element? Builder { get; set; } = null;
 
@@ -214,9 +214,9 @@ internal class ParseTree
                         return this;
                     case SignTable.CloseBrace:
                         token.Submit();
-                        Builder = new ElementArray(/*From?.Builder, */Name, Operator, Tag, Level);
-                        foreach (var scope in Arrays.Cast<ElementScope>())
-                            ((ElementArray)Builder).Append(scope.Property);
+                        var scope = new ElementScope(/*From?.Builder, */Name, Operator, Tag, Level);
+                        scope.AppendArray(Array);
+                        Builder = scope;
                         Done();
                         return From;
                     case SignTable.Equal:
@@ -232,7 +232,7 @@ internal class ParseTree
                     case SignTable.CloseBrace:
                         Step = Steps.ArrayOff;
                         token.Submit();
-                        Arrays.Add(Builder!);
+                        Array.Add(Builder!);
                         return this;
                     case SignTable.OpenBrace:
                         throw SsParseExceptions.UnexpectedDelimiter(token, Step.ToString());

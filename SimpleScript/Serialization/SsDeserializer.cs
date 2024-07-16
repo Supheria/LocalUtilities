@@ -37,7 +37,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
             throw SsParseExceptions.CannotFindEntry(name);
         if (elements.Count > 1)
             throw SsParseExceptions.MultiAssignment(name);
-        return elements.First().Tag.Text;
+        return elements.First().Value.Text;
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
             throw SsParseExceptions.CannotFindEntry(name);
         if (elements.Count > 1)
             throw SsParseExceptions.MultiAssignment(name);
-        return toProperty(elements.First().Tag.Text);
+        return toProperty(elements.First().Value.Text);
     }
     /// <summary>
     /// read for element like: xyz = {str1 str2 str3}
@@ -67,7 +67,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     {
         return GeneralReadList<ElementScope, TItem>(name, (scope, list) =>
         {
-            var items = scope.Property.Values.SelectMany(x => x.Select(x => toItem(x.Tag.Text))).ToList();
+            var items = scope.Property.Values.SelectMany(x => x.Select(x => toItem(x.Value.Text))).ToList();
             list.AddRange(items);
         });
     }
@@ -78,7 +78,7 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
         {
             foreach (var elements in array.Properties)
             {
-                var arr = elements.Values.SelectMany(x => x.Select(x => x.Tag.Text)).ToList();
+                var arr = elements.Values.SelectMany(x => x.Select(x => x.Value.Text)).ToList();
                 list.Add(toItem(arr));
             }
         });
@@ -88,8 +88,8 @@ public class SsDeserializer(object obj) : SsSerializeBase(obj)
     {
         return GeneralReadList<ElementScope, KeyValuePair<TTag, TValue>>(name, (scope, list) =>
         {
-            var tag = toTag(scope.Tag.Text);
-            var values = scope.Property.SelectMany(x => x.Value.Select(x => x.Tag.Text)).ToList();
+            var tag = toTag(scope.Value.Text);
+            var values = scope.Property.SelectMany(x => x.Value.Select(x => x.Value.Text)).ToList();
             list.Add(new(tag, toValue(values)));
         });
     }

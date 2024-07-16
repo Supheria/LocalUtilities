@@ -22,6 +22,14 @@ public class ElementScope(Word name, Word @operator, Word tag, int level) : Elem
             Property[property.Name.Text] = [property];
     }
 
+    public void AppendArray(List<Element> array)
+    {
+        if (Property.TryGetValue("", out var list))
+            list.AddRange(array);
+        else
+            Property[""] = array;
+    }
+
     public override string ToString()
     {
         return new StringBuilder()

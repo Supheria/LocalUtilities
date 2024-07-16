@@ -10,7 +10,7 @@ public abstract class Element(/*Element? from, */Word name, Word @operator, Word
 
     public Word Operator { get; set; } = @operator;
 
-    public Word Tag { get; set; } = tag;
+    public Word Value { get; set; } = tag;
 
     public int Level { get; } = level;
 
