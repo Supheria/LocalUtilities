@@ -2,9 +2,9 @@
 
 namespace LocalUtilities.SimpleScript.Serializer;
 
-public class SsWriter(bool writeIntoMultiLines)
+public class SsWriter(Stream stream, bool writeIntoMultiLines) : IDisposable
 {
-    StringBuilder StringBuilder { get; } = new();
+    Stream Stream { get; } = stream;
 
     int Level { get; set; } = 0;
 
@@ -12,14 +12,9 @@ public class SsWriter(bool writeIntoMultiLines)
 
     public bool WriteIntoMultiLines { get; } = writeIntoMultiLines;
 
-    public override string ToString()
-    {
-        return StringBuilder.ToString();
-    }
-
     public void AppendName(string name)
     {
-        _ = StringBuilder.AppendName(Level, name, WriteIntoMultiLines);
+        Stream.WriteName(Level, name, WriteIntoMultiLines);
         NameAppended = true;
     }
 
@@ -27,23 +22,30 @@ public class SsWriter(bool writeIntoMultiLines)
     {
         Level++;
         if (NameAppended)
-            _ = StringBuilder.AppendStart(0, WriteIntoMultiLines);
+            Stream.WriteStart(0, WriteIntoMultiLines);
         else
-            _ = StringBuilder.AppendStart(Level, WriteIntoMultiLines);
+            Stream.WriteStart(Level, WriteIntoMultiLines);
         NameAppended = false;
     }
 
     public void AppendEnd()
     {
-        _ = StringBuilder.AppendEnd(--Level, WriteIntoMultiLines);
+        Stream.WriteEnd(--Level, WriteIntoMultiLines);
     }
 
     public void AppendValue(string value)
     {
         if (NameAppended)
-            _ = StringBuilder.AppendValue(0, value, WriteIntoMultiLines);
+            Stream.WriteValue(0, value, WriteIntoMultiLines);
         else
-            _ = StringBuilder.AppendValue(Level, value, WriteIntoMultiLines);
+            Stream.WriteValue(Level, value, WriteIntoMultiLines);
         NameAppended = false;
+    }
+
+    public void Dispose()
+    {
+        Stream.Flush();
+        Stream.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

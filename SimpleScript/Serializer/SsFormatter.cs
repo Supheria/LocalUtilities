@@ -74,51 +74,56 @@ public static class SsFormatter
         return sb;
     }
 
-    /// <summary>
-    /// when <paramref name="writeIntoMultiLines"/> is false, comment won't be written out
-    /// </summary>
-    /// <param name="sb"></param>
-    /// <param name="level"></param>
-    /// <param name="comment"></param>
-    /// <param name="writeIntoMultiLines"></param>
-    /// <returns></returns>
-    public static StringBuilder AppendComment(this StringBuilder sb, int level, string comment, bool writeIntoMultiLines)
+    private static byte[] Encode(StringBuilder sb)
     {
+        return Encoding.UTF8.GetBytes(sb.ToString());
+    }
+
+    public static void AppendComment(this Stream stream, int level, string comment, bool writeIntoMultiLines)
+    {
+        var sb = new StringBuilder();
         if (writeIntoMultiLines)
-            return sb.AppendTab(level, writeIntoMultiLines)
+        {
+            sb.AppendTab(level, writeIntoMultiLines)
                 .Append(SignTable.Note)
                 .Append(comment)
                 .AppendNewLine(writeIntoMultiLines);
-        return sb;
+            stream.Write(Encode(sb));
+        }
     }
 
-    public static StringBuilder AppendName(this StringBuilder sb, int level, string name, bool writeIntoMultiLines)
+    public static void WriteName(this Stream stream, int level, string name, bool writeIntoMultiLines)
     {
-        return sb.AppendTab(level, writeIntoMultiLines)
-           .Append(name.ToQuoted())
-           .Append(SignTable.Equal);
+        var sb = new StringBuilder()
+            .AppendTab(level, writeIntoMultiLines)
+            .Append(name.ToQuoted())
+            .Append(SignTable.Equal);
+        stream.Write(Encode(sb));
     }
 
-    public static StringBuilder AppendStart(this StringBuilder sb, int level, bool writeIntoMultiLines)
+    public static void WriteStart(this Stream stream, int level, bool writeIntoMultiLines)
     {
-        return sb.AppendTab(level, writeIntoMultiLines)
+        var sb = new StringBuilder().AppendTab(level, writeIntoMultiLines)
             .Append(SignTable.OpenBrace)
             .AppendNewLine(writeIntoMultiLines);
+        stream.Write(Encode(sb));
     }
 
-    public static StringBuilder AppendEnd(this StringBuilder sb, int level, bool writeIntoMultiLines)
+    public static void WriteEnd(this Stream stream, int level, bool writeIntoMultiLines)
     {
-        return sb.AppendTab(level, writeIntoMultiLines)
+        var sb = new StringBuilder().AppendTab(level, writeIntoMultiLines)
             .Append(SignTable.CloseBrace)
             .AppendNewLine(writeIntoMultiLines);
+        stream.Write(Encode(sb));
     }
 
-    public static StringBuilder AppendValue(this StringBuilder sb, int level, string value, bool writeIntoMultiLines)
+    public static void WriteValue(this Stream stream, int level, string value, bool writeIntoMultiLines)
     {
-        sb.AppendTab(level, writeIntoMultiLines)
+        var sb = new StringBuilder().AppendTab(level, writeIntoMultiLines)
             .Append(value.ToQuoted());
         if (value is not "")
             sb.Append(SignTable.Space);
-        return sb.AppendNewLine(writeIntoMultiLines);
+        sb.AppendNewLine(writeIntoMultiLines);
+        stream.Write(Encode(sb));
     }
 }

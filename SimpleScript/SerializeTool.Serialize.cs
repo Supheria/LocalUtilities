@@ -8,23 +8,22 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
-    public static string Serialize(this object obj, bool writeIntoMultiLines, string? name)
-    {
-        var writer = new SsWriter(writeIntoMultiLines);
-        Serialize(obj, writer, name, true);
-        return writer.ToString();
-    }
-
     public static byte[] Serialize(this object obj, string? name)
     {
-        var str = Serialize(obj, false, name);
-        return Encoding.UTF8.GetBytes(str);
+        var memory = new MemoryStream();
+        using var writer = new SsWriter(memory, false);
+        Serialize(obj, writer, name, true);
+        var buffer = new byte[memory.Position];
+        Array.Copy(memory.GetBuffer(), 0, buffer, 0, buffer.Length);
+        return buffer;
     }
 
     public static void SerializeFile(this object obj, bool writeIntoMultiLines, string filePath, string? name)
     {
-        var text = Serialize(obj, writeIntoMultiLines, name);
-        WriteUtf8File(text, filePath);
+        using var file = File.Create(filePath);
+        file.Write(Utf8_BOM);
+        using var writer = new SsWriter(file, writeIntoMultiLines);
+        Serialize(obj, writer, name, true);
     }
 
     private static void Serialize(object? obj, SsWriter writer, string? name, bool root)

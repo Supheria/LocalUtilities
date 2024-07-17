@@ -8,7 +8,7 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     protected delegate FormData SerializeHandler();
 
-    protected delegate FormData DeserializeHandler();
+    protected delegate void DeserializeHandler(object? data);
 
     protected delegate void DrawClientHandler();
 
@@ -37,6 +37,8 @@ public abstract class ResizeableForm : Form, IInitializeable
     protected int ClientWidth => ClientRectangle.Width;
 
     protected int ClientHeight => ClientRectangle.Height;
+
+    protected virtual Type DataType => typeof(FormData);
 
     protected class FormData
     {
@@ -103,8 +105,9 @@ public abstract class ResizeableForm : Form, IInitializeable
     {
         try
         {
-            var formData = OnLoadForm?.Invoke() ?? SerializeTool.DeserializeFile<FormData>(this.GetInitializeFilePath(), InitializeName);
-            if (formData is null)
+            var data = SerializeTool.DeserializeFile(DataType, this.GetInitializeFilePath(), InitializeName);
+            OnLoadForm?.Invoke(data);
+            if (data is not FormData formData)
                 return;
             MinimumSize = formData.MinimumSize;
             Size = formData.Size;

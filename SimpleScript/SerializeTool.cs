@@ -71,33 +71,4 @@ public static partial class SerializeTool
         }
         return true;
     }
-
-    private static void WriteUtf8File(string text, string filePath)
-    {
-        using var file = File.Create(filePath);
-        file.Write(Utf8_BOM);
-        using var streamWriter = new StreamWriter(file, Encoding.UTF8);
-        streamWriter.Write(text);
-        streamWriter.Close();
-    }
-
-    private static byte[] ReadFileBuffer(string filePath)
-    {
-        if (!File.Exists(filePath))
-            throw SsParseException.CannotOpenFile(filePath);
-        byte[] buffer;
-        using var file = File.OpenRead(filePath);
-        if (file.ReadByte() == Utf8_BOM[0] && file.ReadByte() == Utf8_BOM[1] && file.ReadByte() == Utf8_BOM[2])
-        {
-            buffer = new byte[file.Length - 3];
-            _ = file.Read(buffer, 0, buffer.Length);
-        }
-        else
-        {
-            file.Seek(0, SeekOrigin.Begin);
-            buffer = new byte[file.Length];
-            _ = file.Read(buffer, 0, buffer.Length);
-        }
-        return buffer;
-    }
 }

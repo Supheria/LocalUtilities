@@ -40,16 +40,16 @@ public class Element(/*Element? from, */Word name, Word @operator, Word value, i
             Property[""] = array;
     }
 
-    public override string ToString()
-    {
-        return new StringBuilder()
-            .AppendName(Level, Name.Text, false)
-            .AppendStart(Level, false)
-            .AppendJoin(SignTable.Empty, Property.Values.ToList(), (sb, property) =>
-            {
-                sb.Append(property.ToString());
-            })
-            .AppendEnd(Level, false)
-            .ToString();
-    }
+    //public override string ToString()
+    //{
+    //    //return new StringBuilder()
+    //    //    .AppendName(Level, Name.Text, false)
+    //    //    .AppendStart(Level, false)
+    //    //    .AppendJoin(SignTable.Empty, Property.Values.ToList(), (sb, property) =>
+    //    //    {
+    //    //        sb.Append(property.ToString());
+    //    //    })
+    //    //    .AppendEnd(Level, false)
+    //    //    .ToString();
+    //}
 }

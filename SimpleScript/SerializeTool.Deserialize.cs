@@ -9,26 +9,50 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
-    public static T? Deserialize<T>(byte[] buffer, int offset, int count, string? name)
+    public static object? Deserialize(this Type type, byte[] buffer, int offset, int count, string? name)
     {
         var tokenizer = new Tokenizer(buffer, offset, count);
-        var type = typeof(T);
         name ??= type.Name;
         if (tokenizer.Element.Property.TryGetValue(name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
-            return (T?)Deserialize(type, roots.LastOrDefault());
-        return default;
+            return Deserialize(type, roots.LastOrDefault());
+        return null;
     }
 
-    public static T? Deserialize<T>(this string str, string? name)
+    public static T? Deserialize<T>(byte[] buffer, int offset, int count, string? name)
     {
-        var buffer = Encoding.UTF8.GetBytes(str);
-        return Deserialize<T>(buffer, 0, buffer.Length, name);
+        return (T?)Deserialize(typeof(T), buffer, offset, count, name);
     }
 
     public static T? DeserializeFile<T>(string filePath, string? name)
     {
         var buffer = ReadFileBuffer(filePath);
         return Deserialize<T>(buffer, 0, buffer.Length, name);
+    }
+
+    public static object? DeserializeFile(Type type, string filePath, string? name)
+    {
+        var buffer = ReadFileBuffer(filePath);
+        return Deserialize(type, buffer, 0, buffer.Length, name);
+    }
+
+    private static byte[] ReadFileBuffer(string filePath)
+    {
+        if (!File.Exists(filePath))
+            throw SsParseException.CannotOpenFile(filePath);
+        byte[] buffer;
+        using var file = File.OpenRead(filePath);
+        if (file.ReadByte() == Utf8_BOM[0] && file.ReadByte() == Utf8_BOM[1] && file.ReadByte() == Utf8_BOM[2])
+        {
+            buffer = new byte[file.Length - 3];
+            _ = file.Read(buffer, 0, buffer.Length);
+        }
+        else
+        {
+            file.Seek(0, SeekOrigin.Begin);
+            buffer = new byte[file.Length];
+            _ = file.Read(buffer, 0, buffer.Length);
+        }
+        return buffer;
     }
 
     private static object? Deserialize(Type type, Element? root)
