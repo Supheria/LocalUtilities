@@ -1,10 +1,11 @@
-﻿using System.Text;
+﻿using LocalUtilities.SimpleScript.Common;
+using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serializer;
 
-public class SsWriter(Stream stream, bool writeIntoMultiLines) : IDisposable
+public class SsWriter(Stream stream, bool writeIntoMultiLines, SignTable? signTable, Encoding encoding) : IDisposable
 {
-    Stream Stream { get; } = stream;
+    SsFormatter Formatter { get; } = new(stream, writeIntoMultiLines, signTable ?? new DefaultSignTable(), encoding);
 
     int Level { get; set; } = 0;
 
@@ -14,7 +15,7 @@ public class SsWriter(Stream stream, bool writeIntoMultiLines) : IDisposable
 
     public void AppendName(string name)
     {
-        Stream.WriteName(Level, name, WriteIntoMultiLines);
+        Formatter.WriteName(Level, name);
         NameAppended = true;
     }
 
@@ -22,30 +23,34 @@ public class SsWriter(Stream stream, bool writeIntoMultiLines) : IDisposable
     {
         Level++;
         if (NameAppended)
-            Stream.WriteStart(0, WriteIntoMultiLines);
+            Formatter.WriteStart(0);
         else
-            Stream.WriteStart(Level, WriteIntoMultiLines);
+            Formatter.WriteStart(Level);
         NameAppended = false;
     }
 
     public void AppendEnd()
     {
-        Stream.WriteEnd(--Level, WriteIntoMultiLines);
+        Formatter.WriteEnd(--Level);
     }
 
     public void AppendValue(string value)
     {
         if (NameAppended)
-            Stream.WriteValue(0, value, WriteIntoMultiLines);
+            Formatter.WriteValue(0, value);
         else
-            Stream.WriteValue(Level, value, WriteIntoMultiLines);
+            Formatter.WriteValue(Level, value);
         NameAppended = false;
+    }
+
+    public void AppendUnquotedValue(string value)
+    {
+        Formatter.WriteUnquotedValue(value);
     }
 
     public void Dispose()
     {
-        Stream.Flush();
-        Stream.Dispose();
+        Formatter.Dispose();
         GC.SuppressFinalize(this);
     }
 }

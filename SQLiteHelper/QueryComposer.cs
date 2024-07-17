@@ -15,7 +15,7 @@ internal class QueryComposer
 
     public QueryComposer Finish()
     {
-        Query.Append(SignTable.Semicolon);
+        Query.Append(SignCollection.Semicolon);
         return this;
     }
 
@@ -27,24 +27,24 @@ internal class QueryComposer
 
     public QueryComposer AppendFields(Field[] fields)
     {
-        Query.Append(SignTable.OpenParenthesis)
-            .AppendJoin(SignTable.Comma, fields, (sb, field) =>
+        Query.Append(SignCollection.OpenParenthesis)
+            .AppendJoin(SignCollection.Comma, fields, (sb, field) =>
             {
                 sb.Append(field);
             })
-            .Append(SignTable.CloseParenthesis);
+            .Append(SignCollection.CloseParenthesis);
         return this;
     }
 
     public QueryComposer AppendValues(Volume[] values)
     {
         Append(Keywords.Values);
-        Query.Append(SignTable.OpenParenthesis)
-            .AppendJoin(SignTable.Comma, values, (sb, value) =>
+        Query.Append(SignCollection.OpenParenthesis)
+            .AppendJoin(SignCollection.Comma, values, (sb, value) =>
             {
                 sb.Append(value);
             })
-            .Append(SignTable.CloseParenthesis);
+            .Append(SignCollection.CloseParenthesis);
         return this;
     }
 
@@ -67,7 +67,7 @@ internal class QueryComposer
 
     public QueryComposer AppendColumnFields(Assignment[] assignments)
     {
-        Query.AppendJoin(SignTable.Comma, assignments, (sb, assignment) =>
+        Query.AppendJoin(SignCollection.Comma, assignments, (sb, assignment) =>
         {
             sb.Append(assignment);
         });

@@ -22,7 +22,7 @@ public class CommandSender : Command
 
     public byte[] GetPacket()
     {
-        var args = Args.Serialize(null);
+        var args = SerializeTool.Serialize(Args, null, null);
         var PacketLength = HeadLength + args.Length + Data.Length;
         var buffer = new byte[PacketLength];
         var offset = 0;
@@ -42,7 +42,7 @@ public class CommandSender : Command
 
     public CommandSender AppendArgs(string key, object? obj)
     {
-        var buffer = obj?.Serialize(null) ?? [];
+        var buffer = SerializeTool.Serialize(obj, null, null) ?? [];
         Args[key] = buffer;
         return this;
     }

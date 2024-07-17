@@ -1,12 +1,28 @@
-﻿using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serializer;
 
-public static class SsFormatter
+public class SsFormatter(Stream stream, bool writeIntoMultiLines, SignTable signTable, Encoding encoding) : IDisposable
 {
-    private static string ToQuoted(this string str)
+    Stream Stream { get; } = stream;
+
+    bool WriteIntoMultiLines { get; } = writeIntoMultiLines;
+
+    SignTable SignTable { get; } = signTable;
+
+    Encoding Encoding { get; } = encoding;
+
+    public void Dispose()
+    {
+        Stream.Flush();
+        Stream.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private string ToQuoted(string str)
     {
         if (str is "")
             return new StringBuilder()
@@ -17,32 +33,31 @@ public static class SsFormatter
         bool useQuote = false;
         foreach (var ch in str)
         {
-            switch (ch)
+            if (ch == SignTable.Escape ||
+                ch == SignTable.Quote)
             {
-                case SignTable.Escape:
-                case SignTable.Quote:
-                    sb.Append(SignTable.Escape)
+                sb.Append(SignTable.Escape)
                         .Append(ch);
-                    useQuote = true;
-                    continue;
-                case SignTable.Tab:
-                case SignTable.Space:
-                case SignTable.Note:
-                case SignTable.Equal:
-                case SignTable.Greater:
-                case SignTable.Less:
-                case SignTable.OpenBrace:
-                case SignTable.CloseBrace:
-                case SignTable.Return:
-                case SignTable.NewLine:
-                case SignTable.Empty:
-                    useQuote = true;
-                    sb.Append(ch);
-                    continue;
-                default:
-                    sb.Append(ch);
-                    continue;
+                useQuote = true;
             }
+            else if (ch == SignTable.Tab ||
+                ch == SignTable.Space ||
+                ch == SignTable.Note ||
+                ch == SignTable.Equal ||
+                ch == SignTable.Greater ||
+                ch == SignTable.Less ||
+                ch == SignTable.Open ||
+                ch == SignTable.Close ||
+                ch == SignTable.Return ||
+                ch == SignTable.NewLine ||
+                ch == SignTable.Empty)
+            {
+                useQuote = true;
+                sb.Append(ch);
+                continue;
+            }
+            else
+                sb.Append(ch);
         }
         if (useQuote)
             return new StringBuilder()
@@ -53,17 +68,17 @@ public static class SsFormatter
         return sb.ToString();
     }
 
-    private static StringBuilder AppendNewLine(this StringBuilder sb, bool writeIntoMultiLines)
+    private StringBuilder AppendNewLine(StringBuilder sb)
     {
-        if (writeIntoMultiLines)
+        if (WriteIntoMultiLines)
             return sb.AppendLine();
         else
             return sb;
     }
 
-    private static StringBuilder AppendTab(this StringBuilder sb, int times, bool writeIntoMultiLines)
+    private StringBuilder AppendTab(StringBuilder sb, int times)
     {
-        if (writeIntoMultiLines)
+        if (WriteIntoMultiLines)
         {
             for (var i = 0; i < times; i++)
                 sb.Append(SignTable.Space)
@@ -74,56 +89,61 @@ public static class SsFormatter
         return sb;
     }
 
-    private static byte[] Encode(StringBuilder sb)
+    private byte[] Encode(StringBuilder sb)
     {
-        return Encoding.UTF8.GetBytes(sb.ToString());
+        return Encoding.GetBytes(sb.ToString());
     }
 
-    public static void AppendComment(this Stream stream, int level, string comment, bool writeIntoMultiLines)
+    public void AppendComment(int level, string comment)
     {
-        var sb = new StringBuilder();
-        if (writeIntoMultiLines)
+        if (WriteIntoMultiLines)
         {
-            sb.AppendTab(level, writeIntoMultiLines)
+            var sb = AppendTab(new(), level)
                 .Append(SignTable.Note)
-                .Append(comment)
-                .AppendNewLine(writeIntoMultiLines);
-            stream.Write(Encode(sb));
+                .Append(comment);
+            AppendNewLine(sb);
+            Stream.Write(Encode(sb));
         }
     }
 
-    public static void WriteName(this Stream stream, int level, string name, bool writeIntoMultiLines)
+    public void WriteName(int level, string name)
     {
-        var sb = new StringBuilder()
-            .AppendTab(level, writeIntoMultiLines)
-            .Append(name.ToQuoted())
+        var sb = AppendTab(new(), level)
+            .Append(ToQuoted(name))
             .Append(SignTable.Equal);
-        stream.Write(Encode(sb));
+        Stream.Write(Encode(sb));
     }
 
-    public static void WriteStart(this Stream stream, int level, bool writeIntoMultiLines)
+    public void WriteStart(int level)
     {
-        var sb = new StringBuilder().AppendTab(level, writeIntoMultiLines)
-            .Append(SignTable.OpenBrace)
-            .AppendNewLine(writeIntoMultiLines);
-        stream.Write(Encode(sb));
+        var sb = AppendTab(new(), level)
+            .Append(SignTable.Open);
+        AppendNewLine(sb);
+        Stream.Write(Encode(sb));
     }
 
-    public static void WriteEnd(this Stream stream, int level, bool writeIntoMultiLines)
+    public void WriteEnd(int level)
     {
-        var sb = new StringBuilder().AppendTab(level, writeIntoMultiLines)
-            .Append(SignTable.CloseBrace)
-            .AppendNewLine(writeIntoMultiLines);
-        stream.Write(Encode(sb));
+        var sb = AppendTab(new(), level)
+            .Append(SignTable.Close);
+        AppendNewLine(sb);
+        Stream.Write(Encode(sb));
     }
 
-    public static void WriteValue(this Stream stream, int level, string value, bool writeIntoMultiLines)
+    public void WriteValue(int level, string value)
     {
-        var sb = new StringBuilder().AppendTab(level, writeIntoMultiLines)
-            .Append(value.ToQuoted());
+        var sb = AppendTab(new(), level)
+            .Append(ToQuoted(value));
         if (value is not "")
             sb.Append(SignTable.Space);
-        sb.AppendNewLine(writeIntoMultiLines);
-        stream.Write(Encode(sb));
+        AppendNewLine(sb);
+        Stream.Write(Encode(sb));
+    }
+
+    public void WriteUnquotedValue(string value)
+    {
+        var sb = new StringBuilder(value);
+        AppendNewLine(sb);
+        Stream.Write(Encode(sb));
     }
 }

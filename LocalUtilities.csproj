@@ -32,9 +32,4 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="SQLite\Data\" />
-    <Folder Include="SQLite\Helper\" />
-  </ItemGroup>
-
 </Project>

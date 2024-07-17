@@ -13,7 +13,7 @@ public class Keywords
 
     private Keywords(string value)
     {
-        Value = value + SignTable.Space;
+        Value = value + SignCollection.Space;
     }
 
     private Keywords() : this("")
@@ -32,7 +32,7 @@ public class Keywords
     }
 
     public static Keywords Null { get; } = new();
-    public static Keywords Any { get; } = new(SignTable.Asterisk.ToString());
+    public static Keywords Any { get; } = new(SignCollection.Asterisk.ToString());
     public static Keywords Equal { get; } = new("=");
     public static Keywords Less { get; } = new("<");
     public static Keywords Greater { get; } = new(">");

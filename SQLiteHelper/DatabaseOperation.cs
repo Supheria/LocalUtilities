@@ -20,31 +20,19 @@ public class DatabaseOperation
     static string SubModulStampField { get; } = "sub-module stamp";
 
     static string DataName { get; } = "Data";
+
+    DatabaseSignTable SignTable { get; } = new();
     /// <summary>
     /// 数据库连接定义
     /// </summary>
-    SQLiteConnection Connection { get; }
+    SQLiteConnection? Connection { get; set; }
 
-    /// <summary>
-    /// SQL命令定义
-    /// </summary>
-    SQLiteCommand? Command { get; set; }
-
-    /// <summary>
-    /// 数据读取定义
-    /// </summary>
-    SQLiteDataReader? DataReader { get; set; }
-
-    /// <summary>
-    /// 构造函数
-    /// </summary>
-    /// <param name="connectionString">连接SQLite库字符串</param>
-    public DatabaseOperation(Volume filePath)
+    public void Connect(string filePath)
     {
         var query = new QueryComposer()
             .Append(Keywords.DataSource)
             .Append(Keywords.Equal)
-            .Append(filePath)
+            .Append(new(filePath))
             .Finish()
             .Append(Keywords.Version)
             .Append(Keywords.Equal)
@@ -60,11 +48,7 @@ public class DatabaseOperation
     /// </summary>
     public void Close()
     {
-        Command?.Cancel();
-        Command = null;
-        DataReader?.Close();
-        DataReader = null;
-        Connection.Close();
+        Connection?.Close();
 
     }
 
@@ -73,12 +57,13 @@ public class DatabaseOperation
     /// </summary>
     /// <returns>The query.</returns>
     /// <param name="queryString">SQL命令字符串</param>
-    private SQLiteDataReader ExecuteQuery(QueryComposer queryComposer)
+    private SQLiteDataReader? ExecuteQuery(QueryComposer queryComposer)
     {
-        Command = Connection.CreateCommand();
-        Command.CommandText = queryComposer.ToString();
-        DataReader = Command.ExecuteReader();
-        return DataReader;
+        if (Connection is null)
+            return null;
+        using var command = Connection.CreateCommand();
+        command.CommandText = queryComposer.ToString();
+        return command.ExecuteReader();
     }
 
     public object[] ReadFullTable(Type type)
@@ -100,7 +85,7 @@ public class DatabaseOperation
         if (tableName is null)
             tableName = table.Name ?? type.Name;
         else
-            tableName = tableName + SignTable.Dot + (table.Name ?? type.Name);
+            tableName = tableName + SignCollection.Dot + (table.Name ?? type.Name);
         var query = new QueryComposer()
             .Append(Keywords.Select)
             .Append(Keywords.Any)
@@ -109,7 +94,9 @@ public class DatabaseOperation
         if (stamp is not null)
             query.AppendCondition(new(new(SubModulStampField), new(stamp), Condition.Operates.Equal));
         query.Finish();
-        var reader = ExecuteQuery(query);
+        using var reader = ExecuteQuery(query);
+        if (reader is null)
+            return [];
         while(reader.Read())
         {
             var obj = Activator.CreateInstance(type);
@@ -117,7 +104,7 @@ public class DatabaseOperation
                 continue;
             foreach (var property in type.GetProperties())
             {
-                if (property.GetCustomAttribute<TableFieldIgnore>() is not null)
+                if (property.GetCustomAttribute<TableFieldIgnore>() is not null || property.SetMethod is null)
                     continue;
                 var subTable = property.PropertyType.GetCustomAttribute<Table>();
                 if (subTable is not null)
@@ -131,7 +118,7 @@ public class DatabaseOperation
                 {
                     var ordinal = reader.GetOrdinal(property.GetCustomAttribute<TableField>()?.Name ?? property.Name);
                     var buffer = Encoding.UTF8.GetBytes(reader.GetString(ordinal));
-                    var subObj = SerializeTool.Deserialize(property.PropertyType, buffer, 0, buffer.Length, DataName);
+                    var subObj = SerializeTool.Deserialize(property.PropertyType, buffer, 0, buffer.Length, DataName, SignTable);
                     if (subObj is not null)
                         property.SetValue(obj,subObj);
                 }
@@ -141,27 +128,27 @@ public class DatabaseOperation
         return objects.ToArray();
     }
 
-    public SQLiteDataReader? CreateTable(Type type)
+    public void CreateTable(Type type)
     {
-        return CreateTable(type, null);
+        CreateTable(type, null);
     }
 
-    private SQLiteDataReader? CreateTable(Type type, string? tableName)
+    private void CreateTable(Type type, string? tableName)
     {
         var table = type.GetCustomAttribute<Table>();
         if (table is null)
-            return null;
+            return;
         var fields = new List<Field>();
         if (tableName is null)
             tableName = table.Name ?? type.Name;
         else
         {
-            tableName = tableName + SignTable.Dot + (table.Name ?? type.Name);
+            tableName = tableName + SignCollection.Dot + (table.Name ?? type.Name);
             fields.Add(new(SubModulStampField));
         }
         foreach (var property in type.GetProperties())
         {
-            if (property.GetCustomAttribute<TableFieldIgnore>() is not null)
+            if (property.GetCustomAttribute<TableFieldIgnore>() is not null || property.SetMethod is null)
                 continue;
             var subTable = property.PropertyType.GetCustomAttribute<Table>();
             if (subTable is not null)
@@ -178,33 +165,33 @@ public class DatabaseOperation
             .Append(new(tableName))
             .AppendFields(fields.ToArray())
             .Finish();
-        return ExecuteQuery(query);
+        _ = ExecuteQuery(query);
     }
 
-    public SQLiteDataReader? InsertFields(object obj)
+    public void InsertFields(object obj)
     {
-        return InsertFields(obj, null, null);
+        InsertFields(obj, null, null);
     }
 
-    private SQLiteDataReader? InsertFields(object? obj, string? tableName, Volume? stamp)
+    private void InsertFields(object? obj, string? tableName, Volume? stamp)
     {
         if (obj is null)
-            return null;
+            return;
         var type = obj.GetType();
         var table = type.GetCustomAttribute<Table>();
         if (table is null)
-            return null;
+            return;
         if (tableName is null)
             tableName = table.Name ?? type.Name;
         else
-            tableName = tableName + SignTable.Dot + (table.Name ?? type.Name);
+            tableName = tableName + SignCollection.Dot + (table.Name ?? type.Name);
         var fieldValues = new List<Volume>();
         if (stamp is not null)
             fieldValues.Add(stamp);
         stamp = GetStamp();
         foreach (var property in type.GetProperties())
         {
-            if (property.GetCustomAttribute<TableFieldIgnore>() is not null)
+            if (property.GetCustomAttribute<TableFieldIgnore>() is not null || property.SetMethod is null)
                 continue;
             var subObj = property.GetValue(obj);
             if (property.PropertyType.GetCustomAttribute<Table>() is not null)
@@ -213,7 +200,7 @@ public class DatabaseOperation
                 fieldValues.Add(stamp);
                 continue;
             }
-            var buffer = subObj?.Serialize(DataName) ?? [];
+            var buffer = SerializeTool.Serialize(subObj, DataName, SignTable) ?? [];
             fieldValues.Add(new(Encoding.UTF8.GetString(buffer)));
         }
         var query = new QueryComposer()
@@ -221,7 +208,7 @@ public class DatabaseOperation
              .Append(new(tableName))
              .AppendValues(fieldValues.ToArray())
              .Finish();
-        return ExecuteQuery(query);
+        _ = ExecuteQuery(query);
     }
 
     private static Volume GetStamp()

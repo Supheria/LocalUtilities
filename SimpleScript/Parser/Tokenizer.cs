@@ -1,4 +1,5 @@
-﻿using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.SimpleScript.Common;
+using LocalUtilities.TypeGeneral;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;
@@ -24,7 +25,7 @@ internal class Tokenizer
 
     int Column { get; set; } = 0;
 
-    ParseTree Tree { get; set; } = new();
+    ParseTree Tree { get; set; }
 
     Token Composed { get; set; } = new();
 
@@ -32,10 +33,14 @@ internal class Tokenizer
 
     public Element Element { get; } = new(/*null, */new(), new(), new(), -1);
 
-    public Tokenizer(byte[] buffer, int offset, int count)
+    SignTable SignTable { get; }
+
+    public Tokenizer(byte[] buffer, int offset, int count, SignTable? signTable)
     {
         Buffer = new byte[count];
         Array.Copy(buffer, offset, Buffer, 0, count);
+        SignTable = signTable ?? new DefaultSignTable();
+        Tree = new(SignTable);
         Tokenize();
     }
 
@@ -49,7 +54,7 @@ internal class Tokenizer
             if (tree is null)
             {
                 AddToken();
-                Tree = new();
+                Tree = new(SignTable);
             }
             else
                 Tree = tree;
@@ -72,107 +77,100 @@ internal class Tokenizer
         switch (State)
         {
             case States.Quotation:
-                switch (ch)
+                if (ch == SignTable.Escape)
                 {
-                    case SignTable.Escape:
-                        //Composing.Append(GetU8Char());
-                        State = States.Escape;
-                        GetU8Char();
-                        return false;
-                    case SignTable.Quote:
-                        //case SignTable.Return:
-                        //case SignTable.NewLine:
-                        //case SignTable.Empty:
-                        //Composing.Append(GetChar());
-                        Composed = new(Composing.ToString(), Line, Column, true);
-                        State = States.None;
-                        GetU8Char();
-                        return true;
+                    State = States.Escape;
+                    GetU8Char();
+                    return false;
+                }
+                if (ch == SignTable.Quote)
+                {
+                    Composed = new(Composing.ToString(), Line, Column, true);
+                    State = States.None;
+                    GetU8Char();
+                    return true;
                 }
                 Composing.Append(GetU8Char());
                 return false;
             case States.Escape:
-                switch (ch)
+                if (ch == SignTable.Return ||
+                    ch == SignTable.NewLine ||
+                    ch == SignTable.Empty)
                 {
-                    case SignTable.Return:
-                    case SignTable.NewLine:
-                    case SignTable.Empty:
-                        Composed = new(Composing.ToString(), Line, Column, true);
-                        State = States.None;
-                        return true;
-                    default:
-                        Composing.Append(GetU8Char());
-                        State = States.Quotation;
-                        return false;
+                    Composed = new(Composing.ToString(), Line, Column, true);
+                    State = States.None;
+                    return true;
                 }
+                Composing.Append(GetU8Char());
+                State = States.Quotation;
+                return false;
             case States.Word:
-                switch (ch)
+                if (ch == SignTable.Tab || 
+                    ch == SignTable.Space ||
+                    ch == SignTable.Return ||
+                    ch == SignTable.NewLine ||
+                    ch == SignTable.Note ||
+                    ch == SignTable.Equal ||
+                    ch == SignTable.Greater ||
+                    ch == SignTable.Less ||
+                    ch == SignTable.Open ||
+                    ch == SignTable.Close ||
+                    ch == SignTable.Quote ||
+                    ch == SignTable.Empty)
                 {
-                    case SignTable.Tab:
-                    case SignTable.Space:
-                    case SignTable.Return:
-                    case SignTable.NewLine:
-                    case SignTable.Note:
-                    case SignTable.Equal:
-                    case SignTable.Greater:
-                    case SignTable.Less:
-                    case SignTable.OpenBrace:
-                    case SignTable.CloseBrace:
-                    case SignTable.Quote:
-                    case SignTable.Empty:
-                        Composed = new(Composing.ToString(), Line, Column, false);
-                        State = States.None;
-                        return true;
-                    default:
-                        Composing.Append(GetU8Char());
-                        return false;
+                    Composed = new(Composing.ToString(), Line, Column, false);
+                    State = States.None;
+                    return true;
                 }
+                Composing.Append(GetU8Char());
+                return false;
             case States.Note:
-                switch (ch)
+                if (ch == SignTable.Return ||
+                    ch == SignTable.NewLine || 
+                    ch == SignTable.Empty)
                 {
-                    case SignTable.Return:
-                    case SignTable.NewLine:
-                    case SignTable.Empty:
-                        State = States.None;
-                        GetU8Char();
-                        return false;
-                    default:
-                        GetU8Char();
-                        return false;
+                    State = States.None;
+                    GetU8Char();
+                    return false;
                 }
+                GetU8Char();
+                return false;
             default:
-                switch (ch)
+                if (ch == SignTable.Quote)
                 {
-                    case SignTable.Quote:
-                        Composing.Clear();
-                        //Composing.Append(GetChar());
-                        GetU8Char();
-                        State = States.Quotation;
-                        return false;
-                    case SignTable.Note:
-                        State = States.Note;
-                        GetU8Char();
-                        return false;
-                    case SignTable.Equal:
-                    case SignTable.Greater:
-                    case SignTable.Less:
-                    case SignTable.OpenBrace:
-                    case SignTable.CloseBrace:
-                        Composed = new(GetU8Char().ToString(), Line, Column, false);
-                        return true;
-                    case SignTable.Tab:
-                    case SignTable.Space:
-                    case SignTable.Return:
-                    case SignTable.NewLine:
-                    case SignTable.Empty:
-                        GetU8Char();
-                        return false;
-                    default:
-                        Composing.Clear();
-                        Composing.Append(GetU8Char());
-                        State = States.Word;
-                        return false;
+                    Composing.Clear();
+                    GetU8Char();
+                    State = States.Quotation;
+                    return false;
                 }
+                if (ch == SignTable.Note)
+                {
+                    State = States.Note;
+                    GetU8Char();
+                    return false;
+                }
+                if (ch == SignTable.Equal ||
+                    ch == SignTable.Greater ||
+                    ch == SignTable.Less ||
+                    ch == SignTable.Open ||
+                    ch == SignTable.Close)
+                {
+                    Composed = new(GetU8Char().ToString(), Line, Column, false);
+                    return true;
+                }
+                if (ch == SignTable.Tab ||
+                    ch == SignTable.Space ||
+                    ch == SignTable.Return ||
+                    ch == SignTable.NewLine ||
+                    ch == SignTable.Empty)
+                {
+                    GetU8Char();
+                    return false;
+                }
+                Composing.Clear();
+                Composing.Append(GetU8Char());
+                State = States.Word;
+                return false;
         }
     }
 

@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.TypeGeneral;
 
-public class SignTable
+public class SignCollection
 {
     public const char Note = '#';
     public const char Quote = '"';

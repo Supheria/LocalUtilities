@@ -2,12 +2,12 @@
 
 public abstract class Displayer : PictureBox
 {
-    protected virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData))
+    protected virtual FontData LabelFontData { get; set; } = new()
     {
         Size = 17f,
     };
 
-    protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData));
+    protected virtual FontData ContentFontData { get; set; } = new();
 
     public void Relocate()
     {

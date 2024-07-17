@@ -19,10 +19,10 @@ public static class NetLoggerHelper
             _ => "UnknownError"
         };
         var message = new StringBuilder()
-            .Append(SignTable.OpenBracket)
+            .Append(SignCollection.OpenBracket)
             .Append(errorCode)
-            .Append(SignTable.CloseBracket)
-            .Append(SignTable.Space)
+            .Append(SignCollection.CloseBracket)
+            .Append(SignCollection.Space)
             .Append(ex.Message)
             .ToString();
         obj.HandleLog(message);

@@ -10,9 +10,9 @@ public class Volume
     public Volume(string value)
     {
         Value = new StringBuilder()
-            .Append(SignTable.Quote)
+            .Append(SignCollection.Quote)
             .Append(value)
-            .Append(SignTable.Quote)
+            .Append(SignCollection.Quote)
             .ToString();
     }
 

@@ -26,9 +26,9 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     protected new int Padding { get; set; } = 12;
 
-    protected virtual FontData LabelFontData { get; set; } = new(nameof(LabelFontData));
+    protected virtual FontData LabelFontData { get; set; } = new();
 
-    protected virtual FontData ContentFontData { get; set; } = new(nameof(ContentFontData)) { Size = 17f };
+    protected virtual FontData ContentFontData { get; set; } = new() { Size = 17f };
 
     protected int ClientLeft => ClientRectangle.Left;
 
@@ -105,7 +105,7 @@ public abstract class ResizeableForm : Form, IInitializeable
     {
         try
         {
-            var data = SerializeTool.DeserializeFile(DataType, this.GetInitializeFilePath(), InitializeName);
+            var data = SerializeTool.DeserializeFile(DataType, this.GetInitializeFilePath(), InitializeName, null);
             OnLoadForm?.Invoke(data);
             if (data is not FormData formData)
                 return;
@@ -134,7 +134,7 @@ public abstract class ResizeableForm : Form, IInitializeable
             formData.Padding = Padding;
             formData.LabelFontData = LabelFontData;
             formData.ContentFontData = ContentFontData;
-            formData.SerializeFile(true, this.GetInitializeFilePath(), InitializeName);
+            SerializeTool.SerializeFile(formData, true, this.GetInitializeFilePath(), InitializeName, null);
         }
         catch { }
     }

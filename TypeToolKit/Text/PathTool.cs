@@ -13,9 +13,9 @@ public static class PathTool
         var name = Path.GetFileNameWithoutExtension(path);
         name = new StringBuilder()
             .Append(name)
-            .Append(SignTable.UnderLine)
+            .Append(SignCollection.UnderLine)
             .Append(DateTime.Now.ToString(DateTimeFormat.Data))
-            .Append(SignTable.Dot)
+            .Append(SignCollection.Dot)
             .Append(Path.GetExtension(path))
             .ToString();
         return Path.Combine(dir, name);
