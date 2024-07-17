@@ -1,5 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Data;
-using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.TypeGeneral;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;

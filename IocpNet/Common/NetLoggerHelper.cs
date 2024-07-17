@@ -1,5 +1,5 @@
-﻿using LocalUtilities.SimpleScript.Data.Convert;
-using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.TypeGeneral;
+using LocalUtilities.TypeToolKit.Convert;
 using System.Text;
 
 namespace LocalUtilities.IocpNet.Common;

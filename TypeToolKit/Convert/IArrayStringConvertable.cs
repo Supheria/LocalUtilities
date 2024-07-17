@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Data.Convert;
+﻿namespace LocalUtilities.TypeToolKit.Convert;
 
 public interface IArrayStringConvertable
 {

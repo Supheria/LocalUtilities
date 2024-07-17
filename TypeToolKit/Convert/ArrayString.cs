@@ -1,8 +1,8 @@
-﻿using LocalUtilities.SimpleScript.Data.Convert;
+﻿using LocalUtilities.TypeToolKit.Convert;
 using System.Collections;
 using System.Text;
 
-namespace LocalUtilities.SimpleScript.Data.Convert;
+namespace LocalUtilities.TypeToolKit.Convert;
 
 public static class ArrayString
 {

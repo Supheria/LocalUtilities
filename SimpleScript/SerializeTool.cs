@@ -1,5 +1,5 @@
-﻿using LocalUtilities.SimpleScript.Data.Convert;
-using LocalUtilities.SimpleScript.Parser;
+﻿using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.TypeToolKit.Convert;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;

@@ -26,4 +26,15 @@
     <None Remove="README.md" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\sqlite-netFx46-binary-bundle-x64-2015-1.0.118.0\System.Data.SQLite.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SQLite\Data\" />
+    <Folder Include="SQLite\Helper\" />
+  </ItemGroup>
+
 </Project>
