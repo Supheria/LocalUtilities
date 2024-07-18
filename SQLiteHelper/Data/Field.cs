@@ -4,15 +4,31 @@ using System.Text;
 
 namespace LocalUtilities.SQLiteHelper.Data;
 
-public class Field(string name, object value, bool primary = false) : RosterItem<string>
+public class Field : RosterItem<string>
 {
     public override string Signature => Name;
 
-    public string Name { get; } = name;
+    public string Name { get; }
 
-    public object Value { get; set; } = value;
+    public object? Value { get; set; }
 
-    public bool Primary { get; } = primary;
+    public bool IsPrimaryKey { get; }
 
-    public Type Type { get; } = value.GetType();
+    public Type Type { get; }
+
+    public Field(string name, object value, bool isPrimaryKey = false)
+    {
+        Name = name;
+        Value = value;
+        IsPrimaryKey = isPrimaryKey;
+        Type = value.GetType();
+    }
+
+    public Field(string name, Type type, bool isPrimaryKey = false)
+    {
+        Name = name;
+        Value = null;
+        Type = type;
+        IsPrimaryKey = isPrimaryKey;
+    }
 }

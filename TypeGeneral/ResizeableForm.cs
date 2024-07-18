@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.FileHelper;
 using LocalUtilities.SimpleScript;
+using LocalUtilities.SimpleScript.Common;
 
 namespace LocalUtilities.TypeGeneral;
 
@@ -39,6 +40,8 @@ public abstract class ResizeableForm : Form, IInitializeable
     protected int ClientHeight => ClientRectangle.Height;
 
     protected virtual Type DataType => typeof(FormData);
+
+    protected static SsSignTable SignTable { get; } = new();
 
     protected class FormData
     {
@@ -105,7 +108,7 @@ public abstract class ResizeableForm : Form, IInitializeable
     {
         try
         {
-            var data = SerializeTool.DeserializeFile(DataType, new(InitializeName), this.GetInitializeFilePath(), null);
+            var data = SerializeTool.DeserializeFile(DataType, new(InitializeName), this.GetInitializeFilePath(), SignTable);
             OnLoadForm?.Invoke(data);
             if (data is not FormData formData)
                 return;
@@ -134,7 +137,7 @@ public abstract class ResizeableForm : Form, IInitializeable
             formData.Padding = Padding;
             formData.LabelFontData = LabelFontData;
             formData.ContentFontData = ContentFontData;
-            SerializeTool.SerializeFile(formData, new(InitializeName), this.GetInitializeFilePath(), true, null);
+            SerializeTool.SerializeFile(formData, new(InitializeName), this.GetInitializeFilePath(), true, SignTable);
         }
         catch { }
     }

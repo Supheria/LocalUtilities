@@ -4,6 +4,7 @@ using System.Text;
 using LocalUtilities.TypeToolKit.Text;
 using LocalUtilities.SimpleScript.Common;
 using System.Data.SQLite;
+using LocalUtilities.TypeToolKit;
 
 namespace LocalUtilities.SQLiteHelper;
 
@@ -24,7 +25,7 @@ internal static class QueryHelper
          {
              sb.Append(field.Name.ToQuoted())
              .Append(ConvertType(field.Type));
-             if (field.Primary)
+             if (field.IsPrimaryKey)
                  sb.Append(Keywords.Blank)
                  .Append(Keywords.PrimaryKey);
          });
@@ -32,14 +33,14 @@ internal static class QueryHelper
 
     private static Keywords ConvertType(Type type)
     {
-        if (type == SerializeTool.TByte ||
-            type == SerializeTool.TChar ||
-            type == SerializeTool.TShort ||
-            type == SerializeTool.TInt ||
-            type == SerializeTool.TLong)
+        if (type == TypeTable.Byte ||
+            type == TypeTable.Char ||
+            type == TypeTable.Short ||
+            type == TypeTable.Int ||
+            type == TypeTable.Long)
             return Keywords.Integer;
-        if (type == SerializeTool.TFloat ||
-            type == SerializeTool.TDouble)
+        if (type == TypeTable.Float ||
+            type == TypeTable.Double)
             return Keywords.Real;
         return Keywords.Text;
     }
@@ -47,21 +48,21 @@ internal static class QueryHelper
     public static bool ConvertType(this SQLiteDataReader reader, Type type, out Func<int, object> convert)
     {
         convert = reader.GetString;
-        if (type == SerializeTool.TByte)
+        if (type == TypeTable.Byte)
             convert = i => reader.GetByte(i);
-        else if (type == SerializeTool.TChar)
+        else if (type == TypeTable.Char)
             convert = i => reader.GetChar(i);
-        else if (type == SerializeTool.TShort)
+        else if (type == TypeTable.Short)
             convert = i => reader.GetInt16(i);
-        else if (type == SerializeTool.TInt)
+        else if (type == TypeTable.Int)
             convert = i => reader.GetInt32(i);
-        else if (type == SerializeTool.TLong)
+        else if (type == TypeTable.Long)
             convert = i => reader.GetInt64(i);
-        else if (type == SerializeTool.TFloat)
+        else if (type == TypeTable.Float)
             convert = i => reader.GetFloat(i);
-        else if (type == SerializeTool.TDouble)
+        else if (type == TypeTable.Double)
             convert = i => reader.GetDouble(i);
-        else if (type != SerializeTool.TString)
+        else if (type != TypeTable.String)
             return false;
         return true;
     }

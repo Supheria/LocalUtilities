@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.SimpleScript;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.TypeGeneral;
 
@@ -20,33 +21,24 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
     }
 
     [SsIgnore]
-    public TItem? this[TSignature signature]
+    public TItem this[TSignature signature]
     {
-        get
-        {
-            _ = RosterMap.TryGetValue(signature, out var item);
-            return item;
-        }
-        set
-        {
-            if (signature is "" || value is null)
-                return;
-            RosterMap[signature] = value;
-        }
+        get => RosterMap[signature];
+        set => RosterMap[signature] = value;
     }
 
     public int Count => RosterMap.Count;
 
-    public bool IsReadOnly => true;
+    public bool IsReadOnly => false;
 
     public void Add(TItem item)
     {
-        RosterMap[item.Signature] = item;
+        RosterMap.Add(item.Signature, item);
     }
 
-    public virtual void Remove(TSignature signature)
+    public bool TryGetValue(TSignature signature, [NotNullWhen(true)] out TItem? value)
     {
-        RosterMap.Remove(signature);
+        return RosterMap.TryGetValue(signature, out value);
     }
 
     public void Clear()
@@ -61,7 +53,7 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
 
     public void CopyTo(TItem[] array, int arrayIndex)
     {
-        throw new NotImplementedException();
+        RosterList.CopyTo(array, arrayIndex);
     }
 
     public bool Remove(TItem item)
@@ -71,11 +63,11 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
 
     public IEnumerator<TItem> GetEnumerator()
     {
-        return RosterMap.Values.GetEnumerator();
+        return RosterList.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return RosterMap.Values.GetEnumerator();
+        return RosterList.GetEnumerator();
     }
 }

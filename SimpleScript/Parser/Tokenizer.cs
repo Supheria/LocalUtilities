@@ -35,7 +35,7 @@ internal class Tokenizer
 
     SignTable SignTable { get; }
 
-    public Tokenizer(byte[] buffer, int offset, int count, Encoding encoding, SignTable signTable)
+    public Tokenizer(byte[] buffer, int offset, int count, SignTable signTable, Encoding encoding)
     {
         Buffer = encoding.GetString(buffer, offset, count);
         SignTable = signTable;

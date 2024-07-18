@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.SimpleScript.Common;
 using LocalUtilities.SimpleScript.Serializer;
+using LocalUtilities.TypeToolKit;
 using LocalUtilities.TypeToolKit.Convert;
 using System;
 using System.Collections;
@@ -12,10 +13,10 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
-    public static byte[] Serialize(object? obj, DataName name, Encoding? encoding, SignTable? signTable)
+    public static byte[] Serialize(object? obj, DataName name, SignTable signTable, Encoding? encoding)
     {
         var memory = new MemoryStream();
-        using var writer = new SsStreamWriter(memory, encoding ?? Encoding.UTF8, false, signTable ?? new DefaultSignTable());
+        using var writer = new SsStreamWriter(memory, false, signTable, encoding ?? Encoding.UTF8);
         if (Serialize(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
@@ -25,9 +26,9 @@ partial class SerializeTool
         return buffer;
     }
 
-    public static string Serialize(object? obj, DataName name, bool writeIntoMultiLines, SignTable? signTable)
+    public static string Serialize(object? obj, DataName name, bool writeIntoMultiLines, SignTable signTable)
     {
-        var writer = new SsStringWriter(writeIntoMultiLines, signTable ?? new DefaultSignTable());
+        var writer = new SsStringWriter(writeIntoMultiLines, signTable);
         if (Serialize(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
@@ -35,11 +36,11 @@ partial class SerializeTool
         return writer.ToString();
     }
 
-    public static void SerializeFile(object? obj, DataName name, string filePath, bool writeIntoMultiLines, SignTable? signTable)
+    public static void SerializeFile(object? obj, DataName name, string filePath, bool writeIntoMultiLines, SignTable signTable)
     {
         using var file = File.Create(filePath);
         file.Write(Utf8_BOM);
-        using var writer = new SsStreamWriter(file, Encoding.UTF8, writeIntoMultiLines, signTable ?? new DefaultSignTable());
+        using var writer = new SsStreamWriter(file, writeIntoMultiLines, signTable, Encoding.UTF8);
         if (Serialize(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
@@ -52,26 +53,26 @@ partial class SerializeTool
         var type = obj?.GetType();
         if (obj is null)
             convert = _ => "";
-        else if (type == TByte ||
-            type == TChar ||
-            type == TBool ||
-            type == TShort ||
-            type == TInt ||
-            type == TLong ||
-            type == TFloat ||
-            type == TDouble ||
-            type == TString ||
-            TEnum.IsAssignableFrom(type))
+        else if (type == TypeTable.Byte ||
+            type == TypeTable.Char ||
+            type == TypeTable.Bool ||
+            type == TypeTable.Short ||
+            type == TypeTable.Int ||
+            type == TypeTable.Long ||
+            type == TypeTable.Float ||
+            type == TypeTable.Double ||
+            type == TypeTable.String ||
+            TypeTable.Enum.IsAssignableFrom(type))
             convert = o => o!.ToString() ?? "";
-        else if (type == TPoint)
+        else if (type == TypeTable.Point)
             convert = o => ((Point)o!).ToArrayString();
-        else if (type == TRectangle)
+        else if (type == TypeTable.Rectangle)
             convert = o => ((Rectangle)o!).ToArrayString();
-        else if (type == TSize)
+        else if (type == TypeTable.Size)
             convert = o => ((Size)o!).ToArrayString();
-        else if (type == TColor)
+        else if (type == TypeTable.Color)
             convert = o => ((Color)o!).Name;
-        else if (type == TDateTime)
+        else if (type == TypeTable.DateTime)
             convert = o => ((DateTime)o!).ToBinary().ToString();
         else if (typeof(IArrayStringConvertable).IsAssignableFrom(type))
             convert = o => ((IArrayStringConvertable)o!).ToArrayString();

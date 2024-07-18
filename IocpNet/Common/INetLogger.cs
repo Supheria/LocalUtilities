@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.IocpNet.Common;
+﻿using LocalUtilities.SimpleScript.Common;
+
+namespace LocalUtilities.IocpNet.Common;
 
 public interface INetLogger
 {

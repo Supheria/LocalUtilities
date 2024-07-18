@@ -10,7 +10,7 @@ public class DataName(string name)
 {
     public string Name { get; } = name;
 
-    public DataName() : this("Data")
+    public DataName() : this("Ss")
     {
 
     }

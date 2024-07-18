@@ -1,5 +1,6 @@
 ﻿using LocalUtilities.SimpleScript.Common;
 using LocalUtilities.SimpleScript.Parser;
+using LocalUtilities.TypeToolKit;
 using LocalUtilities.TypeToolKit.Convert;
 using System;
 using System.Collections;
@@ -12,7 +13,7 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
-    public static object? Deserialize(Type type, DataName name, byte[] buffer, int offset, int count, Encoding? encoding, SignTable? signTable)
+    public static object? Deserialize(Type type, DataName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
     {
         encoding ??= Encoding.UTF8;
         if (Deserialize(type, out var convert))
@@ -20,19 +21,19 @@ partial class SerializeTool
             var str = encoding.GetString(buffer, offset, count);
             return convert(str);
         }
-        var tokenizer = new Tokenizer(buffer, offset, count, encoding, signTable ?? new DefaultSignTable());
+        var tokenizer = new Tokenizer(buffer, offset, count, signTable, encoding);
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
     }
 
-    public static object? Deserialize(Type type, DataName name, string str, SignTable? signTable)
+    public static object? Deserialize(Type type, DataName name, string str, SignTable signTable)
     {
         if (Deserialize(type, out var convert))
         {
             return convert(str);
         }
-        var tokenizer = new Tokenizer(str, signTable ?? new DefaultSignTable());
+        var tokenizer = new Tokenizer(str, signTable);
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
@@ -41,35 +42,35 @@ partial class SerializeTool
     private static bool Deserialize(Type type, [NotNullWhen(true)] out Func<string, object?>? convert)
     {
         convert = null;
-        if (type == TByte)
+        if (type == TypeTable.Byte)
             convert = str => str.ToByte();
-        else if (type == TChar)
+        else if (type == TypeTable.Char)
             convert = str => str.ToChar();
-        else if (type == TBool)
+        else if (type == TypeTable.Bool)
             convert = str => str.ToBool();
-        else if (type == TShort)
+        else if (type == TypeTable.Short)
             convert = str => str.ToShort();
-        else if (type == TInt)
+        else if (type == TypeTable.Int)
             convert = str => str.ToInt();
-        else if (type == TLong)
+        else if (type == TypeTable.Long)
             convert = str => str.ToLong();
-        else if (type == TFloat)
+        else if (type == TypeTable.Float)
             convert = str => str.ToFloat();
-        else if (type == TDouble)
+        else if (type == TypeTable.Double)
             convert = str => str.ToDouble();
-        else if (type == TString)
+        else if (type == TypeTable.String)
             convert = str => str;
-        else if (TEnum.IsAssignableFrom(type))
+        else if (TypeTable.Enum.IsAssignableFrom(type))
             convert = str => str.ToEnum(type);
-        else if (type == TPoint)
+        else if (type == TypeTable.Point)
             convert = str => str.ToPoint();
-        else if (type == TRectangle)
+        else if (type == TypeTable.Rectangle)
             convert = str => str.ToRectangle();
-        else if (type == TSize)
+        else if (type == TypeTable.Size)
             convert = str => str.ToSize();
-        else if (type == TColor)
+        else if (type == TypeTable.Color)
             convert = str => Color.FromName(str);
-        else if (type == TDateTime)
+        else if (type == TypeTable.DateTime)
             convert = str => DateTime.FromBinary(str.ToLong());
         else if (typeof(IArrayStringConvertable).IsAssignableFrom(type))
         {
@@ -101,6 +102,8 @@ partial class SerializeTool
             var pairType = type.GetGenericArguments();
             var closeType = openType.MakeGenericType(pairType[0], pairType[1]);
             var obj = Activator.CreateInstance(closeType);
+            if (obj is null)
+                return null;
             if (!Deserialize(pairType[0], out convert))
                 return obj;
             foreach (var pair in root.Property)
@@ -120,6 +123,8 @@ partial class SerializeTool
             if (root.Property.TryGetValue("", out var items))
             {
                 obj = Array.CreateInstance(itemType, items.Count);
+                if (obj is null)
+                    return null;
                 for (var i = 0; i < items.Count; i++)
                 {
                     var itemObj = Deserialize(itemType, items[i]);
@@ -135,6 +140,8 @@ partial class SerializeTool
             var openType = typeof(List<>);
             var closeType = openType.MakeGenericType(itemType);
             var obj = Activator.CreateInstance(closeType);
+            if (obj is null)
+                return null;
             var add = type.GetMethod("Add");
             if (root.Property.TryGetValue("", out var items))
             {
@@ -150,6 +157,8 @@ partial class SerializeTool
         else
         {
             var obj = Activator.CreateInstance(type);
+            if (obj is null)
+                return null;
             foreach (var property in type.GetProperties(Authority))
             {
                 if (property.GetCustomAttribute<SsIgnore>() is not null || property.SetMethod is null)
@@ -165,26 +174,26 @@ partial class SerializeTool
         }
     }
 
-    public static T? Deserialize<T>(DataName name, byte[] buffer, int offset, int count, Encoding? encoding, SignTable? signTable)
+    public static T? Deserialize<T>(DataName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
     {
-        return (T?)Deserialize(typeof(T), name, buffer, offset, count, encoding, signTable);
+        return (T?)Deserialize(typeof(T), name, buffer, offset, count, signTable, encoding);
     }
 
-    public static T? Deserialize<T>(DataName name, string str, SignTable? signTable)
+    public static T? Deserialize<T>(DataName name, string str, SignTable signTable)
     {
         return (T?)Deserialize(typeof(T), name, str, signTable);
     }
 
-    public static T? DeserializeFile<T>(DataName name, string filePath, SignTable? signTable)
+    public static T? DeserializeFile<T>(DataName name, string filePath, SignTable signTable)
     {
         var buffer = ReadFileBuffer(filePath);
-        return (T?)Deserialize(typeof(T), name, buffer, 0, buffer.Length, Encoding.UTF8, signTable);
+        return (T?)Deserialize(typeof(T), name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);
     }
 
-    public static object? DeserializeFile(Type type, DataName name, string filePath, SignTable? signTable)
+    public static object? DeserializeFile(Type type, DataName name, string filePath, SignTable signTable)
     {
         var buffer = ReadFileBuffer(filePath);
-        return Deserialize(type, name, buffer, 0, buffer.Length, Encoding.UTF8, signTable);
+        return Deserialize(type, name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);
     }
 
     private static byte[] ReadFileBuffer(string filePath)

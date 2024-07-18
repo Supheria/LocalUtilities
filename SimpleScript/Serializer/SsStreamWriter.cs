@@ -3,7 +3,7 @@ using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serializer;
 
-internal class SsStreamWriter(Stream stream, Encoding encoding, bool writeIntoMultiLines, SignTable signTable) : SsWriter(writeIntoMultiLines, signTable), IDisposable
+internal class SsStreamWriter(Stream stream, bool writeIntoMultiLines, SignTable signTable, Encoding encoding) : SsWriter(writeIntoMultiLines, signTable), IDisposable
 {
     Stream Stream { get; } = stream;
 

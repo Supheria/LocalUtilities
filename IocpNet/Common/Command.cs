@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using LocalUtilities.SimpleScript.Common;
+using System.Text;
 
 namespace LocalUtilities.IocpNet.Common;
 
@@ -23,6 +24,8 @@ public abstract class Command : INetLogger
     protected Dictionary<string, string> Args { get; init; } = [];
 
     public byte[] Data { get; protected init; } = [];
+
+    protected static SsSignTable SignTable { get; } = new();
 
     public string GetLog(string message)
     {

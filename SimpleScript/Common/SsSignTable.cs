@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.SimpleScript.Common;
 
-public sealed class DefaultSignTable : SignTable
+public sealed class SsSignTable : SignTable
 {
     public override char Empty { get; } = '\0';
     public override char Note { get; } = '#';
