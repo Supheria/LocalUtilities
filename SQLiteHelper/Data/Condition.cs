@@ -7,52 +7,28 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.SQLiteHelper.Data;
 
-public class Condition(Volume key, Volume value, Condition.Operates operate)
+public class Condition(string key, object value, Condition.Operates operate)
 {
-    public enum Combos
-    {
-        Or,
-        And,
-    }
-
     public enum Operates
     {
         Equal,
         Less,
         Greater,
+        LessOrEqual,
+        GreaterOrEqual,
     }
 
-    public Volume Key { get; } = key;
+    public string Key { get; } = key;
 
-    public Volume Value { get; } = value;
+    public object Value { get; } = value;
 
     public Keywords Operate { get; } = operate switch
     {
         Operates.Equal => Keywords.Equal,
         Operates.Less => Keywords.Less,
         Operates.Greater => Keywords.Greater,
-        _ => Keywords.Null
+        Operates.LessOrEqual => Keywords.LessOrEqual,
+        Operates.GreaterOrEqual => Keywords.GreaterOrEqual,
+        _ => Keywords.Blank
     };
-
-    public override string ToString()
-    {
-        return new StringBuilder()
-            .Append(Key)
-            .Append(Operate)
-            .Append(Value)
-            .ToString();
-    }
-}
-
-internal static class ConditionCombo
-{
-    public static Keywords ToKeywords(this Condition.Combos combo)
-    {
-        return combo switch
-        {
-            Condition.Combos.Or => Keywords.Or,
-            Condition.Combos.And => Keywords.And,
-            _ => Keywords.Null
-        };
-    }
 }

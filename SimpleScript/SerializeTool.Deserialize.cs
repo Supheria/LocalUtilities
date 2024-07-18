@@ -5,22 +5,35 @@ using System;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
-    public static object? Deserialize(Type type, byte[] buffer, int offset, int count, string? name, SignTable? signTable)
+    public static object? Deserialize(Type type, DataName name, byte[] buffer, int offset, int count, Encoding? encoding, SignTable? signTable)
+    {
+        encoding ??= Encoding.UTF8;
+        if (Deserialize(type, out var convert))
+        {
+            var str = encoding.GetString(buffer, offset, count);
+            return convert(str);
+        }
+        var tokenizer = new Tokenizer(buffer, offset, count, encoding, signTable ?? new DefaultSignTable());
+        if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
+            return Deserialize(type, roots.LastOrDefault());
+        return null;
+    }
+
+    public static object? Deserialize(Type type, DataName name, string str, SignTable? signTable)
     {
         if (Deserialize(type, out var convert))
         {
-            var str = Encoding.UTF8.GetString(buffer, offset, count);
             return convert(str);
         }
-        var tokenizer = new Tokenizer(buffer, offset, count, signTable);
-        name ??= type.Name;
-        if (tokenizer.Element.Property.TryGetValue(name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
+        var tokenizer = new Tokenizer(str, signTable ?? new DefaultSignTable());
+        if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
     }
@@ -152,21 +165,26 @@ partial class SerializeTool
         }
     }
 
-    public static T? Deserialize<T>(byte[] buffer, int offset, int count, string? name, SignTable? signTable)
+    public static T? Deserialize<T>(DataName name, byte[] buffer, int offset, int count, Encoding? encoding, SignTable? signTable)
     {
-        return (T?)Deserialize(typeof(T), buffer, offset, count, name, signTable);
+        return (T?)Deserialize(typeof(T), name, buffer, offset, count, encoding, signTable);
     }
 
-    public static T? DeserializeFile<T>(string filePath, string? name, SignTable? signTable)
+    public static T? Deserialize<T>(DataName name, string str, SignTable? signTable)
     {
-        var buffer = ReadFileBuffer(filePath);
-        return Deserialize<T>(buffer, 0, buffer.Length, name, signTable);
+        return (T?)Deserialize(typeof(T), name, str, signTable);
     }
 
-    public static object? DeserializeFile(Type type, string filePath, string? name, SignTable? signTable)
+    public static T? DeserializeFile<T>(DataName name, string filePath, SignTable? signTable)
     {
         var buffer = ReadFileBuffer(filePath);
-        return Deserialize(type, buffer, 0, buffer.Length, name, signTable);
+        return (T?)Deserialize(typeof(T), name, buffer, 0, buffer.Length, Encoding.UTF8, signTable);
+    }
+
+    public static object? DeserializeFile(Type type, DataName name, string filePath, SignTable? signTable)
+    {
+        var buffer = ReadFileBuffer(filePath);
+        return Deserialize(type, name, buffer, 0, buffer.Length, Encoding.UTF8, signTable);
     }
 
     private static byte[] ReadFileBuffer(string filePath)

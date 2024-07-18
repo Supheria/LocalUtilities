@@ -1,56 +1,64 @@
 ﻿using LocalUtilities.SimpleScript.Common;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LocalUtilities.SimpleScript.Serializer;
 
-public class SsWriter(Stream stream, bool writeIntoMultiLines, SignTable? signTable, Encoding encoding) : IDisposable
+internal abstract class SsWriter(bool writeIntoMultiLines, SignTable signTable)
 {
-    SsFormatter Formatter { get; } = new(stream, writeIntoMultiLines, signTable ?? new DefaultSignTable(), encoding);
-
     int Level { get; set; } = 0;
 
     bool NameAppended { get; set; } = false;
 
-    public bool WriteIntoMultiLines { get; } = writeIntoMultiLines;
+    bool WriteIntoMultiLines { get; } = writeIntoMultiLines;
+
+    SignTable SignTable { get; } = signTable;
+
+    protected abstract void WriteString(string str);
 
     public void AppendName(string name)
     {
-        Formatter.WriteName(Level, name);
+        var str = SsFormatter.GetName(Level, name, WriteIntoMultiLines, SignTable);
+        WriteString(str);
         NameAppended = true;
     }
 
     public void AppendStart()
     {
         Level++;
+        string str;
         if (NameAppended)
-            Formatter.WriteStart(0);
+            str = SsFormatter.GetStart(0, WriteIntoMultiLines, SignTable);
         else
-            Formatter.WriteStart(Level);
+            str = SsFormatter.GetStart(Level, WriteIntoMultiLines, SignTable);
+        WriteString(str);
         NameAppended = false;
     }
 
     public void AppendEnd()
     {
-        Formatter.WriteEnd(--Level);
+        var str = SsFormatter.GetEnd(--Level, WriteIntoMultiLines, SignTable);
+        WriteString(str);
     }
 
     public void AppendValue(string value)
     {
+        string str;
         if (NameAppended)
-            Formatter.WriteValue(0, value);
+            str = SsFormatter.GetValue(0, value, WriteIntoMultiLines, SignTable);
         else
-            Formatter.WriteValue(Level, value);
+            str = SsFormatter.GetValue(Level, value, WriteIntoMultiLines, SignTable);
+        WriteString(str);
         NameAppended = false;
     }
 
     public void AppendUnquotedValue(string value)
     {
-        Formatter.WriteUnquotedValue(value);
-    }
-
-    public void Dispose()
-    {
-        Formatter.Dispose();
-        GC.SuppressFinalize(this);
+        var str = SsFormatter.GetUnquotedValue(value, WriteIntoMultiLines);
+        WriteString(str);
     }
 }

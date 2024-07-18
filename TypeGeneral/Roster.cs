@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : RosterItem<TSignature>, new()
+public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : RosterItem<TSignature>
 {
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 

@@ -1,4 +1,6 @@
-﻿namespace LocalUtilities.IocpNet.Common;
+﻿using System.Text;
+
+namespace LocalUtilities.IocpNet.Common;
 
 public abstract class Command : INetLogger
 {
@@ -18,7 +20,7 @@ public abstract class Command : INetLogger
 
     public byte OperateCode { get; protected init; } = byte.MinValue;
 
-    protected Dictionary<string, byte[]> Args { get; init; } = [];
+    protected Dictionary<string, string> Args { get; init; } = [];
 
     public byte[] Data { get; protected init; } = [];
 

@@ -1,6 +1,7 @@
 ﻿using LocalUtilities.SimpleScript.Common;
 using LocalUtilities.SimpleScript.Serializer;
 using LocalUtilities.TypeToolKit.Convert;
+using System;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -11,17 +12,38 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
-    public static byte[] Serialize(object? obj, string? name, SignTable? signTable)
+    public static byte[] Serialize(object? obj, DataName name, Encoding? encoding, SignTable? signTable)
     {
         var memory = new MemoryStream();
-        using var writer = new SsWriter(memory, false, signTable, Encoding);
+        using var writer = new SsStreamWriter(memory, encoding ?? Encoding.UTF8, false, signTable ?? new DefaultSignTable());
         if (Serialize(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
-            Serialize(obj, writer, name, true);
+            Serialize(obj, writer, name.Name, true);
         var buffer = new byte[memory.Position];
         Array.Copy(memory.GetBuffer(), 0, buffer, 0, buffer.Length);
         return buffer;
+    }
+
+    public static string Serialize(object? obj, DataName name, bool writeIntoMultiLines, SignTable? signTable)
+    {
+        var writer = new SsStringWriter(writeIntoMultiLines, signTable ?? new DefaultSignTable());
+        if (Serialize(obj, out var convert))
+            writer.AppendUnquotedValue(convert(obj));
+        else
+            Serialize(obj, writer, name.Name, true);
+        return writer.ToString();
+    }
+
+    public static void SerializeFile(object? obj, DataName name, string filePath, bool writeIntoMultiLines, SignTable? signTable)
+    {
+        using var file = File.Create(filePath);
+        file.Write(Utf8_BOM);
+        using var writer = new SsStreamWriter(file, Encoding.UTF8, writeIntoMultiLines, signTable ?? new DefaultSignTable());
+        if (Serialize(obj, out var convert))
+            writer.AppendUnquotedValue(convert(obj));
+        else
+            Serialize(obj, writer, name.Name, true);
     }
 
     private static bool Serialize([NotNullWhen(false)] object? obj, [NotNullWhen(true)] out Func<object?, string>? convert)
@@ -109,13 +131,5 @@ partial class SerializeTool
             }
             writer.AppendEnd();
         }
-    }
-
-    public static void SerializeFile(object? obj, bool writeIntoMultiLines, string filePath, string? name, SignTable? signTable)
-    {
-        using var file = File.Create(filePath);
-        file.Write(Utf8_BOM);
-        using var writer = new SsWriter(file, writeIntoMultiLines, signTable, Encoding);
-        Serialize(obj, writer, name, true);
     }
 }

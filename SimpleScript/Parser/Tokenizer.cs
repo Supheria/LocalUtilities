@@ -17,7 +17,7 @@ internal class Tokenizer
 
     States State { get; set; } = States.None;
 
-    byte[] Buffer { get; set; } = [];
+    string Buffer { get; set; }
 
     int BufferPosition { get; set; } = 0;
 
@@ -35,11 +35,18 @@ internal class Tokenizer
 
     SignTable SignTable { get; }
 
-    public Tokenizer(byte[] buffer, int offset, int count, SignTable? signTable)
+    public Tokenizer(byte[] buffer, int offset, int count, Encoding encoding, SignTable signTable)
     {
-        Buffer = new byte[count];
-        Array.Copy(buffer, offset, Buffer, 0, count);
-        SignTable = signTable ?? new DefaultSignTable();
+        Buffer = encoding.GetString(buffer, offset, count);
+        SignTable = signTable;
+        Tree = new(SignTable);
+        Tokenize();
+    }
+
+    public Tokenizer(string str, SignTable signTable)
+    {
+        Buffer = str;
+        SignTable = signTable;
         Tree = new(SignTable);
         Tokenize();
     }
@@ -80,17 +87,17 @@ internal class Tokenizer
                 if (ch == SignTable.Escape)
                 {
                     State = States.Escape;
-                    GetU8Char();
+                    GetChar();
                     return false;
                 }
                 if (ch == SignTable.Quote)
                 {
                     Composed = new(Composing.ToString(), Line, Column, true);
                     State = States.None;
-                    GetU8Char();
+                    GetChar();
                     return true;
                 }
-                Composing.Append(GetU8Char());
+                Composing.Append(GetChar());
                 return false;
             case States.Escape:
                 if (ch == SignTable.Return ||
@@ -101,7 +108,7 @@ internal class Tokenizer
                     State = States.None;
                     return true;
                 }
-                Composing.Append(GetU8Char());
+                Composing.Append(GetChar());
                 State = States.Quotation;
                 return false;
             case States.Word:
@@ -122,7 +129,7 @@ internal class Tokenizer
                     State = States.None;
                     return true;
                 }
-                Composing.Append(GetU8Char());
+                Composing.Append(GetChar());
                 return false;
             case States.Note:
                 if (ch == SignTable.Return ||
@@ -130,23 +137,23 @@ internal class Tokenizer
                     ch == SignTable.Empty)
                 {
                     State = States.None;
-                    GetU8Char();
+                    GetChar();
                     return false;
                 }
-                GetU8Char();
+                GetChar();
                 return false;
             default:
                 if (ch == SignTable.Quote)
                 {
                     Composing.Clear();
-                    GetU8Char();
+                    GetChar();
                     State = States.Quotation;
                     return false;
                 }
                 if (ch == SignTable.Note)
                 {
                     State = States.Note;
-                    GetU8Char();
+                    GetChar();
                     return false;
                 }
                 if (ch == SignTable.Equal ||
@@ -155,7 +162,7 @@ internal class Tokenizer
                     ch == SignTable.Open ||
                     ch == SignTable.Close)
                 {
-                    Composed = new(GetU8Char().ToString(), Line, Column, false);
+                    Composed = new(GetChar().ToString(), Line, Column, false);
                     return true;
                 }
                 if (ch == SignTable.Tab ||
@@ -164,55 +171,28 @@ internal class Tokenizer
                     ch == SignTable.NewLine ||
                     ch == SignTable.Empty)
                 {
-                    GetU8Char();
+                    GetChar();
                     return false;
                 }
                 Composing.Clear();
-                Composing.Append(GetU8Char());
+                Composing.Append(GetChar());
                 State = States.Word;
                 return false;
         }
     }
 
-    /// <summary>
-    /// 获取UTF-8字符长度
-    /// <para>U-00000000 - U-0000007F: 0xxxxxxx</para>
-    /// <para>U-00000080 - U-000007FF: 110xxxxx 10xxxxxx</para>
-    /// <para>U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx</para>
-    /// <para>U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx</para>
-    /// <para>U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx</para>
-    /// <para>U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx</para>
-    /// </summary>
-    /// <param name="head">起始位字符</param>
-    /// <returns>返回1-6</returns>
-    /// <exception cref="无效的UTF-8起始符"></exception>
-    private string GetU8Char()
+    private char GetChar()
     {
-        var length = 0;
-        byte mask = 0b10000000;
-        while ((Buffer[BufferPosition] & mask) is not 0)
-        {
-            if (++length > 6)
-                throw new ArgumentException("无效的UTF-8起始符。");
-            mask >>= 1;
-        }
-        //
-        // ASCII's 8th bit is 0, and head of two-bytes utf-8's is 110xxxxx, so variable 'length' itself will be 0 or 2...6
-        //
-        if (length is 0)
-            length = 1;
-        var str = new List<byte>();
-        for (int i = 0; i < length; i++)
-            str.Add(Buffer[BufferPosition++]);
-        if (str[0] is (byte)'\n')
+        var ch = Buffer[BufferPosition++];
+        if (ch is '\n')
         {
             Line++;
             Column = 0;
         }
-        else if (str[0] is (byte)'\t')
+        else if (ch is '\t') 
             Column += 4;
         else
-            Column += length;
-        return Encoding.UTF8.GetString(str.ToArray());
+            Column ++;
+        return ch;
     }
 }

@@ -105,7 +105,7 @@ public abstract class ResizeableForm : Form, IInitializeable
     {
         try
         {
-            var data = SerializeTool.DeserializeFile(DataType, this.GetInitializeFilePath(), InitializeName, null);
+            var data = SerializeTool.DeserializeFile(DataType, new(InitializeName), this.GetInitializeFilePath(), null);
             OnLoadForm?.Invoke(data);
             if (data is not FormData formData)
                 return;
@@ -134,7 +134,7 @@ public abstract class ResizeableForm : Form, IInitializeable
             formData.Padding = Padding;
             formData.LabelFontData = LabelFontData;
             formData.ContentFontData = ContentFontData;
-            SerializeTool.SerializeFile(formData, true, this.GetInitializeFilePath(), InitializeName, null);
+            SerializeTool.SerializeFile(formData, new(InitializeName), this.GetInitializeFilePath(), true, null);
         }
         catch { }
     }

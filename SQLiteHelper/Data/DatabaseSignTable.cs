@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.SQLiteHelper.Data;
 
-internal class DatabaseSignTable : SignTable
+public class DatabaseSignTable : SignTable
 {
     public override char Empty { get; } = '\0';
     public override char Note { get; } = '@';
