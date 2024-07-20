@@ -9,18 +9,6 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
     protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
     [SsIgnore]
-    public List<TItem> RosterList
-    {
-        get => RosterMap.Values.ToList();
-        set
-        {
-            RosterMap.Clear();
-            foreach (var item in value)
-                RosterMap[item.Signature] = item;
-        }
-    }
-
-    [SsIgnore]
     public TItem this[TSignature signature]
     {
         get => RosterMap[signature];
@@ -53,7 +41,7 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
 
     public void CopyTo(TItem[] array, int arrayIndex)
     {
-        RosterList.CopyTo(array, arrayIndex);
+        RosterMap.ToArray().CopyTo(array, arrayIndex);
     }
 
     public bool Remove(TItem item)
@@ -63,11 +51,11 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
 
     public IEnumerator<TItem> GetEnumerator()
     {
-        return RosterList.GetEnumerator();
+        return RosterMap.Values.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return RosterList.GetEnumerator();
+        return RosterMap.Values.GetEnumerator();
     }
 }

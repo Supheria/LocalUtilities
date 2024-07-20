@@ -37,7 +37,8 @@ internal static class QueryHelper
             type == TypeTable.Char ||
             type == TypeTable.Short ||
             type == TypeTable.Int ||
-            type == TypeTable.Long)
+            type == TypeTable.Long||
+            type == TypeTable.DateTime)
             return Keywords.Integer;
         if (type == TypeTable.Float ||
             type == TypeTable.Double)
@@ -45,34 +46,38 @@ internal static class QueryHelper
         return Keywords.Text;
     }
 
-    public static bool ConvertType(this SQLiteDataReader reader, Type type, out Func<int, object> convert)
+    public static Func<int, string> ConvertType(this SQLiteDataReader reader, Type type)
     {
-        convert = reader.GetString;
         if (type == TypeTable.Byte)
-            convert = i => reader.GetByte(i);
-        else if (type == TypeTable.Char)
-            convert = i => reader.GetChar(i);
-        else if (type == TypeTable.Short)
-            convert = i => reader.GetInt16(i);
-        else if (type == TypeTable.Int)
-            convert = i => reader.GetInt32(i);
-        else if (type == TypeTable.Long)
-            convert = i => reader.GetInt64(i);
-        else if (type == TypeTable.Float)
-            convert = i => reader.GetFloat(i);
-        else if (type == TypeTable.Double)
-            convert = i => reader.GetDouble(i);
-        else if (type != TypeTable.String)
-            return false;
-        return true;
+            return i => reader.GetByte(i).ToString();
+        if (type == TypeTable.Char)
+            return i => reader.GetChar(i).ToString();
+        if (type == TypeTable.Short)
+            return i => reader.GetInt16(i).ToString();
+        if (type == TypeTable.Int)
+            return i => reader.GetInt32(i).ToString();
+        if (type == TypeTable.Long ||
+            type == TypeTable.DateTime)
+            return i => reader.GetInt64(i).ToString();
+        if (type == TypeTable.Float)
+            return i => reader.GetFloat(i).ToString();
+        if (type == TypeTable.Double)
+            return i => reader.GetDouble(i).ToString();
+        return reader.GetString;
     }
 
-    public static StringBuilder AppendConditions(this StringBuilder query, Conditions conditions, SignTable signTable)
+    public static StringBuilder AppendConditions(this StringBuilder query, Condition[] conditions, Condition.Combo combo, SignTable signTable)
     {
-        if (conditions.Count < 1)
+        if (conditions.Length < 1)
             return query;
+        var comboWord = combo switch
+        {
+            Condition.Combo.Or => Keywords.Or,
+            Condition.Combo.And => Keywords.And,
+            _ => Keywords.Or
+        };
         return query.Append(Keywords.Where)
-            .AppendJoin(conditions.Combo.ToString(), conditions, (sb, condition) =>
+            .AppendJoin(comboWord.ToString(), conditions, (sb, condition) =>
             {
                 var value = SerializeTool.Serialize(condition.Value, new(), false, signTable);
                 sb.Append(condition.Key.ToQuoted())

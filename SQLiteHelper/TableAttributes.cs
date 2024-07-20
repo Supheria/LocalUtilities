@@ -6,12 +6,6 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.SQLiteHelper;
 
-[AttributeUsage(AttributeTargets.Class)]
-public class Table : Attribute
-{
-
-}
-
 public class TableField : Attribute
 {
     public string? Name { get; set; } = null;

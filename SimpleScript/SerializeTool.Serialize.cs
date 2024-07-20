@@ -123,11 +123,10 @@ partial class SerializeTool
             writer.AppendStart();
             foreach (var property in type.GetProperties(Authority))
             {
-                if (property.GetCustomAttribute<SsIgnore>() is not null || property.SetMethod is null)
+                if (NotSsItem(property))
                     continue;
                 var subObj = property.GetValue(obj, Authority, null, null, null);
-                var propertyName = property.GetCustomAttribute<SsItem>()?.Name ?? property.Name;
-                writer.AppendName(propertyName);
+                writer.AppendName(GetSsItemName(property));
                 Serialize(subObj, writer, null, false);
             }
             writer.AppendEnd();

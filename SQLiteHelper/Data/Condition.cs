@@ -18,6 +18,13 @@ public class Condition(string key, object value, Condition.Operates operate)
         GreaterOrEqual,
     }
 
+    public enum Combo
+    {
+        Default,
+        Or,
+        And,
+    }
+
     public string Key { get; } = key;
 
     public object Value { get; } = value;

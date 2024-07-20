@@ -8,22 +8,18 @@ using System.Reflection;
 using System.Text;
 using LocalUtilities.TypeToolKit.Text;
 using System.Windows.Forms;
-using static System.Runtime.InteropServices.Marshalling.IIUnknownCacheStrategy;
-using static LocalUtilities.SQLiteHelper.Data.Conditions;
 
 namespace LocalUtilities.SQLiteHelper;
-/// <summary>
-/// SQLite 操作类
-/// </summary>
-public class DatabaseQuery
+
+public class SQLiteQuery : IDisposable
 {
     public static string Version { get; } = "3";
 
     static DatabaseSignTable SignTable { get; } = new();
 
-    SQLiteConnection? Connection { get; set; }
+    SQLiteConnection Connection { get; set; }
 
-    public void Connect(string filePath)
+    public SQLiteQuery(string filePath)
     {
         var query = new StringBuilder()
             .Append(Keywords.DataSource)
@@ -38,10 +34,10 @@ public class DatabaseQuery
         Connection.Open();
     }
 
-    public void Close()
+    public void Dispose()
     {
-        Connection?.Close();
-
+        Connection.Close();
+        GC.SuppressFinalize(this);
     }
 
     private SQLiteDataReader? ExecuteQuery(string query)
@@ -53,7 +49,7 @@ public class DatabaseQuery
         return command.ExecuteReader();
     }
 
-    public void CreateTable(string name, params Field[] fields)
+    public void CreateTable(string name, Field[] fields)
     {
         var query = new StringBuilder()
             .Append(Keywords.CreateTableNotExists)
@@ -65,7 +61,7 @@ public class DatabaseQuery
         ExecuteQuery(query.ToString());
     }
 
-    public void InsertFieldsValue(string name, params Field[] fields)
+    public void InsertFieldsValue(string name, Field[] fields)
     {
         var query = new StringBuilder()
              .Append(Keywords.InsertInto)
@@ -81,34 +77,34 @@ public class DatabaseQuery
         _ = ExecuteQuery(query.ToString());
     }
 
-    /// <summary>
-    /// 更新指定数据表内的数据
-    /// </summary>
-    /// <returns>The values.</returns>
-    /// <param name="tableName">数据表名称</param>
-    /// <param name="colNames">字段名</param>
-    /// <param name="colValues">字段名对应的数据</param>
-    /// <param name="key">关键字</param>
-    /// <param name="value">关键字对应的值</param>
-    /// <param name="operation">运算符：=,<,>,...，默认“=”</param>
-    public void UpdateFieldsValues(string name, Conditions conditions, params Field[] fields)
+    public void UpdateFieldsValues(string name, Field[] fields, Condition? condition)
+    {
+        UpdateFieldsValues(name, fields, condition is null ? [] : [condition], Condition.Combo.Default);
+    }
+
+    public void UpdateFieldsValues(string name, Field[] fields, Condition[] conditions, Condition.Combo combo)
     {
         var query = new StringBuilder()
-            .Append(Keywords.Update)
-            .Append(name.ToQuoted())
-            .Append(Keywords.Set)
-            .AppendJoin(SignCollection.Comma, fields, (sb, field) =>
-            {
-                var value = SerializeTool.Serialize(field.Value, new(), false, SignTable);
-                sb.Append(field.Name.ToQuoted())
-                    .Append(Keywords.Equal)
-                    .Append(value.ToQuoted());
-            })
-            .AppendConditions(conditions, SignTable);
+           .Append(Keywords.Update)
+           .Append(name.ToQuoted())
+           .Append(Keywords.Set)
+           .AppendJoin(SignCollection.Comma, fields, (sb, field) =>
+           {
+               var value = SerializeTool.Serialize(field.Value, new(), false, SignTable);
+               sb.Append(field.Name.ToQuoted())
+                   .Append(Keywords.Equal)
+                   .Append(value.ToQuoted());
+           })
+           .AppendConditions(conditions, combo, SignTable);
         _ = ExecuteQuery(query.ToString());
     }
 
-    public List<Fields> SelectFieldsValue(string name, Conditions conditions, params Field[] fields)
+    public List<Fields> SelectFieldsValue(string name, Field[] fields, Condition? condition)
+    {
+        return SelectFieldsValue(name, fields, condition is null ? [] : [condition], Condition.Combo.Default);
+    }
+
+    public List<Fields> SelectFieldsValue(string name, Field[] fields, Condition[] conditions, Condition.Combo combo)
     {
         var query = new StringBuilder()
             .Append(Keywords.Select)
@@ -118,7 +114,7 @@ public class DatabaseQuery
             })
             .Append(Keywords.From)
             .Append(name.ToQuoted())
-            .AppendConditions(conditions, SignTable);
+            .AppendConditions(conditions, combo, SignTable);
         using var reader = ExecuteQuery(query.ToString());
         if (reader is null)
             return [];
@@ -130,36 +126,28 @@ public class DatabaseQuery
             {
                 var field = fields[i];
                 object? obj;
-                var ordinal = reader.GetOrdinal(field.Name);
-                if (reader.ConvertType(field.Type, out var convert))
-                    obj = convert(ordinal);
-                else
-                {
-                    var str = (string)convert(ordinal);
-                    obj = SerializeTool.Deserialize(field.Type, new(), str, SignTable);
-                }
-                if (obj is null)
-                    continue;
-                roster.Add(new(field.Name, obj));
+                var convert = reader.ConvertType(field.Type);
+                var str = convert(reader.GetOrdinal(field.Name));
+                obj = SerializeTool.Deserialize(field.Type, new(), str, SignTable);
+                if (obj is not null)
+                    roster.Add(new(field.Name, obj));
             }
             result.Add(roster);
         }
         return result;
     }
 
-    /// <summary>
-    /// 删除指定数据表内的数据
-    /// </summary>
-    /// <returns>The values.</returns>
-    /// <param name="tableName">数据表名称</param>
-    /// <param name="colNames">字段名</param>
-    /// <param name="colValues">字段名对应的数据</param>
-    public void DeleteFields(string name, Conditions conditions)
+    public void DeleteFields(string name, Condition? condition)
+    {
+        DeleteFields(name, condition is null ? [] : [condition], Condition.Combo.Default);
+    }
+
+    public void DeleteFields(string name, Condition[] conditions, Condition.Combo combo)
     {
         var query = new StringBuilder()
             .Append(Keywords.Delete)
             .Append(name.ToQuoted())
-            .AppendConditions(conditions, SignTable);
+            .AppendConditions(conditions, combo, SignTable);
         _ = ExecuteQuery(query.ToString());
     }
 

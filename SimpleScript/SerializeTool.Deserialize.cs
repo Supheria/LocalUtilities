@@ -30,9 +30,7 @@ partial class SerializeTool
     public static object? Deserialize(Type type, DataName name, string str, SignTable signTable)
     {
         if (Deserialize(type, out var convert))
-        {
             return convert(str);
-        }
         var tokenizer = new Tokenizer(str, signTable);
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
@@ -91,9 +89,7 @@ partial class SerializeTool
     private static object? Deserialize(Type type, Element? root)
     {
         if (root is null)
-        {
             return null;
-        }
         if (Deserialize(type, out var convert))
             return convert(root.Value.Text);
         if (typeof(IDictionary).IsAssignableFrom(type))
@@ -161,10 +157,9 @@ partial class SerializeTool
                 return null;
             foreach (var property in type.GetProperties(Authority))
             {
-                if (property.GetCustomAttribute<SsIgnore>() is not null || property.SetMethod is null)
+                if (NotSsItem(property))
                     continue;
-                var propertyName = property.GetCustomAttribute<SsItem>()?.Name ?? property.Name;
-                if (!root.Property.TryGetValue(propertyName, out var roots))
+                if (!root.Property.TryGetValue(GetSsItemName(property), out var roots))
                     continue;
                 var subObj = Deserialize(property.PropertyType, roots.LastOrDefault());
                 if (subObj is not null)
