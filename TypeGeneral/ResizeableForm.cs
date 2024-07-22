@@ -62,18 +62,13 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     public ResizeableForm()
     {
-        ResizeBegin += ResizeableForm_ResizeBegin;
-        ResizeEnd += ResizeableForm_ResizeEnd;
+        //ResizeBegin += ResizeableForm_ResizeBegin;
+        //ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
         Load += ResizeableForm_Load;
         //Shown += ResizeableForm_Shown;
         FormClosing += ResizeableForm_FormClosing;
         //InitializeComponent();
-    }
-
-    private void ResizeableForm_Shown(object? sender, EventArgs e)
-    {
-        DrawClient();
     }
 
     //protected abstract void InitializeComponent();
@@ -91,7 +86,7 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     private void ResizeableForm_SizeChanged(object? sender, EventArgs e)
     {
-        if (Resizing is false)
+        //if (Resizing is false)
             DrawClient();
     }
 

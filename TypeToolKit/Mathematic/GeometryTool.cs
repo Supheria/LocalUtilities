@@ -5,7 +5,7 @@ namespace LocalUtilities.TypeToolKit.Mathematic;
 
 public static class GeometryTool
 {
-    public static Size ScaleSizeOnRatio(this Size fromSize, Size toSize)
+    public static Size ScaleSizeWithinRatio(this Size fromSize, Size toSize)
     {
         var toWidth = toSize.Width;
         var toHeight = toSize.Height;
