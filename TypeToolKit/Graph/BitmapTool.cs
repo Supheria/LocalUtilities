@@ -40,28 +40,31 @@ public static class BitmapTool
         pTarget.UnlockBits();
     }
 
-    public static void TemplateDrawOntoParts(this Bitmap template, Bitmap source, List<Rectangle> drawRects, bool ignoreTransparent)
+    public static void DrawTemplateSamePartsOnto(this Bitmap template, Bitmap source, List<Rectangle> drawRects, bool ignoreTransparent)
     {
         if (source.Size != template.Size)
             throw GraphicException.SizeMismatch();
-        PointBitmap pTemplate = new(template);
-        PointBitmap pSource = new(source);
-        pTemplate.LockBits();
-        pSource.LockBits();
+        using var g = Graphics.FromImage(source);
         foreach (var rect in drawRects)
-        {
-            for (var x = rect.X; x < rect.Right; x++)
-            {
-                for (var y = rect.Y; y < rect.Bottom; y++)
-                {
-                    var pixel = pTemplate.GetPixel(x, y);
-                    if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
-                        pSource.SetPixel(x, y, pixel);
-                }
-            }
-        }
-        pTemplate.UnlockBits();
-        pSource.UnlockBits();
+            g.DrawImage(template, rect, rect, GraphicsUnit.Pixel);
+        //PointBitmap pTemplate = new(template);
+        //PointBitmap pSource = new(source);
+        //pTemplate.LockBits();
+        //pSource.LockBits();
+        //foreach (var rect in drawRects)
+        //{
+        //    for (var x = rect.X; x < rect.Right; x++)
+        //    {
+        //        for (var y = rect.Y; y < rect.Bottom; y++)
+        //        {
+        //            var pixel = pTemplate.GetPixel(x, y);
+        //            if (!ignoreTransparent || pixel.A != 0 || pixel.R != 0 || pixel.G != 0 || pixel.B != 0)
+        //                pSource.SetPixel(x, y, pixel);
+        //        }
+        //    }
+        //}
+        //pTemplate.UnlockBits();
+        //pSource.UnlockBits();
     }
 
     public static void DrawTemplateOnto(this Bitmap template, Bitmap source, Rectangle part, bool ignoreTransparent)
@@ -81,7 +84,7 @@ public static class BitmapTool
         //}
         //pTemplate.UnlockBits();
         //pSource.UnlockBits();
-        var g = Graphics.FromImage(source);
+        using var g = Graphics.FromImage(source);
         g.DrawImage(template, part);
     }
 }

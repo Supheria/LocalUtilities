@@ -130,7 +130,7 @@ public class SQLiteQuery : IDisposable
                 var str = convert(reader.GetOrdinal(field.Name));
                 obj = SerializeTool.Deserialize(field.Type, new(), str, SignTable);
                 if (obj is not null)
-                    roster.Add(new(field.Name, obj));
+                    roster.TryAdd(new(field.Name, obj));
             }
             result.Add(roster);
         }

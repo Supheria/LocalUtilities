@@ -1,12 +1,13 @@
 ﻿using LocalUtilities.SimpleScript;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : RosterItem<TSignature>
+public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : IRosterItem<TSignature>
 {
-    protected Dictionary<TSignature, TItem> RosterMap { get; set; } = [];
+    protected ConcurrentDictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
     [SsIgnore]
     public TItem this[TSignature signature]
@@ -19,9 +20,9 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
 
     public bool IsReadOnly => false;
 
-    public void Add(TItem item)
+    public bool TryAdd(TItem item)
     {
-        RosterMap.Add(item.Signature, item);
+        return RosterMap.TryAdd(item.Signature, item);
     }
 
     public bool TryGetValue(TSignature signature, [NotNullWhen(true)] out TItem? value)
@@ -41,12 +42,12 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
 
     public void CopyTo(TItem[] array, int arrayIndex)
     {
-        RosterMap.ToArray().CopyTo(array, arrayIndex);
+        RosterMap.Values.ToArray().CopyTo(array, arrayIndex);
     }
-
-    public bool Remove(TItem item)
+    
+    public bool TryRemove(TItem item)
     {
-        return RosterMap.Remove(item.Signature);
+        return RosterMap.TryRemove(item.Signature, out _);
     }
 
     public IEnumerator<TItem> GetEnumerator()
@@ -57,5 +58,17 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
     IEnumerator IEnumerable.GetEnumerator()
     {
         return RosterMap.Values.GetEnumerator();
+    }
+
+    [Obsolete]
+    public void Add(TItem item)
+    {
+        throw new NotImplementedException();
+    }
+
+    [Obsolete]
+    public bool Remove(TItem item)
+    {
+        throw new NotImplementedException();
     }
 }

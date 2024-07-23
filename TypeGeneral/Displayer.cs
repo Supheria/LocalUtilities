@@ -18,16 +18,15 @@ public abstract class Displayer : PictureBox
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        if (Size == Image?.Size || Size.Width is 0 || Size.Height is 0)
-            return;
-        Image?.Dispose();
-        Image = new Bitmap(Width, Height);
         Redraw();
     }
 
     public virtual void Redraw()
     {
-
+        if (Size == Image?.Size || Size.Width is 0 || Size.Height is 0)
+            return;
+        Image?.Dispose();
+        Image = new Bitmap(Width, Height);
     }
 
     //protected override void OnResize(EventArgs e)

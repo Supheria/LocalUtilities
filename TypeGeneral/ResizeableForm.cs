@@ -1,24 +1,12 @@
 ﻿using LocalUtilities.FileHelper;
 using LocalUtilities.SimpleScript;
 using LocalUtilities.SimpleScript.Common;
+using System.ComponentModel;
 
 namespace LocalUtilities.TypeGeneral;
 
 public abstract class ResizeableForm : Form, IInitializeable
 {
-
-    protected delegate FormData SerializeHandler();
-
-    protected delegate void DeserializeHandler(object? data);
-
-    protected delegate void DrawClientHandler();
-
-    protected event SerializeHandler? OnSaveForm;
-
-    protected event DeserializeHandler? OnLoadForm;
-
-    protected event DrawClientHandler? OnDrawClient;
-
     public abstract string InitializeName { get; }
 
     public string IniFileExtension { get; } = "form";
@@ -39,7 +27,7 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     protected int ClientHeight => ClientRectangle.Height;
 
-    protected virtual Type DataType => typeof(FormData);
+    protected virtual Type FormDataType => typeof(FormData);
 
     protected static SsSignTable SignTable { get; } = new();
 
@@ -65,9 +53,9 @@ public abstract class ResizeableForm : Form, IInitializeable
         //ResizeBegin += ResizeableForm_ResizeBegin;
         //ResizeEnd += ResizeableForm_ResizeEnd;
         SizeChanged += ResizeableForm_SizeChanged;
-        Load += ResizeableForm_Load;
+        //Load += ResizeableForm_Load;
         //Shown += ResizeableForm_Shown;
-        FormClosing += ResizeableForm_FormClosing;
+        //FormClosing += ResizeableForm_FormClosing;
         //InitializeComponent();
     }
 
@@ -95,16 +83,22 @@ public abstract class ResizeableForm : Form, IInitializeable
         if (WindowState is FormWindowState.Minimized)
             return;
         SuspendLayout();
-        OnDrawClient?.Invoke();
+        Redraw();
         ResumeLayout();
     }
 
-    private void ResizeableForm_Load(object? sender, EventArgs e)
+    protected virtual void Redraw()
     {
+
+    }
+
+    protected sealed override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
         try
         {
-            var data = SerializeTool.DeserializeFile(DataType, new(InitializeName), this.GetInitializeFilePath(), SignTable);
-            OnLoadForm?.Invoke(data);
+            var data = SerializeTool.DeserializeFile(FormDataType, new(InitializeName), this.GetInitializeFilePath(), SignTable);
+            OnLoad(data);
             if (data is not FormData formData)
                 return;
             MinimumSize = formData.MinimumSize;
@@ -117,14 +111,18 @@ public abstract class ResizeableForm : Form, IInitializeable
 
         }
         catch { }
-        DrawClient();
     }
 
-    private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
+    protected virtual void OnLoad(object? formData)
+    {
+
+    }
+
+    protected sealed override void OnClosing(CancelEventArgs e)
     {
         try
         {
-            var formData = OnSaveForm?.Invoke() ?? new();
+            var formData = OnSave();
             formData.MinimumSize = MinimumSize;
             formData.Size = Size;
             formData.Location = Location;
@@ -136,6 +134,49 @@ public abstract class ResizeableForm : Form, IInitializeable
         }
         catch { }
     }
+
+    protected virtual FormData OnSave()
+    {
+        return new();
+    }
+
+    //private void ResizeableForm_Load(object? sender, EventArgs e)
+    //{
+    //    try
+    //    {
+    //        var data = SerializeTool.DeserializeFile(DataType, new(InitializeName), this.GetInitializeFilePath(), SignTable);
+    //        OnLoadForm?.Invoke(data);
+    //        if (data is not FormData formData)
+    //            return;
+    //        MinimumSize = formData.MinimumSize;
+    //        Size = formData.Size;
+    //        Location = formData.Location;
+    //        WindowState = formData.WindowState;
+    //        Padding = formData.Padding;
+    //        LabelFontData = formData.LabelFontData;
+    //        ContentFontData = formData.ContentFontData;
+
+    //    }
+    //    catch { }
+    //    DrawClient();
+    //}
+
+    //private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
+    //{
+    //    try
+    //    {
+    //        var formData = OnSaveForm?.Invoke() ?? new();
+    //        formData.MinimumSize = MinimumSize;
+    //        formData.Size = Size;
+    //        formData.Location = Location;
+    //        formData.WindowState = WindowState;
+    //        formData.Padding = Padding;
+    //        formData.LabelFontData = LabelFontData;
+    //        formData.ContentFontData = ContentFontData;
+    //        SerializeTool.SerializeFile(formData, new(InitializeName), this.GetInitializeFilePath(), true, SignTable);
+    //    }
+    //    catch { }
+    //}
 
     protected void InvokeAsync(Action process)
     {

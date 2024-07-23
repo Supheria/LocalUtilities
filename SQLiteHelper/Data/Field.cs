@@ -4,9 +4,9 @@ using System.Text;
 
 namespace LocalUtilities.SQLiteHelper.Data;
 
-public class Field : RosterItem<string>
+public class Field : IRosterItem<string>
 {
-    public override string Signature => Name;
+    public string Signature => Name;
 
     public string Name { get; }
 
