@@ -81,7 +81,7 @@ public abstract class ResizeableForm : Form, IInitializeable
     private void ResizeableForm_SizeChanged(object? sender, EventArgs e)
     {
         //if (Resizing is false)
-            DrawClient();
+        DrawClient();
     }
 
     private void DrawClient()

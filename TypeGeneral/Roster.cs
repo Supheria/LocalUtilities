@@ -44,7 +44,7 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
     {
         RosterMap.Values.ToArray().CopyTo(array, arrayIndex);
     }
-    
+
     public bool TryRemove(TItem item)
     {
         return RosterMap.TryRemove(item.Signature, out _);

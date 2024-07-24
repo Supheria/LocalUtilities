@@ -1,13 +1,9 @@
 ﻿using LocalUtilities.SimpleScript;
-using LocalUtilities.SQLiteHelper;
 using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeGeneral;
-using System.Data;
-using System.Data.SQLite;
-using System.Reflection;
-using System.Text;
 using LocalUtilities.TypeToolKit.Text;
-using System.Windows.Forms;
+using System.Data.SQLite;
+using System.Text;
 
 namespace LocalUtilities.SQLiteHelper;
 

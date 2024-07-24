@@ -1,5 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Common;
-using LocalUtilities.TypeGeneral;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Parser;
@@ -112,7 +111,7 @@ internal class Tokenizer
                 State = States.Quotation;
                 return false;
             case States.Word:
-                if (ch == SignTable.Tab || 
+                if (ch == SignTable.Tab ||
                     ch == SignTable.Space ||
                     ch == SignTable.Return ||
                     ch == SignTable.NewLine ||
@@ -133,7 +132,7 @@ internal class Tokenizer
                 return false;
             case States.Note:
                 if (ch == SignTable.Return ||
-                    ch == SignTable.NewLine || 
+                    ch == SignTable.NewLine ||
                     ch == SignTable.Empty)
                 {
                     State = States.None;
@@ -189,10 +188,10 @@ internal class Tokenizer
             Line++;
             Column = 0;
         }
-        else if (ch is '\t') 
+        else if (ch is '\t')
             Column += 4;
         else
-            Column ++;
+            Column++;
         return ch;
     }
 }

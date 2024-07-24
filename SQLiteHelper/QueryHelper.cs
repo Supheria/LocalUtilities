@@ -1,10 +1,10 @@
 ﻿using LocalUtilities.SimpleScript;
-using LocalUtilities.SQLiteHelper.Data;
-using System.Text;
-using LocalUtilities.TypeToolKit.Text;
 using LocalUtilities.SimpleScript.Common;
-using System.Data.SQLite;
+using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeToolKit;
+using LocalUtilities.TypeToolKit.Text;
+using System.Data.SQLite;
+using System.Text;
 
 namespace LocalUtilities.SQLiteHelper;
 
@@ -37,7 +37,7 @@ internal static class QueryHelper
             type == TypeTable.Char ||
             type == TypeTable.Short ||
             type == TypeTable.Int ||
-            type == TypeTable.Long||
+            type == TypeTable.Long ||
             type == TypeTable.DateTime)
             return Keywords.Integer;
         if (type == TypeTable.Float ||

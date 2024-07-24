@@ -1,6 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Common;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Text;
 using System.Text;
 
 namespace LocalUtilities.SimpleScript.Serializer;

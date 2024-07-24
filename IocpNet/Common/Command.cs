@@ -1,5 +1,4 @@
 ﻿using LocalUtilities.SimpleScript.Common;
-using System.Text;
 
 namespace LocalUtilities.IocpNet.Common;
 

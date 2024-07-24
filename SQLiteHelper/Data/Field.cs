@@ -1,6 +1,4 @@
-﻿using LocalUtilities.SimpleScript;
-using LocalUtilities.TypeGeneral;
-using System.Text;
+﻿using LocalUtilities.TypeGeneral;
 
 namespace LocalUtilities.SQLiteHelper.Data;
 

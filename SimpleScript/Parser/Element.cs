@@ -1,9 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Serializer;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Text;
-using System.Text;
-
-namespace LocalUtilities.SimpleScript.Parser;
+﻿namespace LocalUtilities.SimpleScript.Parser;
 
 public class Element(/*Element? from, */Word name, Word @operator, Word value, int level)
 {
