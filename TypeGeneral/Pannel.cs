@@ -18,6 +18,18 @@ public class Pannel : Control
 
     protected int ClientHeight => ClientRectangle.Height;
 
+    public virtual new Size Padding { get; set; }
+
+    public Pannel()
+    {
+        AddOperation();
+    }
+
+    protected virtual void AddOperation()
+    {
+
+    }
+
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
@@ -31,6 +43,16 @@ public class Pannel : Control
     }
 
     protected virtual void SetSize()
+    {
+
+    }
+
+    public virtual void EnableListener()
+    {
+
+    }
+
+    public virtual void DisableListener()
     {
 
     }

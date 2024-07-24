@@ -25,10 +25,19 @@ public abstract class Displayer : PictureBox
 
     protected virtual FontData ContentFontData { get; set; } = new();
 
+    public Displayer()
+    {
+        AddOperation();
+    }
+
+    protected virtual void AddOperation()
+    {
+
+    }
+
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        //BeginInvoke(Redraw);
         Redraw();
     }
 
@@ -40,12 +49,13 @@ public abstract class Displayer : PictureBox
         Image = new Bitmap(ClientWidth, ClientHeight);
     }
 
-    //protected override void OnResize(EventArgs e)
-    //{
-    //    base.OnResize(e);
-    //    if (Size == Image?.Size || Size.Width is 0 || Size.Height is 0)
-    //        return;
-    //    Image?.Dispose();
-    //    Image = new Bitmap(Width, Height);
-    //}
+    public virtual void EnableListener()
+    {
+
+    }
+
+    public virtual void DisableListener()
+    {
+
+    }
 }

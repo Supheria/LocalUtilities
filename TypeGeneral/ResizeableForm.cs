@@ -59,9 +59,13 @@ public abstract class ResizeableForm : Form, IInitializeable
         //Shown += ResizeableForm_Shown;
         //FormClosing += ResizeableForm_FormClosing;
         //InitializeComponent();
+        AddOperation();
     }
 
-    //protected abstract void InitializeComponent();
+    protected virtual void AddOperation()
+    {
+
+    }
 
     private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
     {
@@ -139,42 +143,4 @@ public abstract class ResizeableForm : Form, IInitializeable
     {
         return new();
     }
-
-    //private void ResizeableForm_Load(object? sender, EventArgs e)
-    //{
-    //    try
-    //    {
-    //        var data = SerializeTool.DeserializeFile(DataType, new(InitializeName), this.GetInitializeFilePath(), SignTable);
-    //        OnLoadForm?.Invoke(data);
-    //        if (data is not FormData formData)
-    //            return;
-    //        MinimumSize = formData.MinimumSize;
-    //        Size = formData.Size;
-    //        Location = formData.Location;
-    //        WindowState = formData.WindowState;
-    //        Padding = formData.Padding;
-    //        LabelFontData = formData.LabelFontData;
-    //        ContentFontData = formData.ContentFontData;
-
-    //    }
-    //    catch { }
-    //    DrawClient();
-    //}
-
-    //private void ResizeableForm_FormClosing(object? sender, FormClosingEventArgs e)
-    //{
-    //    try
-    //    {
-    //        var formData = OnSaveForm?.Invoke() ?? new();
-    //        formData.MinimumSize = MinimumSize;
-    //        formData.Size = Size;
-    //        formData.Location = Location;
-    //        formData.WindowState = WindowState;
-    //        formData.Padding = Padding;
-    //        formData.LabelFontData = LabelFontData;
-    //        formData.ContentFontData = ContentFontData;
-    //        SerializeTool.SerializeFile(formData, new(InitializeName), this.GetInitializeFilePath(), true, SignTable);
-    //    }
-    //    catch { }
-    //}
 }
