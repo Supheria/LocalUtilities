@@ -42,7 +42,7 @@ public class CommandSender : Command
 
     public CommandSender AppendArgs(string key, object? obj)
     {
-        var str = SerializeTool.Serialize(obj, new(), false, SignTable) ?? "";
+        var str = SerializeTool.Serialize(obj, new(), SignTable, false) ?? "";
         Args[key] = str;
         return this;
     }

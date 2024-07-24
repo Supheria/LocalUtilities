@@ -70,7 +70,7 @@ public class SQLiteQuery : IDisposable
              .Append(Keywords.Open)
             .AppendJoin(Keywords.Comma.ToString(), fields, (sb, field) =>
             {
-                var value = SerializeTool.Serialize(field.Value, new(), false, SignTable);
+                var value = SerializeTool.Serialize(field.Value, new(), SignTable, false);
                 sb.Append(value.ToQuoted());
             })
             .Append(Keywords.Close);
@@ -90,7 +90,7 @@ public class SQLiteQuery : IDisposable
            .Append(Keywords.Set)
            .AppendJoin(SignCollection.Comma, fields, (sb, field) =>
            {
-               var value = SerializeTool.Serialize(field.Value, new(), false, SignTable);
+               var value = SerializeTool.Serialize(field.Value, new(), SignTable, false);
                sb.Append(field.Name.ToQuoted())
                    .Append(Keywords.Equal)
                    .Append(value.ToQuoted());

@@ -79,7 +79,7 @@ internal static class QueryHelper
         return query.Append(Keywords.Where)
             .AppendJoin(comboWord.ToString(), conditions, (sb, condition) =>
             {
-                var value = SerializeTool.Serialize(condition.Value, new(), false, signTable);
+                var value = SerializeTool.Serialize(condition.Value, new(), signTable, false);
                 sb.Append(condition.Key.ToQuoted())
                 .Append(condition.Operate)
                 .Append(value.ToQuoted());

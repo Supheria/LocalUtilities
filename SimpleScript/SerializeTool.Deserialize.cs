@@ -179,13 +179,13 @@ partial class SerializeTool
         return (T?)Deserialize(typeof(T), name, str, signTable);
     }
 
-    public static T? DeserializeFile<T>(DataName name, string filePath, SignTable signTable)
+    public static T? DeserializeFile<T>(DataName name, SignTable signTable, string filePath)
     {
         var buffer = ReadFileBuffer(filePath);
         return (T?)Deserialize(typeof(T), name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);
     }
 
-    public static object? DeserializeFile(Type type, DataName name, string filePath, SignTable signTable)
+    public static object? DeserializeFile(Type type, DataName name, SignTable signTable, string filePath)
     {
         var buffer = ReadFileBuffer(filePath);
         return Deserialize(type, name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);

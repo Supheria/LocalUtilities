@@ -26,7 +26,7 @@ partial class SerializeTool
         return buffer;
     }
 
-    public static string Serialize(object? obj, DataName name, bool writeIntoMultiLines, SignTable signTable)
+    public static string Serialize(object? obj, DataName name, SignTable signTable, bool writeIntoMultiLines)
     {
         var writer = new SsStringWriter(writeIntoMultiLines, signTable);
         if (Serialize(obj, out var convert))
@@ -36,7 +36,7 @@ partial class SerializeTool
         return writer.ToString();
     }
 
-    public static void SerializeFile(object? obj, DataName name, string filePath, bool writeIntoMultiLines, SignTable signTable)
+    public static void SerializeFile(object? obj, DataName name, SignTable signTable, bool writeIntoMultiLines, string filePath)
     {
         using var file = File.Create(filePath);
         file.Write(Utf8_BOM);
