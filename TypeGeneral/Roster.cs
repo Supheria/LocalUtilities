@@ -16,6 +16,17 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
         set => RosterMap[signature] = value;
     }
 
+    public TItem[] RosterList
+    {
+        get => RosterMap.Values.ToArray();
+        set
+        {
+            RosterMap.Clear();
+            foreach (var item in value)
+                RosterMap.TryAdd(item.Signature, item);
+        }
+    }
+
     public int Count => RosterMap.Count;
 
     public bool IsReadOnly => false;

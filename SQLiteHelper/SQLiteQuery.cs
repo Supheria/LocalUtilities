@@ -4,6 +4,7 @@ using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Data.SQLite;
 using System.Text;
+using System.Transactions;
 
 namespace LocalUtilities.SQLiteHelper;
 
@@ -13,36 +14,72 @@ public class SQLiteQuery : IDisposable
 
     static DatabaseSignTable SignTable { get; } = new();
 
-    SQLiteConnection Connection { get; set; }
+    SQLiteConnection Connection { get; }
+
+    SQLiteCommand Command { get; }
+
+    SQLiteTransaction Transaction { get; }
 
     public SQLiteQuery(string filePath)
     {
         var query = new StringBuilder()
             .Append(Keywords.DataSource)
             .Append(Keywords.Equal)
-            .Append(filePath.ToQuoted())
-            .Append(Keywords.Finish)
-            .Append(Keywords.Version)
-            .Append(Keywords.Equal)
-            .Append(Version.ToQuoted())
-            .ToString();
-        Connection = new(query);
+            .Append(filePath.ToQuoted());
+        Connection = new(query.ToString());
         Connection.Open();
+        Command = Connection.CreateCommand();
+        Transaction = Connection.BeginTransaction();
     }
 
     public void Dispose()
     {
+        Transaction.Commit();
+        Command.Dispose();
         Connection.Close();
         GC.SuppressFinalize(this);
     }
 
-    private SQLiteDataReader? ExecuteQuery(string query)
+    private void ExecuteNonQuery(string query)
     {
-        if (Connection is null)
-            return null;
-        using var command = Connection.CreateCommand();
-        command.CommandText = query;
-        return command.ExecuteReader();
+        try
+        {
+            Command.CommandText = query;
+            Command.ExecuteNonQuery();
+        }
+        catch
+        {
+            Transaction.Rollback();
+            throw;
+        }
+    }
+
+    private SQLiteDataReader ExecuteReader(string query)
+    {
+        try
+        {
+            Command.CommandText = query;
+            return Command.ExecuteReader();
+        }
+        catch
+        {
+            Transaction.Rollback();
+            throw;
+        }
+    }
+
+    private object ExecuteScalar(string query)
+    {
+        try
+        {
+            Command.CommandText = query;
+            return Command.ExecuteScalar();
+        }
+        catch
+        {
+            Transaction.Rollback();
+            throw;
+        }
     }
 
     public void CreateTable(string name, Field[] fields)
@@ -54,7 +91,7 @@ public class SQLiteQuery : IDisposable
             .AppendFieldsName(fields)
             .Append(Keywords.Close)
             .Append(Keywords.WithoutRowid);
-        ExecuteQuery(query.ToString());
+        ExecuteNonQuery(query.ToString());
     }
 
     public void InsertFieldsValue(string name, Field[] fields)
@@ -70,7 +107,12 @@ public class SQLiteQuery : IDisposable
                 sb.Append(value.ToQuoted());
             })
             .Append(Keywords.Close);
-        _ = ExecuteQuery(query.ToString());
+        ExecuteNonQuery(query.ToString());
+    }
+
+    public void InsertManyFieldsValue(string name, List<Field[]> fields)
+    {
+
     }
 
     public void UpdateFieldsValues(string name, Field[] fields, Condition? condition)
@@ -92,7 +134,7 @@ public class SQLiteQuery : IDisposable
                    .Append(value.ToQuoted());
            })
            .AppendConditions(conditions, combo, SignTable);
-        _ = ExecuteQuery(query.ToString());
+        ExecuteNonQuery(query.ToString());
     }
 
     public List<Fields> SelectFieldsValue(string name, Field[] fields, Condition? condition)
@@ -111,9 +153,7 @@ public class SQLiteQuery : IDisposable
             .Append(Keywords.From)
             .Append(name.ToQuoted())
             .AppendConditions(conditions, combo, SignTable);
-        using var reader = ExecuteQuery(query.ToString());
-        if (reader is null)
-            return [];
+        using var reader = ExecuteReader(query.ToString());
         var result = new List<Fields>();
         while (reader.Read())
         {
@@ -144,7 +184,28 @@ public class SQLiteQuery : IDisposable
             .Append(Keywords.Delete)
             .Append(name.ToQuoted())
             .AppendConditions(conditions, combo, SignTable);
-        _ = ExecuteQuery(query.ToString());
+        ExecuteNonQuery(query.ToString());
+    }
+
+    public int Sum(string name, Field? field, Condition? condition)
+    {
+        return Sum(name, field, condition is null ? [] : [condition], Condition.Combo.Default);
+    }
+
+    public int Sum(string name, Field? field, Condition[] conditions, Condition.Combo combo)
+    {
+        var query = new StringBuilder()
+            .Append(Keywords.SelectCount)
+            .Append(Keywords.Open);
+        if (field is null)
+            query.Append(Keywords.Any);
+        else
+            query.Append(field.Name.ToQuoted());
+        query.Append(Keywords.Close)
+            .Append(Keywords.From)
+            .Append(name.ToQuoted())
+            .AppendConditions(conditions, combo, SignTable);
+        return Convert.ToInt32(ExecuteScalar(query.ToString()));
     }
 
     /// <summary>
