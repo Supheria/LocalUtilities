@@ -19,6 +19,8 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     protected virtual FontData ContentFontData { get; set; } = new() { Size = 17f };
 
+    protected Rectangle ClientRect => ClientRectangle;
+
     protected int ClientLeft => ClientRectangle.Left;
 
     protected int ClientTop => ClientRectangle.Top;
@@ -82,9 +84,7 @@ public abstract class ResizeableForm : Form, IInitializeable
     {
         if (WindowState is FormWindowState.Minimized)
             return;
-        SuspendLayout();
         Redraw();
-        ResumeLayout();
     }
 
     protected virtual void Redraw()
@@ -177,12 +177,4 @@ public abstract class ResizeableForm : Form, IInitializeable
     //    }
     //    catch { }
     //}
-
-    protected void InvokeAsync(Action process)
-    {
-        if (InvokeRequired)
-            BeginInvoke(process);
-        else
-            Invoke(process);
-    }
 }

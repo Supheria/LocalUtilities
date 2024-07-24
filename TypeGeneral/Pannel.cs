@@ -1,0 +1,37 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace LocalUtilities.TypeGeneral;
+
+public class Pannel : Control
+{
+    protected Rectangle ClientRect => ClientRectangle;
+
+    protected int ClientLeft => ClientRectangle.Left;
+
+    protected int ClientTop => ClientRectangle.Top;
+
+    protected int ClientWidth => ClientRectangle.Width;
+
+    protected int ClientHeight => ClientRectangle.Height;
+
+    protected override void OnResize(EventArgs e)
+    {
+        base.OnResize(e);
+        SetSize();
+        //BeginInvoke(() =>
+        //{
+        //    //SuspendLayout();
+        //    SetSize();
+        //    //ResumeLayout();
+        //});
+    }
+
+    protected virtual void SetSize()
+    {
+
+    }
+}
