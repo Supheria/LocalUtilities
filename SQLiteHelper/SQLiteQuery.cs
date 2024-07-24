@@ -49,7 +49,6 @@ public class SQLiteQuery : IDisposable
         }
         catch
         {
-            Transaction.Rollback();
             throw;
         }
     }
@@ -63,7 +62,6 @@ public class SQLiteQuery : IDisposable
         }
         catch
         {
-            Transaction.Rollback();
             throw;
         }
     }
@@ -77,7 +75,6 @@ public class SQLiteQuery : IDisposable
         }
         catch
         {
-            Transaction.Rollback();
             throw;
         }
     }
