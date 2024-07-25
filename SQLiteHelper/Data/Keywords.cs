@@ -21,7 +21,8 @@ public class Keywords
     public static Keywords Greater { get; } = new(">");
     public static Keywords LessOrEqual { get; } = new("<=");
     public static Keywords GreaterOrEqual { get; } = new(">=");
-    public static Keywords Quote { get; } = new("\"");
+    public static Keywords Quote { get; } = new("'");
+    public static Keywords DoubleQuote { get; } = new("\"");
     public static Keywords Finish { get; } = new(";");
     public static Keywords Open { get; } = new("(");
     public static Keywords Close { get; } = new(")");
@@ -38,10 +39,10 @@ public class Keywords
     public static Keywords Delete { get; } = new("Delete From");
     public static Keywords Or { get; } = new(nameof(Or));
     public static Keywords And { get; } = new(nameof(And));
-    public static Keywords CreateTableNotExists { get; } = new("Create Table If Not Exists");
+    public static Keywords CreateTableIfNotExists { get; } = new("Create Table If Not Exists");
     public static Keywords WithoutRowid { get; } = new("Without Rowid");
     public static Keywords Text { get; } = new(nameof(Text));
-    public static Keywords PrimaryKey { get; } = new("Primary Key");
+    public static Keywords PrimaryKeyNotNull { get; } = new("Primary Key Not Null");
     public static Keywords Integer { get; } = new(nameof(Integer));
     public static Keywords Real { get; } = new(nameof(Real));
     public static Keywords SelectCount { get; } = new("Select Count");

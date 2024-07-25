@@ -1,31 +1,36 @@
 ﻿using LocalUtilities.SimpleScript;
+using LocalUtilities.SimpleScript.Common;
 using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Data.SQLite;
+using System.Reflection;
 using System.Text;
 using System.Transactions;
+using System.Xml.Linq;
 
 namespace LocalUtilities.SQLiteHelper;
 
-public class SQLiteQuery : IDisposable
+public partial class SQLiteQuery : IDisposable
 {
-    public static string Version { get; } = "3";
-
-    static DatabaseSignTable SignTable { get; } = new();
+    static SsSignTable SignTable { get; } = new();
 
     SQLiteConnection Connection { get; }
 
     SQLiteCommand Command { get; }
 
-    SQLiteTransaction Transaction { get; }
+    SQLiteTransaction Transaction { get; set; }
 
+    /// <summary>
+    /// a <see cref="SQLiteTransaction"/> begins, and use <see cref="Dispose"/> to commit it
+    /// </summary>
+    /// <param name="filePath"></param>
     public SQLiteQuery(string filePath)
     {
         var query = new StringBuilder()
             .Append(Keywords.DataSource)
             .Append(Keywords.Equal)
-            .Append(filePath.ToQuoted());
+            .Append(QuoteValue(filePath));
         Connection = new(query.ToString());
         Connection.Open();
         Command = Connection.CreateCommand();
@@ -35,197 +40,348 @@ public class SQLiteQuery : IDisposable
     public void Dispose()
     {
         Transaction.Commit();
+        Transaction.Dispose();
         Command.Dispose();
         Connection.Close();
+        Connection.Dispose();
         GC.SuppressFinalize(this);
     }
 
     private void ExecuteNonQuery(string query)
     {
-        try
-        {
-            Command.CommandText = query;
-            Command.ExecuteNonQuery();
-        }
-        catch
-        {
-            throw;
-        }
+        Command.CommandText = query;
+        Command.ExecuteNonQuery();
     }
 
     private SQLiteDataReader ExecuteReader(string query)
     {
-        try
-        {
-            Command.CommandText = query;
-            return Command.ExecuteReader();
-        }
-        catch
-        {
-            throw;
-        }
+        Command.CommandText = query;
+        return Command.ExecuteReader();
     }
 
     private object ExecuteScalar(string query)
     {
-        try
-        {
-            Command.CommandText = query;
-            return Command.ExecuteScalar();
-        }
-        catch
-        {
-            throw;
-        }
+        Command.CommandText = query;
+        return Command.ExecuteScalar();
     }
 
-    public void CreateTable(string name, Field[] fields)
+    public void CreateTable(string tableName, FieldName[] fieldNames)
     {
         var query = new StringBuilder()
-            .Append(Keywords.CreateTableNotExists)
-            .Append(name.ToQuoted())
+            .Append(Keywords.CreateTableIfNotExists)
+            .Append(QuoteName(tableName))
             .Append(Keywords.Open)
-            .AppendFieldsName(fields)
+            .AppendJoin(Keywords.Comma.ToString(), fieldNames, (sb, field) =>
+            {
+                sb.Append(QuoteName(field.Name))
+                .Append(ConvertType(field.Type));
+                if (field.IsPrimaryKey)
+                    sb.Append(Keywords.Blank)
+                    .Append(Keywords.PrimaryKeyNotNull);
+            })
             .Append(Keywords.Close)
             .Append(Keywords.WithoutRowid);
         ExecuteNonQuery(query.ToString());
     }
 
-    public void InsertFieldsValue(string name, Field[] fields)
+    public void CreateTable<T>(string tableName)
+    {
+        var type = typeof(T);
+        var query = new StringBuilder()
+            .Append(Keywords.CreateTableIfNotExists)
+            .Append(QuoteName(tableName))
+            .Append(Keywords.Open);
+        var first = true;
+        foreach (var property in type.GetProperties(Authority))
+        {
+            if (NotField(property))
+                continue;
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            if (!first)
+                query.Append(Keywords.Comma);
+            else
+                first = false;
+            query.Append(QuoteName(name))
+                .Append(ConvertType(property.PropertyType));
+            if (isPrimaryKey)
+                query.Append(Keywords.Blank)
+                    .Append(Keywords.PrimaryKeyNotNull);
+        }
+        query.Append(Keywords.Close)
+            .Append(Keywords.WithoutRowid);
+        ExecuteNonQuery(query.ToString());
+    }
+
+    public void InsertItem(string tableName, FieldValue[] fieldValues)
     {
         var query = new StringBuilder()
              .Append(Keywords.InsertInto)
-             .Append(name.ToQuoted())
+             .Append(QuoteName(tableName))
              .Append(Keywords.Values)
              .Append(Keywords.Open)
-            .AppendJoin(Keywords.Comma.ToString(), fields, (sb, field) =>
+            .AppendJoin(Keywords.Comma.ToString(), fieldValues, (sb, value) =>
             {
-                var value = SerializeTool.Serialize(field.Value, new(), SignTable, false);
-                sb.Append(value.ToQuoted());
+                var val = SerializeTool.Serialize(value.Value, new(), SignTable, false);
+                sb.Append(QuoteValue(val));
             })
             .Append(Keywords.Close);
         ExecuteNonQuery(query.ToString());
     }
 
-    public void InsertManyFieldsValue(string name, List<Field[]> fields)
+    public void InsertItem(string tableName, object obj)
     {
+        var type = obj.GetType();
+        var query = new StringBuilder()
+             .Append(Keywords.InsertInto)
+             .Append(QuoteName(tableName))
+             .Append(Keywords.Values)
+             .Append(Keywords.Open);
+        var first = true;
+        foreach (var property in type.GetProperties(Authority))
+        {
+            if (NotField(property))
+                continue;
+            if (!first)
+                query.Append(Keywords.Comma);
+            else
+                first = false;
+            var value = SerializeTool.Serialize(property.GetValue(obj), new(), SignTable, false);
+            query.Append(QuoteValue(value));
+        }
+        query.Append(Keywords.Close);
+        ExecuteNonQuery(query.ToString());
 
     }
 
-    public void UpdateFieldsValues(string name, Field[] fields, Condition? condition)
+    public void InsertItems<T>(string tableName, T[] objs)
     {
-        UpdateFieldsValues(name, fields, condition is null ? [] : [condition], Condition.Combo.Default);
+        var type = typeof(T);
+        var valueTable = new StringBuilder[objs.Length];
+        var first = true;
+        foreach (var property in type.GetProperties(Authority))
+        {
+            if (NotField(property))
+                continue;
+            for (var i = 0; i < objs.Length; i++)
+            {
+                if (!first)
+                    valueTable[i].Append(Keywords.Comma);
+                else
+                    valueTable[i] = new();
+                var value = SerializeTool.Serialize(property.GetValue(objs[i]), new(), SignTable, false);
+                valueTable[i].Append(QuoteValue(value));
+            }
+            first = false;
+        }
+        var query = new StringBuilder()
+             .Append(Keywords.InsertInto)
+             .Append(QuoteName(tableName))
+             .Append(Keywords.Values)
+             .AppendJoin(Keywords.Comma.ToString(), valueTable, (sb, valueString) =>
+             {
+                 sb.Append(Keywords.Open)
+                 .Append(valueString)
+                 .Append(Keywords.Close);
+             });
+        ExecuteNonQuery(query.ToString());
     }
 
-    public void UpdateFieldsValues(string name, Field[] fields, Condition[] conditions, Condition.Combo combo)
+    /// <summary>
+    /// update an item completely fits to <paramref name="obj"/>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="obj"></param>
+    public void UpdateItem(string tableName, object obj)
+    {
+        var type = obj.GetType();
+        var query = new StringBuilder()
+           .Append(Keywords.Update)
+           .Append(QuoteName(tableName))
+           .Append(Keywords.Set);
+        var first = true;
+        Condition? condition = null;
+        foreach (var property in type.GetProperties(Authority))
+        {
+            if (NotField(property))
+                continue;
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            var value = SerializeTool.Serialize(property.GetValue(obj), new(), SignTable, false);
+            if (isPrimaryKey)
+            {
+                condition = new(name, value, Operators.Equal);
+                continue;
+            }
+            if (!first)
+                query.Append(Keywords.Comma);
+            else
+                first = false;
+            query.Append(QuoteName(name))
+                .Append(Keywords.Equal)
+                .Append(QuoteValue(value));
+        }
+        query.Append(GetConditionsString([condition], ConditionCombo.Default));
+        ExecuteNonQuery(query.ToString());
+    }
+
+    /// <summary>
+    /// <para>field which is primary key won't be updated</para>
+    /// <para>set <paramref name="condition"/> null for no condition limit</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="fieldValues"></param>
+    /// <param name="condition"></param>
+    public void UpdateItems(string tableName, FieldValue[] fieldValues, Condition? condition)
+    {
+        UpdateItems(tableName, fieldValues, [condition], ConditionCombo.Default);
+    }
+
+    /// <summary>
+    /// <para>field which is primary key won't be updated</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="fieldValues"></param>
+    /// <param name="conditions"></param>
+    /// <param name="combo"></param>
+    public void UpdateItems(string tableName, FieldValue[] fieldValues, Condition?[] conditions, ConditionCombo combo)
     {
         var query = new StringBuilder()
            .Append(Keywords.Update)
-           .Append(name.ToQuoted())
-           .Append(Keywords.Set)
-           .AppendJoin(SignCollection.Comma, fields, (sb, field) =>
-           {
-               var value = SerializeTool.Serialize(field.Value, new(), SignTable, false);
-               sb.Append(field.Name.ToQuoted())
+           .Append(QuoteName(tableName))
+           .Append(Keywords.Set);
+        var first = true;
+        foreach(var field in fieldValues)
+        {
+            if (field.IsPrimaryKey)
+                continue;
+            var value = SerializeTool.Serialize(field.Value, new(), SignTable, false);
+            if (!first)
+                query.Append(Keywords.Comma);
+            else
+                first = false;
+            query.Append(QuoteName(field.Name))
                    .Append(Keywords.Equal)
-                   .Append(value.ToQuoted());
-           })
-           .AppendConditions(conditions, combo, SignTable);
+                   .Append(QuoteValue(value));
+        };
+        query.Append(GetConditionsString(conditions, combo));
         ExecuteNonQuery(query.ToString());
     }
 
-    public List<Fields> SelectFieldsValue(string name, Field[] fields, Condition? condition)
+    /// <summary>
+    /// <para>set <paramref name="fieldNames"/> null or empty to select any</para>
+    /// <para>set <paramref name="condition"/> null for no condition limit</para>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="tableName"></param>
+    /// <param name="fieldNames"></param>
+    /// <param name="condition"></param>
+    /// <returns></returns>
+    public T[] SelectItems<T>(string tableName, FieldName[]? fieldNames, Condition? condition)
     {
-        return SelectFieldsValue(name, fields, condition is null ? [] : [condition], Condition.Combo.Default);
+        return SelectItems<T>(tableName, fieldNames, [condition], ConditionCombo.Default);
     }
 
-    public List<Fields> SelectFieldsValue(string name, Field[] fields, Condition[] conditions, Condition.Combo combo)
+    /// <summary>
+    /// <para>set <paramref name="fieldNames"/> null or empty to select any</para>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="tableName"></param>
+    /// <param name="fieldNames"></param>
+    /// <param name="conditions"></param>
+    /// <param name="combo"></param>
+    /// <returns></returns>
+    public T[] SelectItems<T>(string tableName, FieldName[]? fieldNames, Condition?[] conditions, ConditionCombo combo)
     {
         var query = new StringBuilder()
-            .Append(Keywords.Select)
-            .AppendJoin(Keywords.Comma.ToString(), fields, (sb, field) =>
+            .Append(Keywords.Select);
+        if (fieldNames is null || fieldNames.Length is 0)
+        {
+            query.Append(Keywords.Any);
+            fieldNames = GetFieldNames<T>();
+        }
+        else
+        {
+            query.AppendJoin(Keywords.Comma.ToString(), fieldNames, (sb, field) =>
             {
-                sb.Append(field.Name.ToQuoted());
-            })
-            .Append(Keywords.From)
-            .Append(name.ToQuoted())
-            .AppendConditions(conditions, combo, SignTable);
+                sb.Append(QuoteName(field.Name));
+            });
+        }
+        query.Append(Keywords.From)
+            .Append(QuoteName(tableName))
+            .Append(GetConditionsString(conditions, combo));
         using var reader = ExecuteReader(query.ToString());
-        var result = new List<Fields>();
+        var type = typeof(T);
+        var objs = new List<T>();
         while (reader.Read())
         {
-            var roster = new Fields();
-            for (var i = 0; i < fields.Length; i++)
+            var obj = Activator.CreateInstance(type);
+            if (obj is null)
+                continue;
+            foreach (var fieldName in fieldNames)
             {
-                var field = fields[i];
-                object? obj;
-                var convert = reader.ConvertType(field.Type);
-                var str = convert(reader.GetOrdinal(field.Name));
-                obj = SerializeTool.Deserialize(field.Type, new(), str, SignTable);
-                if (obj is not null)
-                    roster.TryAdd(new(field.Name, obj));
+                var convert = ConvertType(reader, fieldName.Type);
+                var str = convert(reader.GetOrdinal(fieldName.Name));
+                var subObj = SerializeTool.Deserialize(fieldName.Type, new(), str, SignTable);
+                var property = fieldName.Property ?? type.GetProperty(fieldName.PropertyName);
+                property?.SetValue(obj, subObj);
             }
-            result.Add(roster);
+            objs.Add((T)obj);
         }
-        return result;
+        return objs.ToArray();
     }
 
-    public void DeleteFields(string name, Condition? condition)
+    /// <summary>
+    /// <para>set <paramref name="condition"/> null for no condition limit</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="condition"></param>
+    public void DeleteItems(string tableName, Condition? condition)
     {
-        DeleteFields(name, condition is null ? [] : [condition], Condition.Combo.Default);
+        DeleteItems(tableName, [condition], ConditionCombo.Default);
     }
 
-    public void DeleteFields(string name, Condition[] conditions, Condition.Combo combo)
+    public void DeleteItems(string tableName, Condition?[] conditions, ConditionCombo combo)
     {
         var query = new StringBuilder()
             .Append(Keywords.Delete)
-            .Append(name.ToQuoted())
-            .AppendConditions(conditions, combo, SignTable);
+            .Append(QuoteName(tableName))
+           .Append(GetConditionsString(conditions, combo));
         ExecuteNonQuery(query.ToString());
     }
 
-    public int Sum(string name, Field? field, Condition? condition)
+    /// <summary>
+    /// <para>set <paramref name="fieldName"/> null to select any</para>
+    /// <para>set <paramref name="condition"/> null for no condition limit</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="fieldName"></param>
+    /// <param name="condition"></param>
+    /// <returns></returns>
+    public int Sum(string tableName, FieldName? fieldName, Condition? condition)
     {
-        return Sum(name, field, condition is null ? [] : [condition], Condition.Combo.Default);
+        return Sum(tableName, fieldName, [condition], ConditionCombo.Default);
     }
 
-    public int Sum(string name, Field? field, Condition[] conditions, Condition.Combo combo)
+    /// <summary>
+    /// <para>set <paramref name="fieldName"/> null to select any</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="fieldName"></param>
+    /// <param name="conditions"></param>
+    /// <param name="combo"></param>
+    /// <returns></returns>
+    public int Sum(string tableName, FieldName? fieldName, Condition?[] conditions, ConditionCombo combo)
     {
         var query = new StringBuilder()
             .Append(Keywords.SelectCount)
             .Append(Keywords.Open);
-        if (field is null)
+        if (fieldName is null)
             query.Append(Keywords.Any);
         else
-            query.Append(field.Name.ToQuoted());
+            query.Append(QuoteName(fieldName.Name));
         query.Append(Keywords.Close)
             .Append(Keywords.From)
-            .Append(name.ToQuoted())
-            .AppendConditions(conditions, combo, SignTable);
+            .Append(QuoteName(tableName))
+           .Append(GetConditionsString(conditions, combo));
         return Convert.ToInt32(ExecuteScalar(query.ToString()));
     }
-
-    /// <summary>
-    /// Reads the table.
-    /// </summary>
-    /// <returns>The table.</returns>
-    /// <param name="tableName">Table name.</param>
-    /// <param name="items">Items.</param>
-    /// <param name="colNames">Col names.</param>
-    /// <param name="operations">Operations.</param>
-    /// <param name="colValues">Col values.</param>
-    //public SQLiteDataReader ReadTable(string tableName, string[] items, string[] colNames, string[] operations, string[] colValues)
-    //{
-    //    string queryString = "SELECT " + items[0];
-    //    for (int i = 1; i < items.Length; i++)
-    //    {
-    //        queryString += ", " + items[i];
-    //    }
-    //    queryString += " FROM " + tableName + " WHERE " + colNames[0] + " " + operations[0] + " " + colValues[0];
-    //    for (int i = 0; i < colNames.Length; i++)
-    //    {
-    //        queryString += " AND " + colNames[i] + " " + operations[i] + " " + colValues[0] + " ";
-    //    }
-    //    return ExecuteQuery(queryString);
-    //}
 }

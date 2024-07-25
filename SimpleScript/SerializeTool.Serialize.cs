@@ -10,11 +10,19 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="name"></param>
+    /// <param name="signTable"></param>
+    /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
+    /// <returns></returns>
     public static byte[] Serialize(object? obj, DataName name, SignTable signTable, Encoding? encoding)
     {
         var memory = new MemoryStream();
         using var writer = new SsStreamWriter(memory, false, signTable, encoding ?? Encoding.UTF8);
-        if (Serialize(obj, out var convert))
+        if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
             Serialize(obj, writer, name.Name, true);
@@ -26,7 +34,7 @@ partial class SerializeTool
     public static string Serialize(object? obj, DataName name, SignTable signTable, bool writeIntoMultiLines)
     {
         var writer = new SsStringWriter(writeIntoMultiLines, signTable);
-        if (Serialize(obj, out var convert))
+        if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
             Serialize(obj, writer, name.Name, true);
@@ -38,13 +46,13 @@ partial class SerializeTool
         using var file = File.Create(filePath);
         file.Write(Utf8_BOM);
         using var writer = new SsStreamWriter(file, writeIntoMultiLines, signTable, Encoding.UTF8);
-        if (Serialize(obj, out var convert))
+        if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
         else
             Serialize(obj, writer, name.Name, true);
     }
 
-    private static bool Serialize([NotNullWhen(false)] object? obj, [NotNullWhen(true)] out Func<object?, string>? convert)
+    private static bool SerializeSimpleType([NotNullWhen(false)] object? obj, [NotNullWhen(true)] out Func<object?, string>? convert)
     {
         convert = null;
         var type = obj?.GetType();
@@ -80,7 +88,7 @@ partial class SerializeTool
 
     private static void Serialize(object? obj, SsWriter writer, string? name, bool root)
     {
-        if (Serialize(obj, out var convert))
+        if (SerializeSimpleType(obj, out var convert))
         {
             writer.AppendValue(convert(obj));
             return;
@@ -95,7 +103,7 @@ partial class SerializeTool
             for (var i = 0; i < ((IDictionary)obj).Count; i++)
             {
                 enumer.MoveNext();
-                if (!Serialize(enumer.Key, out convert))
+                if (!SerializeSimpleType(enumer.Key, out convert))
                     continue;
                 writer.AppendName(convert(enumer.Key));
                 Serialize(enumer.Value, writer, null, false);

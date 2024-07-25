@@ -5,7 +5,7 @@ namespace LocalUtilities.TypeToolKit.Text;
 
 public static class HashTool
 {
-    public static string ToMd5HashString(this string str)
+    public static string ToMd5HashString(string str)
     {
         if (str is null)
             return "";
@@ -13,7 +13,7 @@ public static class HashTool
         return hash.Aggregate(string.Empty, (current, b) => current + b);
     }
 
-    public static string ToMd5HashString(this FileStream file)
+    public static string ToMd5HashString(FileStream file)
     {
         var sha = MD5.Create();
         var hash = sha.ComputeHash(file);

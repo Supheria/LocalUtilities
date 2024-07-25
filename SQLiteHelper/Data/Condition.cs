@@ -1,34 +1,54 @@
-﻿namespace LocalUtilities.SQLiteHelper.Data;
+﻿using LocalUtilities.TypeGeneral;
 
-public class Condition(string key, object value, Condition.Operates operate)
+namespace LocalUtilities.SQLiteHelper.Data;
+
+public class Condition : IRosterItem<string>
 {
-    public enum Operates
+    public string FieldName { get; }
+
+    public string PropertyName { get; }
+
+    public object? Value { get; set; }
+
+    public Keywords Operate { get; private set; }
+
+    public string Signature => PropertyName;
+
+    public Condition(string fieldName, string propertyName, object? value, Operators operate)
     {
-        Equal,
-        Less,
-        Greater,
-        LessOrEqual,
-        GreaterOrEqual,
+        FieldName = fieldName;
+        PropertyName = propertyName;
+        Value = value;
+        Operate = GetOperate(operate);
     }
 
-    public enum Combo
+    public Condition(string fieldName, object? value, Operators operate) : this(fieldName, fieldName, value, operate)
     {
-        Default,
-        Or,
-        And,
+
     }
 
-    public string Key { get; } = key;
-
-    public object Value { get; } = value;
-
-    public Keywords Operate { get; } = operate switch
+    private Keywords GetOperate(Operators operate)
     {
-        Operates.Equal => Keywords.Equal,
-        Operates.Less => Keywords.Less,
-        Operates.Greater => Keywords.Greater,
-        Operates.LessOrEqual => Keywords.LessOrEqual,
-        Operates.GreaterOrEqual => Keywords.GreaterOrEqual,
-        _ => Keywords.Blank
-    };
+        return operate switch
+        {
+            Operators.Equal => Keywords.Equal,
+            Operators.LessThan => Keywords.Less,
+            Operators.GreaterThan => Keywords.Greater,
+            Operators.LessThanOrEqualTo => Keywords.LessOrEqual,
+            Operators.GreaterThanOrEqualTo => Keywords.GreaterOrEqual,
+            _ => Keywords.Blank
+        };
+    }
+
+    public void SetOperate(Operators operate)
+    {
+        Operate = GetOperate(operate);
+    }
+
+    //public Condition(FieldValue? fieldValue, Operators operate)
+    //{
+    //    Name = fieldValue?.Name ?? "";
+    //    Value = fieldValue?.Value;
+    //    Operate = GetOperate(operate);
+    //}
 }

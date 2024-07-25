@@ -1,6 +1,6 @@
 ﻿namespace LocalUtilities.TypeGeneral;
 
-public enum OperatorTypes
+public enum Operators
 {
     Equal,
     LessThan,

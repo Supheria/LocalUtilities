@@ -10,10 +10,21 @@ namespace LocalUtilities.SimpleScript;
 
 partial class SerializeTool
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="name"></param>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="count"></param>
+    /// <param name="signTable"></param>
+    /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
+    /// <returns></returns>
     public static object? Deserialize(Type type, DataName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
     {
         encoding ??= Encoding.UTF8;
-        if (Deserialize(type, out var convert))
+        if (DeserializeSimpleType(type, out var convert))
         {
             var str = encoding.GetString(buffer, offset, count);
             return convert(str);
@@ -26,7 +37,7 @@ partial class SerializeTool
 
     public static object? Deserialize(Type type, DataName name, string str, SignTable signTable)
     {
-        if (Deserialize(type, out var convert))
+        if (DeserializeSimpleType(type, out var convert))
             return convert(str);
         var tokenizer = new Tokenizer(str, signTable);
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
@@ -34,7 +45,7 @@ partial class SerializeTool
         return null;
     }
 
-    private static bool Deserialize(Type type, [NotNullWhen(true)] out Func<string, object?>? convert)
+    private static bool DeserializeSimpleType(Type type, [NotNullWhen(true)] out Func<string, object?>? convert)
     {
         convert = null;
         if (type == TypeTable.Byte)
@@ -87,7 +98,7 @@ partial class SerializeTool
     {
         if (root is null)
             return null;
-        if (Deserialize(type, out var convert))
+        if (DeserializeSimpleType(type, out var convert))
             return convert(root.Value.Text);
         if (typeof(IDictionary).IsAssignableFrom(type))
         {
@@ -97,7 +108,7 @@ partial class SerializeTool
             var obj = Activator.CreateInstance(closeType);
             if (obj is null)
                 return null;
-            if (!Deserialize(pairType[0], out convert))
+            if (!DeserializeSimpleType(pairType[0], out convert))
                 return obj;
             foreach (var pair in root.Property)
             {
@@ -166,6 +177,17 @@ partial class SerializeTool
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="name"></param>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="count"></param>
+    /// <param name="signTable"></param>
+    /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
+    /// <returns></returns>
     public static T? Deserialize<T>(DataName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
     {
         return (T?)Deserialize(typeof(T), name, buffer, offset, count, signTable, encoding);
@@ -176,12 +198,28 @@ partial class SerializeTool
         return (T?)Deserialize(typeof(T), name, str, signTable);
     }
 
+    /// <summary>
+    /// use <see cref="Encoding.UTF8"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="name"></param>
+    /// <param name="signTable"></param>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
     public static T? DeserializeFile<T>(DataName name, SignTable signTable, string filePath)
     {
         var buffer = ReadFileBuffer(filePath);
         return (T?)Deserialize(typeof(T), name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);
     }
 
+    /// <summary>
+    /// use <see cref="Encoding.UTF8"/>
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="name"></param>
+    /// <param name="signTable"></param>
+    /// <param name="filePath"></param>
+    /// <returns></returns>
     public static object? DeserializeFile(Type type, DataName name, SignTable signTable, string filePath)
     {
         var buffer = ReadFileBuffer(filePath);

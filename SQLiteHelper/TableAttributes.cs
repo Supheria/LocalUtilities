@@ -1,5 +1,6 @@
 ﻿namespace LocalUtilities.SQLiteHelper;
 
+[AttributeUsage(AttributeTargets.Property)]
 public class TableField : Attribute
 {
     public string? Name { get; set; } = null;
