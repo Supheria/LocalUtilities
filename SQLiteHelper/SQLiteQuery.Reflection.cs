@@ -309,10 +309,10 @@ private static Keywords ConvertType(Type type)
     /// </summary>
     /// <param name="obj"></param>
     /// <returns>roster of <see cref="Operators.Equal"/> <see cref="Condition"/></returns>
-    public static Conditions GetConditions(object obj)
+    public static ConditionRoster GetConditions(object obj)
     {
         var type = obj.GetType();
-        var conditions = new Conditions();
+        var conditions = new ConditionRoster();
         foreach (var property in type.GetProperties())
         {
             if (NotField(property))
@@ -329,10 +329,10 @@ private static Keywords ConvertType(Type type)
     /// <param name="obj"></param>
     /// <param name="propertyNames"></param>
     /// <returns>roster of <see cref="Operators.Equal"/> <see cref="Condition"/></returns>
-    public static Conditions GetConditions(object obj, params string[] propertyNames)
+    public static ConditionRoster GetConditions(object obj, params string[] propertyNames)
     {
         var type = obj.GetType();
-        var conditions = new Conditions();
+        var conditions = new ConditionRoster();
         foreach (var propertyName in propertyNames)
         {
             var property = type.GetProperty(propertyName);

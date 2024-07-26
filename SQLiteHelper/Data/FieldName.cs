@@ -15,7 +15,7 @@ public class FieldName(string name, string properyName, Type type, bool isPrimar
 
     public Type Type { get; } = type;
 
-    public bool IsPrimaryKey { get; } = isPrimaryKey;
+    public bool IsPrimaryKey { get; set; } = isPrimaryKey;
 
     public PropertyInfo? Property { get; } = null;
 

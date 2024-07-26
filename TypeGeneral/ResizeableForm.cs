@@ -70,6 +70,7 @@ public abstract class ResizeableForm : Form, IInitializeable
     protected override void OnResizeEnd(EventArgs e)
     {
         base.OnResizeEnd(e);
+        Resizing = false;
         DrawClient();
     }
 

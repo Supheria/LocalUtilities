@@ -284,7 +284,7 @@ public partial class SQLiteQuery : IDisposable
     /// <param name="fieldNames">if empty will return empty array</param>
     /// <param name="condition"></param>
     /// <returns></returns>
-    public Properties[] SelectItems(string tableName, FieldName?[] fieldNames, Condition? condition)
+    public PropertyRoster[] SelectItems(string tableName, FieldName?[] fieldNames, Condition? condition)
     {
         return SelectItems(tableName, fieldNames, [condition], ConditionCombo.Default); 
     }
@@ -297,7 +297,7 @@ public partial class SQLiteQuery : IDisposable
     /// <param name="conditions"></param>
     /// <param name="combo"></param>
     /// <returns></returns>
-    public Properties[] SelectItems(string tableName, FieldName?[] fieldNames, Condition?[] conditions, ConditionCombo combo)
+    public PropertyRoster[] SelectItems(string tableName, FieldName?[] fieldNames, Condition?[] conditions, ConditionCombo combo)
     {
         var query = new StringBuilder()
             .Append(Keywords.Select);
@@ -320,10 +320,10 @@ public partial class SQLiteQuery : IDisposable
             .Append(QuoteName(tableName))
             .Append(GetConditionsString(conditions, combo));
         using var reader = ExecuteReader(query.ToString());
-        var objs = new List<Properties>();
+        var objs = new List<PropertyRoster>();
         while (reader.Read())
         {
-            var properties = new Properties();
+            var properties = new PropertyRoster();
             foreach (var fieldName in fieldNameList)
             {
                 var convert = ConvertType(reader, fieldName.Type);
@@ -441,7 +441,21 @@ public partial class SQLiteQuery : IDisposable
         query.Append(Keywords.Close)
             .Append(Keywords.From)
             .Append(QuoteName(tableName))
-           .Append(GetConditionsString(conditions, combo));
+            .Append(GetConditionsString(conditions, combo));
         return Convert.ToInt32(ExecuteScalar(query.ToString()));
+    }
+
+    public bool Exist(string tableName, object obj)
+    {
+        var conditon = GetCondition(obj, Operators.Equal);
+        var query = new StringBuilder()
+            .Append(Keywords.SelectCount)
+            .Append(Keywords.Open)
+            .Append(Keywords.Any)
+            .Append(Keywords.Close)
+            .Append(Keywords.From)
+            .Append(QuoteName(tableName))
+            .Append(GetConditionsString([conditon], ConditionCombo.Default));
+        return Convert.ToInt32(ExecuteScalar(query.ToString())) is not 0;
     }
 }

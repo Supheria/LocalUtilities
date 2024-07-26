@@ -7,6 +7,6 @@ using System.Threading.Tasks;
 
 namespace LocalUtilities.SQLiteHelper.Data;
 
-public class Properties : Roster<string, Property>
+public class PropertyRoster : Roster<string, Property>
 {
 }
