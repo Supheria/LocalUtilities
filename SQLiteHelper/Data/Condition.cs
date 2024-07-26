@@ -27,6 +27,11 @@ public class Condition : IRosterItem<string>
 
     }
 
+    public Condition(FieldName? field, object? value, Operators operate) : this(field?.Name ?? "", field?.PropertyName ?? "", value, operate)
+    {
+
+    }
+
     private Keywords GetOperate(Operators operate)
     {
         return operate switch

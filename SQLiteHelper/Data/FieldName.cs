@@ -19,11 +19,6 @@ public class FieldName(string name, string properyName, Type type, bool isPrimar
 
     public PropertyInfo? Property { get; } = null;
 
-    public FieldName(string name, Type type, bool isPrimaryKey) : this(name, name, type, isPrimaryKey)
-    {
-
-    }
-
     public FieldName(string name, PropertyInfo property, bool isPrimaryKey) : this(name, property.Name, property.PropertyType, isPrimaryKey)
     {
         Property = property;

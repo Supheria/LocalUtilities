@@ -274,7 +274,7 @@ private static Keywords ConvertType(Type type)
     /// <param name="propertyName"></param>
     /// <param name="operate"></param>
     /// <returns></returns>
-    public static Condition? GetCondition(object obj, string propertyName, Operators operate)
+    public static Condition? GetCondition(object obj, Operators operate, string propertyName)
     {
         var type = obj.GetType();
         var property = type.GetProperty(propertyName);

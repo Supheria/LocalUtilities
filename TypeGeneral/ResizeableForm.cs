@@ -35,53 +35,54 @@ public abstract class ResizeableForm : Form, IInitializeable
 
     protected class FormData
     {
-        public Size MinimumSize { get; set; }
+        public virtual Size MinimumSize { get; set; }
 
-        public Size Size { get; set; }
+        public virtual Size Size { get; set; }
 
-        public Point Location { get; set; }
+        public virtual Point Location { get; set; }
 
-        public FormWindowState WindowState { get; set; }
+        public virtual FormWindowState WindowState { get; set; }
 
-        public int Padding { get; set; }
+        public virtual int Padding { get; set; }
 
-        public FontData LabelFontData { get; set; } = new();
+        public virtual FontData LabelFontData { get; set; } = new();
 
-        public FontData ContentFontData { get; set; } = new();
+        public virtual FontData ContentFontData { get; set; } = new();
     }
 
     public ResizeableForm()
     {
-        //ResizeBegin += ResizeableForm_ResizeBegin;
-        //ResizeEnd += ResizeableForm_ResizeEnd;
-        SizeChanged += ResizeableForm_SizeChanged;
-        //Load += ResizeableForm_Load;
-        //Shown += ResizeableForm_Shown;
-        //FormClosing += ResizeableForm_FormClosing;
-        //InitializeComponent();
         AddOperation();
+    }
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        DrawClient();
+    }
+
+    protected override void OnResizeBegin(EventArgs e)
+    {
+        base.OnResizeBegin(e);
+        Resizing = true;
+    }
+
+    protected override void OnResizeEnd(EventArgs e)
+    {
+        base.OnResizeEnd(e);
+        DrawClient();
+    }
+
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (Resizing is false)
+            DrawClient();
     }
 
     protected virtual void AddOperation()
     {
 
-    }
-
-    private void ResizeableForm_ResizeBegin(object? sender, EventArgs e)
-    {
-        Resizing = true;
-    }
-
-    private void ResizeableForm_ResizeEnd(object? sender, EventArgs e)
-    {
-        Resizing = false;
-        DrawClient();
-    }
-
-    private void ResizeableForm_SizeChanged(object? sender, EventArgs e)
-    {
-        //if (Resizing is false)
-        DrawClient();
     }
 
     private void DrawClient()

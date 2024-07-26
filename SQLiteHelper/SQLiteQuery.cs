@@ -19,10 +19,10 @@ public partial class SQLiteQuery : IDisposable
 
     SQLiteCommand Command { get; }
 
-    SQLiteTransaction Transaction { get; set; }
+    SQLiteTransaction? Transaction { get; set; }
 
     /// <summary>
-    /// a <see cref="SQLiteTransaction"/> begins, and use <see cref="Dispose"/> to commit it
+    /// a <see cref="SQLiteTransaction"/> begins, use <see cref="Commit"/> or <see cref="Dispose"/> to commit it
     /// </summary>
     /// <param name="filePath"></param>
     public SQLiteQuery(string filePath)
@@ -34,17 +34,28 @@ public partial class SQLiteQuery : IDisposable
         Connection = new(query.ToString());
         Connection.Open();
         Command = Connection.CreateCommand();
-        Transaction = Connection.BeginTransaction();
     }
 
     public void Dispose()
     {
-        Transaction.Commit();
-        Transaction.Dispose();
+        Transaction?.Commit();
+        Transaction?.Dispose();
         Command.Dispose();
         Connection.Close();
         Connection.Dispose();
         GC.SuppressFinalize(this);
+    }
+
+    public void Begin()
+    {
+        Transaction = Connection.BeginTransaction();
+    }
+
+    public void Commit()
+    {
+        Transaction?.Commit();
+        Transaction?.Dispose();
+        Transaction = null;
     }
 
     private void ExecuteNonQuery(string query)
@@ -267,7 +278,66 @@ public partial class SQLiteQuery : IDisposable
     }
 
     /// <summary>
-    /// <para>set <paramref name="fieldNames"/> null or empty to select any</para>
+    /// <para>get properties from items of given fieldNames</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="fieldNames">if empty will return empty array</param>
+    /// <param name="condition"></param>
+    /// <returns></returns>
+    public Properties[] SelectItems(string tableName, FieldName?[] fieldNames, Condition? condition)
+    {
+        return SelectItems(tableName, fieldNames, [condition], ConditionCombo.Default); 
+    }
+
+    /// <summary>
+    /// <para>get properties from items of given fieldNames</para>
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="fieldNames">if empty will return empty array</param>
+    /// <param name="conditions"></param>
+    /// <param name="combo"></param>
+    /// <returns></returns>
+    public Properties[] SelectItems(string tableName, FieldName?[] fieldNames, Condition?[] conditions, ConditionCombo combo)
+    {
+        var query = new StringBuilder()
+            .Append(Keywords.Select);
+        if (fieldNames is null || fieldNames.Length is 0)
+            return [];
+        var fieldNameList = new List<FieldName>();
+        var first = true;
+        foreach (var fieldName in fieldNames)
+        {
+            if (fieldName is null)
+                continue;
+            fieldNameList.Add(fieldName);
+            if (!first)
+                query.Append(Keywords.Comma);
+            else
+                first = false;
+            query.Append(QuoteName(fieldName.Name));
+        }
+        query.Append(Keywords.From)
+            .Append(QuoteName(tableName))
+            .Append(GetConditionsString(conditions, combo));
+        using var reader = ExecuteReader(query.ToString());
+        var objs = new List<Properties>();
+        while (reader.Read())
+        {
+            var properties = new Properties();
+            foreach (var fieldName in fieldNameList)
+            {
+                var convert = ConvertType(reader, fieldName.Type);
+                var str = convert(reader.GetOrdinal(fieldName.Name));
+                var value = SerializeTool.Deserialize(fieldName.Type, new(), str, SignTable);
+                properties.TryAdd(new(fieldName.PropertyName, value));
+            }
+            objs.Add(properties);
+        }
+        return objs.ToArray();
+    }
+
+    /// <summary>
+    /// <para>get instances of <typeparamref name="T"/> from items</para>
     /// <para>set <paramref name="condition"/> null for no condition limit</para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -275,13 +345,13 @@ public partial class SQLiteQuery : IDisposable
     /// <param name="fieldNames"></param>
     /// <param name="condition"></param>
     /// <returns></returns>
-    public T[] SelectItems<T>(string tableName, FieldName[]? fieldNames, Condition? condition)
+    public T[] SelectItems<T>(string tableName, Condition? condition)
     {
-        return SelectItems<T>(tableName, fieldNames, [condition], ConditionCombo.Default);
+        return SelectItems<T>(tableName, [condition], ConditionCombo.Default);
     }
 
     /// <summary>
-    /// <para>set <paramref name="fieldNames"/> null or empty to select any</para>
+    /// <para>get instances of <typeparamref name="T"/> from items</para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="tableName"></param>
@@ -289,28 +359,18 @@ public partial class SQLiteQuery : IDisposable
     /// <param name="conditions"></param>
     /// <param name="combo"></param>
     /// <returns></returns>
-    public T[] SelectItems<T>(string tableName, FieldName[]? fieldNames, Condition?[] conditions, ConditionCombo combo)
+    public T[] SelectItems<T>(string tableName, Condition?[] conditions, ConditionCombo combo)
     {
         var query = new StringBuilder()
-            .Append(Keywords.Select);
-        if (fieldNames is null || fieldNames.Length is 0)
-        {
-            query.Append(Keywords.Any);
-            fieldNames = GetFieldNames<T>();
-        }
-        else
-        {
-            query.AppendJoin(Keywords.Comma.ToString(), fieldNames, (sb, field) =>
-            {
-                sb.Append(QuoteName(field.Name));
-            });
-        }
-        query.Append(Keywords.From)
+            .Append(Keywords.Select)
+            .Append(Keywords.Any)
+            .Append(Keywords.From)
             .Append(QuoteName(tableName))
             .Append(GetConditionsString(conditions, combo));
         using var reader = ExecuteReader(query.ToString());
         var type = typeof(T);
         var objs = new List<T>();
+        var fieldNames = GetFieldNames<T>();
         while (reader.Read())
         {
             var obj = Activator.CreateInstance(type);

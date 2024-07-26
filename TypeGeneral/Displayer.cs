@@ -43,10 +43,12 @@ public abstract class Displayer : PictureBox
 
     public virtual void Redraw()
     {
-        if (ClientSize == Image?.Size || ClientWidth is 0 || ClientHeight is 0)
+        if (ClientSize == Image?.Size)
             return;
         Image?.Dispose();
-        Image = new Bitmap(ClientWidth, ClientHeight);
+        var width = ClientWidth > 0 ? ClientWidth : 1;
+        var height = ClientHeight > 0 ? ClientHeight : 1;
+        Image = new Bitmap(width, height);
     }
 
     public virtual void EnableListener()
