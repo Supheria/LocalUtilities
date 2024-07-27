@@ -16,17 +16,6 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
         set => RosterMap[signature] = value;
     }
 
-    public TItem[] RosterList
-    {
-        get => RosterMap.Values.ToArray();
-        set
-        {
-            RosterMap.Clear();
-            foreach (var item in value)
-                RosterMap.TryAdd(item.Signature, item);
-        }
-    }
-
     public int Count => RosterMap.Count;
 
     public bool IsReadOnly => false;
@@ -39,6 +28,12 @@ public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSi
     public bool TryGetValue(TSignature signature, [NotNullWhen(true)] out TItem? value)
     {
         return RosterMap.TryGetValue(signature, out value);
+    }
+
+    public void AddArange(IList<TItem> arrange)
+    {
+        foreach (var item in arrange)
+            RosterMap.TryAdd(item.Signature, item);
     }
 
     public void Clear()

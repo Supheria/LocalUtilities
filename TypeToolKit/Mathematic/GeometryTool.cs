@@ -120,12 +120,12 @@ public static class GeometryTool
         return edges;
     }
 
-    public static List<Rectangle> CutRectLoopRectsInRange(this Rectangle target, Rectangle range)
+    public static List<Rectangle> CutRectLoopRectsInRange(Rectangle source, Rectangle range)
     {
 
-        if (target.Width is 0 || target.Height is 0)
+        if (source.Width is 0 || source.Height is 0)
             return [];
-        SiteRectInRange(target, range, out var left, out var right, out var top, out var bottom);
+        SiteRectInRange(source, range, out var left, out var right, out var top, out var bottom);
         if (left > right && top > bottom)
             return [
                 new(range.Left, range.Top, right - range.Left, bottom - range.Top),
