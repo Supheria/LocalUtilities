@@ -4,10 +4,7 @@ using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Data.SQLite;
-using System.Reflection;
 using System.Text;
-using System.Transactions;
-using System.Xml.Linq;
 
 namespace LocalUtilities.SQLiteHelper;
 
@@ -260,7 +257,7 @@ public partial class SQLiteQuery : IDisposable
            .Append(QuoteName(tableName))
            .Append(Keywords.Set);
         var first = true;
-        foreach(var field in fieldValues)
+        foreach (var field in fieldValues)
         {
             if (field.IsPrimaryKey)
                 continue;
@@ -286,7 +283,7 @@ public partial class SQLiteQuery : IDisposable
     /// <returns></returns>
     public PropertyRoster[] SelectItems(string tableName, FieldName?[] fieldNames, Condition? condition)
     {
-        return SelectItems(tableName, fieldNames, [condition], ConditionCombo.Default); 
+        return SelectItems(tableName, fieldNames, [condition], ConditionCombo.Default);
     }
 
     /// <summary>

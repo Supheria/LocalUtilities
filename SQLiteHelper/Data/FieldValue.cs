@@ -1,6 +1,4 @@
-﻿using LocalUtilities.TypeGeneral;
-
-namespace LocalUtilities.SQLiteHelper.Data;
+﻿namespace LocalUtilities.SQLiteHelper.Data;
 
 public class FieldValue(string name, object? value, bool isPrimaryKey)
 {

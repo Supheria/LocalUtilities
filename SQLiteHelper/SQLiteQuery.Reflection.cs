@@ -2,16 +2,9 @@
 using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit;
-using LocalUtilities.TypeToolKit.Text;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalUtilities.SQLiteHelper;
 
@@ -68,7 +61,7 @@ partial class SQLiteQuery
         return sb.ToString();
     }
 
-private static Keywords ConvertType(Type type)
+    private static Keywords ConvertType(Type type)
     {
         if (type == TypeTable.Byte ||
             type == TypeTable.Char ||
@@ -204,7 +197,7 @@ private static Keywords ConvertType(Type type)
         var property = type.GetProperty(propertyName);
         if (property is null || NotField(property))
             return null;
-        GetFieldNameInfo(property, out var name, out var isPrimaryKey); 
+        GetFieldNameInfo(property, out var name, out var isPrimaryKey);
         return new(name, property.GetValue(obj), isPrimaryKey);
     }
 
