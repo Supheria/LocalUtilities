@@ -27,17 +27,17 @@ public static class GeometryTool
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="target"></param>
+    /// <param name="source"></param>
     /// <param name="range"></param>
-    /// <param name="result">not null when return true, and the value is <paramref name="target"/> cutten within <paramref name="range"/>; otherwise null</param>
-    /// <returns>if <paramref name="target"/> is out of <paramref name="target"/> will return false, otherwise will return true</returns>
-    public static bool CutRectInRange(this Rectangle target, Rectangle range, [NotNullWhen(true)] out Rectangle? result)
+    /// <param name="result">not null when return true, and the value is <paramref name="source"/> cutten within <paramref name="range"/>; otherwise null</param>
+    /// <returns>if <paramref name="source"/> is out of <paramref name="source"/> will return false, otherwise will return true</returns>
+    public static bool CutRectInRange(this Rectangle source, Rectangle range, [NotNullWhen(true)] out Rectangle? result)
     {
         result = null;
-        var left = target.Left;
-        var right = target.Right;
-        var top = target.Top;
-        var bottom = target.Bottom;
+        var left = source.Left;
+        var right = source.Right;
+        var top = source.Top;
+        var bottom = source.Bottom;
         if (left < range.Left)
         {
             if (right <= range.Left)
@@ -62,7 +62,7 @@ public static class GeometryTool
                 return false;
             bottom = range.Bottom;
         }
-        result = new(left, top, right - left, bottom - top);
+        result = new(left, top, right - left-1, bottom - top-1);
         return true;
     }
 

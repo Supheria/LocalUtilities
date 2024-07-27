@@ -12,6 +12,8 @@ public class Pannel : Control
 
     protected int ClientHeight => ClientRectangle.Height;
 
+    protected int ClientRight => ClientRectangle.Right;
+
     public virtual new Size Padding { get; set; }
 
     public Pannel()
@@ -43,11 +45,23 @@ public class Pannel : Control
 
     public virtual void EnableListener()
     {
-
+        foreach (var control in Controls)
+        {
+            if (control is Displayer displayer)
+                displayer.EnableListener();
+            else if (control is Pannel pannel)
+                pannel.EnableListener();
+        }
     }
 
     public virtual void DisableListener()
     {
-
+        foreach (var control in Controls)
+        {
+            if (control is Displayer displayer)
+                displayer.DisableListener();
+            else if (control is Pannel pannel)
+                pannel.DisableListener();
+        }
     }
 }

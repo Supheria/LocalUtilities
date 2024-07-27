@@ -136,6 +136,8 @@ partial class SerializeTool
                         ((Array)obj).SetValue(itemObj, i);
                 }
             }
+            else
+                obj = Array.CreateInstance(itemType, 0);
             return obj;
         }
         else if (typeof(ICollection).IsAssignableFrom(type))

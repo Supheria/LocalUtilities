@@ -87,4 +87,32 @@ public static class BitmapTool
         using var g = Graphics.FromImage(source);
         g.DrawImage(template, part);
     }
+
+    /// <summary>
+    /// 反色
+    /// </summary>
+    /// <param name="color"></param>
+    /// <returns></returns>
+    public static Color GetInverseColor(Color color)
+    {
+        var r = 255 - color.R;
+        var g = 255 - color.G;
+        var b = 255 - color.B;
+        return Color.FromArgb(color.A, r, g, b);
+    }
+
+    /// <summary>
+    /// 混合二色
+    /// </summary>
+    /// <param name="color1"></param>
+    /// <param name="color2"></param>
+    /// <returns></returns>
+    public static Color GetMixedColor(Color color1, Color color2)
+    {
+        var a = (color1.A + color2.A) / 2;
+        var r = (color1.R + color2.R) / 2;
+        var g = (color1.G + color2.G) / 2;
+        var b = (color1.B + color2.B) / 2;
+        return Color.FromArgb(a, r, g, b);
+    }
 }
