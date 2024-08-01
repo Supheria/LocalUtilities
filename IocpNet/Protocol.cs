@@ -9,13 +9,15 @@ public abstract class Protocol : INetLogger
 
     public event NetEventHandler<CommandReceiver>? OnReceiveCommand;
 
+    public const int ReceiveBufferSizeMin = 1024;
+
     public NetEventHandler<string>? OnLog { get; set; }
 
     protected Socket? Socket { get; set; } = null;
 
     public SocketInfo SocketInfo { get; } = new();
 
-    DynamicBuffer ReceiveBuffer { get; } = new(ConstTabel.InitialBufferSize);
+    DynamicBuffer ReceiveBuffer { get; } = new();
 
     public string GetLog(string message)
     {
@@ -38,8 +40,9 @@ public abstract class Protocol : INetLogger
 
     protected void ReceiveAsync()
     {
-        var receiveArgs = new SocketAsyncEventArgs();
-        receiveArgs.SetBuffer(new byte[ReceiveBuffer.TotolCount], 0, ReceiveBuffer.TotolCount);
+        using var receiveArgs = new SocketAsyncEventArgs();
+        var bufferSize = Math.Max(ReceiveBuffer.DataCount, ReceiveBufferSizeMin);
+        receiveArgs.SetBuffer(new byte[bufferSize], 0, bufferSize);
         receiveArgs.Completed += (_, args) => ProcessReceive(args);
         try
         {
@@ -89,14 +92,23 @@ public abstract class Protocol : INetLogger
             this.HandleException(ex);
             Dispose();
         }
+        finally
+        {
+            receiveArgs.Dispose();
+        }
     }
 
     public void SendAsync(CommandSender sender)
     {
+        SendAsync(sender.GetPacket());
+    }
+
+    public void SendAsync(byte[] data)
+    {
         if (Socket is null)
             return;
-        var sendArgs = new SocketAsyncEventArgs();
-        sendArgs.SetBuffer(sender.GetPacket());
+        using var sendArgs = new SocketAsyncEventArgs();
+        sendArgs.SetBuffer(data);
         Socket.SendAsync(sendArgs);
     }
 }

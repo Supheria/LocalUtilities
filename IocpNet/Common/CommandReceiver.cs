@@ -28,9 +28,11 @@ public sealed class CommandReceiver : Command
         return packet.Length >= packetLength;
     }
 
-    public T? GetArgs<T>(string key)
+    public T GetArgs<T>(string key)
     {
-        var str = Args[key];
-        return SerializeTool.Deserialize<T>(new(), str, SignTable);
+        if (!Args.TryGetValue(key, out var str))
+            throw new NetException(ProtocolCode.MissingCommandArgs, key);
+        return SerializeTool.Deserialize<T>(new(), str, SignTable) ??
+                 throw new NetException(ProtocolCode.MissingCommandArgs, key);
     }
 }

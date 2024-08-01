@@ -1,23 +1,8 @@
 ﻿namespace LocalUtilities.IocpNet;
 
-public class DynamicBuffer(int bufferSize)
+public class DynamicBuffer()
 {
-    byte[] Buffer { get; set; } = new byte[bufferSize];
-
-    public int TotolCount
-    {
-        get => Buffer.Length;
-        set
-        {
-            try
-            {
-                var buffer = new byte[value];
-                Array.Copy(Buffer, 0, buffer, 0, DataCount);
-                Buffer = buffer;
-            }
-            catch { }
-        }
-    }
+    byte[] Buffer { get; set; } = [];
 
     public int DataCount { get; private set; } = 0;
 
@@ -34,23 +19,29 @@ public class DynamicBuffer(int bufferSize)
     public void Clear()
     {
         lock (Buffer)
+        {
             DataCount = 0;
+            Buffer = [];
+        }
     }
 
     public void RemoveData(int dataCount)
     {
         lock (Buffer)
         {
-            if (dataCount >= TotolCount || dataCount >= DataCount)
+            if (dataCount >= DataCount)
             {
                 DataCount = 0;
+                Buffer = [];
                 return;
             }
             DataCount -= dataCount;
+            var buffer = new byte[DataCount];
             for (var i = 0; i < DataCount; i++)
             {
-                Buffer[i] = Buffer[dataCount + i];
+                buffer[i] = Buffer[dataCount + i];
             }
+            Buffer = buffer;
         }
     }
 
@@ -58,51 +49,14 @@ public class DynamicBuffer(int bufferSize)
     {
         lock (Buffer)
         {
-            if (data.Length is 0)
+            if (data.Length is 0 || count is 0)
                 return;
-            if (TotolCount - DataCount < count)
-            {
-                var totalCount = count + DataCount;
-                var buffer = new byte[totalCount];
-                Array.Copy(Buffer, 0, buffer, 0, DataCount);
-                Buffer = buffer;
-            }
-            Array.Copy(data, offset, Buffer, DataCount, count);
+            var dataCount = count + DataCount;
+            var buffer = new byte[dataCount];
+            Array.Copy(Buffer, 0, buffer, 0, DataCount);
+            Array.Copy(data, offset, buffer, DataCount, count);
+            Buffer = buffer;
             DataCount += count;
         }
     }
-
-    //public void WriteValue(byte value)
-    //{
-    //    WriteData([value]);
-    //}
-
-    //public void WriteValue(byte[] value, int offset, int count)
-    //{
-    //    WriteData(value, offset, count);
-    //}
-
-    //public void WriteValue(short value)
-    //{
-    //    var data = BitConverter.GetBytes(value);
-    //    WriteData(data);
-    //}
-
-    //public void WriteValue(int value)
-    //{
-    //    var data = BitConverter.GetBytes(value);
-    //    WriteData(data);
-    //}
-
-    //public void WriteValue(long value)
-    //{
-    //    var data = BitConverter.GetBytes(value);
-    //    WriteData(data);
-    //}
-
-    //public void WriteValue(string value)
-    //{
-    //    var data = Encoding.UTF8.GetBytes(value);
-    //    WriteData(data);
-    //}
 }

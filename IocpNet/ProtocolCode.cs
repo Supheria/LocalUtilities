@@ -4,4 +4,5 @@ public enum ProtocolCode
 {
     SocketClosed,
     DataOutLimit,
+    MissingCommandArgs,
 }

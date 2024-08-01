@@ -3,7 +3,7 @@ using LocalUtilities.TypeToolKit.Mathematic;
 
 namespace LocalUtilities.TypeGeneral;
 
-public class Coordinate(int x, int y) : IArrayStringConvertable
+public class Coordinate(int x, int y)
 {
     public int X { get; private set; } = x;
 
@@ -38,12 +38,12 @@ public class Coordinate(int x, int y) : IArrayStringConvertable
         return new((coordinate.X / factor).ToRoundInt(), (coordinate.Y / factor).ToRoundInt());
     }
 
-    public static Coordinate operator +(Coordinate left, Coordinate right)
+    public static Coordinate operator +(Coordinate left, (int X, int Y) right)
     {
         return new(left.X + right.X, left.Y + right.Y);
     }
 
-    public static Coordinate operator -(Coordinate left, Coordinate right)
+    public static Coordinate operator -(Coordinate left, (int X, int Y) right)
     {
         return new(left.X - right.X, left.Y - right.Y);
     }
@@ -56,27 +56,6 @@ public class Coordinate(int x, int y) : IArrayStringConvertable
     public override bool Equals(object? obj)
     {
         return this == obj;
-    }
-
-    public string ToArrayString()
-    {
-        return (X, Y).ToArrayString();
-    }
-
-    public void ParseArrayString(string str)
-    {
-        var array = str.ToArray();
-        if (array.Length is not 2 ||
-            !int.TryParse(array[0], out var x) ||
-            !int.TryParse(array[1], out var y))
-            return;
-        X = x;
-        Y = y;
-    }
-
-    public override string ToString()
-    {
-        return ToArrayString();
     }
 
     public static implicit operator PointF(Coordinate? coordinate)

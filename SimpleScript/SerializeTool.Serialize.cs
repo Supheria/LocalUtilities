@@ -20,7 +20,7 @@ partial class SerializeTool
     /// <returns></returns>
     public static byte[] Serialize(object? obj, DataName name, SignTable signTable, Encoding? encoding)
     {
-        var memory = new MemoryStream();
+        using var memory = new MemoryStream();
         using var writer = new SsStreamWriter(memory, false, signTable, encoding ?? Encoding.UTF8);
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
@@ -79,8 +79,6 @@ partial class SerializeTool
             convert = o => ((Color)o!).Name;
         else if (type == TypeTable.DateTime)
             convert = o => ((DateTime)o!).ToBinary().ToString();
-        else if (typeof(IArrayStringConvertable).IsAssignableFrom(type))
-            convert = o => ((IArrayStringConvertable)o!).ToArrayString();
         else
             return false;
         return true;

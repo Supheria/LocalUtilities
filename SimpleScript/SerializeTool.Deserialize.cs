@@ -78,17 +78,6 @@ partial class SerializeTool
             convert = str => Color.FromName(str);
         else if (type == TypeTable.DateTime)
             convert = str => DateTime.FromBinary(str.ToLong());
-        else if (typeof(IArrayStringConvertable).IsAssignableFrom(type))
-        {
-            convert = str =>
-            {
-                var obj = Activator.CreateInstance(type);
-                if (obj is not IArrayStringConvertable iarr)
-                    return null;
-                iarr.ParseArrayString(str);
-                return iarr;
-            };
-        }
         else
             return false;
         return true;
