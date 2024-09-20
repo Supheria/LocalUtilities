@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.TypeGeneral;
 
-public abstract class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : IRosterItem<TSignature>
+public class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : IRosterItem<TSignature>
 {
     protected ConcurrentDictionary<TSignature, TItem> RosterMap { get; set; } = [];
 
