@@ -1,5 +1,4 @@
 ﻿using LocalUtilities.TypeGeneral;
-using System.Diagnostics.CodeAnalysis;
 
 namespace LocalUtilities.TypeToolKit.Mathematic;
 

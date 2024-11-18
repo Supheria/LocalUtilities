@@ -158,7 +158,6 @@ public partial class SQLiteQuery : IDisposable
         }
         query.Append(Keywords.Close);
         ExecuteNonQuery(query.ToString());
-
     }
 
     public void InsertItems<T>(string tableName, T[] objs)

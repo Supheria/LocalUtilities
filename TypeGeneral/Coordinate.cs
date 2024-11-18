@@ -1,5 +1,4 @@
-﻿using LocalUtilities.TypeToolKit.Convert;
-using LocalUtilities.TypeToolKit.Mathematic;
+﻿using LocalUtilities.TypeToolKit.Mathematic;
 
 namespace LocalUtilities.TypeGeneral;
 
