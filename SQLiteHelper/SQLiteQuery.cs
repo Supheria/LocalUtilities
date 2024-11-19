@@ -75,6 +75,7 @@ public partial class SQLiteQuery : IDisposable
 
     public void CreateTable(string tableName, FieldName[] fieldNames)
     {
+        var hasPrimaryKey = false;
         var query = new StringBuilder()
             .Append(Keywords.CreateTableIfNotExists)
             .Append(QuoteName(tableName))
@@ -84,11 +85,15 @@ public partial class SQLiteQuery : IDisposable
                 sb.Append(QuoteName(field.Name))
                 .Append(ConvertType(field.Type));
                 if (field.IsPrimaryKey)
+                {
                     sb.Append(Keywords.Blank)
                     .Append(Keywords.PrimaryKeyNotNull);
+                    hasPrimaryKey = true;
+                }
             })
-            .Append(Keywords.Close)
-            .Append(Keywords.WithoutRowid);
+            .Append(Keywords.Close);
+        if (hasPrimaryKey)
+            query.Append(Keywords.WithoutRowid);
         ExecuteNonQuery(query.ToString());
     }
 
@@ -100,6 +105,7 @@ public partial class SQLiteQuery : IDisposable
             .Append(QuoteName(tableName))
             .Append(Keywords.Open);
         var first = true;
+        var hasPrimaryKey = false;
         foreach (var property in type.GetProperties(Authority))
         {
             if (NotField(property))
@@ -112,11 +118,15 @@ public partial class SQLiteQuery : IDisposable
             query.Append(QuoteName(name))
                 .Append(ConvertType(property.PropertyType));
             if (isPrimaryKey)
+            {
                 query.Append(Keywords.Blank)
                     .Append(Keywords.PrimaryKeyNotNull);
+                hasPrimaryKey = true;
+            }
         }
-        query.Append(Keywords.Close)
-            .Append(Keywords.WithoutRowid);
+        query.Append(Keywords.Close);
+        if (hasPrimaryKey)
+            query.Append(Keywords.WithoutRowid);
         ExecuteNonQuery(query.ToString());
     }
 
