@@ -4,6 +4,7 @@ using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Data.SQLite;
+using System.Linq;
 using System.Text;
 
 namespace LocalUtilities.SQLiteHelper;
@@ -71,6 +72,24 @@ public partial class SQLiteQuery : IDisposable
     {
         Command.CommandText = query;
         return Command.ExecuteScalar();
+    }
+
+    public List<string> ListAllTableNames()
+    {
+        var query = new StringBuilder()
+            .Append(Keywords.Select)
+            .Append(QuoteName("name"))
+            .Append(Keywords.From)
+            .Append(QuoteName("sqlite_master"))
+            .Append(Keywords.Where)
+            .Append(QuoteName("type"))
+            .Append(Keywords.Equal)
+            .Append(QuoteValue("table"));
+        var reader = ExecuteReader(query.ToString());
+        var names = new List<string>();
+        while (reader.Read())
+            names.Add((string)reader["name"]);
+        return names;
     }
 
     public void CreateTable(string tableName, FieldName[] fieldNames)

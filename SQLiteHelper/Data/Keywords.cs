@@ -46,4 +46,6 @@ public class Keywords
     public static Keywords Integer { get; } = new(nameof(Integer));
     public static Keywords Real { get; } = new(nameof(Real));
     public static Keywords SelectCount { get; } = new("Select Count");
+    public static Keywords SqliteMaster { get; } = new("Sqlite_Master");
+    public static Keywords Type { get; } = new("Type");
 }
