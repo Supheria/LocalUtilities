@@ -31,7 +31,8 @@ public class Keywords
     public static Keywords Version { get; } = new(nameof(Version));
     public static Keywords Select { get; } = new(nameof(Select));
     public static Keywords From { get; } = new(nameof(From));
-    public static Keywords InsertInto { get; } = new("Insert Into");
+    public static Keywords InsertOrIgnoreInto { get; } = new("Insert Or Ignore Into");
+    public static Keywords InsertOrReplaceInto { get; } = new("Insert Or Replace Into");
     public static Keywords Values { get; } = new(nameof(Values));
     public static Keywords Update { get; } = new(nameof(Update));
     public static Keywords Set { get; } = new(nameof(Set));
@@ -48,4 +49,5 @@ public class Keywords
     public static Keywords SelectCount { get; } = new("Select Count");
     public static Keywords SqliteMaster { get; } = new("Sqlite_Master");
     public static Keywords Type { get; } = new("Type");
+    public static Keywords Unique { get; } = new("Unique");
 }

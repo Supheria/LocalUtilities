@@ -101,13 +101,14 @@ partial class SQLiteQuery
         return property.GetCustomAttribute<TableIgnore>() is not null || property.SetMethod is null;
     }
 
-    private static void GetFieldNameInfo(PropertyInfo property, out string name, out bool isPrimaryKey)
+    private static void GetFieldNameInfo(PropertyInfo property, out string name, out bool isPrimaryKey, out bool isUnique)
     {
         var fieldAtrribute = property.GetCustomAttribute<TableField>();
         name = fieldAtrribute?.Name ?? property.Name;
         if (name.Contains(Keywords.Quote.ToString()) || name.Contains(Keywords.DoubleQuote.ToString()))
             name = property.Name;
         isPrimaryKey = fieldAtrribute?.IsPrimaryKey ?? false;
+        isUnique = fieldAtrribute?.IsUnique ?? false;
     }
 
     /// <summary>
@@ -122,8 +123,8 @@ partial class SQLiteQuery
         var property = type.GetProperty(propertyName);
         if (property is null || NotField(property))
             return null;
-        GetFieldNameInfo(property, out var name, out var isPrimaryKey);
-        return new(name, property, isPrimaryKey);
+        GetFieldNameInfo(property, out var name, out var isPrimaryKey, out var isUnique);
+        return new(name, property, isPrimaryKey, isUnique);
     }
 
     /// <summary>
@@ -138,9 +139,9 @@ partial class SQLiteQuery
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out var isUnique);
             if (isPrimaryKey)
-                return new(name, property, isPrimaryKey);
+                return new(name, property, isPrimaryKey, isUnique);
         }
         return null;
     }
@@ -158,8 +159,8 @@ partial class SQLiteQuery
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
-            fieldNames.Add(new(name, property, isPrimaryKey));
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out var isUnique);
+            fieldNames.Add(new(name, property, isPrimaryKey, isUnique));
         }
         return fieldNames.ToArray();
     }
@@ -179,8 +180,8 @@ partial class SQLiteQuery
             var property = type.GetProperty(propertyName);
             if (property is null || NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
-            fieldNames.Add(new(name, property, isPrimaryKey));
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out var isUnique);
+            fieldNames.Add(new(name, property, isPrimaryKey, isUnique));
         }
         return fieldNames.ToArray();
     }
@@ -197,7 +198,7 @@ partial class SQLiteQuery
         var property = type.GetProperty(propertyName);
         if (property is null || NotField(property))
             return null;
-        GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+        GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
         return new(name, property.GetValue(obj), isPrimaryKey);
     }
 
@@ -213,7 +214,7 @@ partial class SQLiteQuery
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
             if (isPrimaryKey)
                 return new(name, property.GetValue(obj), isPrimaryKey);
         }
@@ -233,7 +234,7 @@ partial class SQLiteQuery
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
             fieldValues.Add(new(name, property.GetValue(obj), isPrimaryKey));
         }
         return fieldValues.ToArray();
@@ -254,7 +255,7 @@ partial class SQLiteQuery
             var property = type.GetProperty(propertyName);
             if (property is null || NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
             fieldValues.Add(new(name, property.GetValue(obj), isPrimaryKey));
         }
         return fieldValues.ToArray();
@@ -273,7 +274,7 @@ partial class SQLiteQuery
         var property = type.GetProperty(propertyName);
         if (property is null || NotField(property))
             return null;
-        GetFieldNameInfo(property, out var name, out _);
+        GetFieldNameInfo(property, out var name, out _, out _);
         return new(name, property.Name, property.GetValue(obj), operate);
     }
 
@@ -290,7 +291,7 @@ partial class SQLiteQuery
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
             if (isPrimaryKey)
                 return new(name, property.Name, property.GetValue(obj), operate);
         }
@@ -310,7 +311,7 @@ partial class SQLiteQuery
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out _);
+            GetFieldNameInfo(property, out var name, out _, out _);
             conditions.TryAdd(new(name, property.Name, property.GetValue(obj), Operators.Equal));
         }
         return conditions;
@@ -331,7 +332,7 @@ partial class SQLiteQuery
             var property = type.GetProperty(propertyName);
             if (property is null || NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out _);
+            GetFieldNameInfo(property, out var name, out _, out _);
             conditions.TryAdd(new(name, property.Name, property.GetValue(obj), Operators.Equal));
         }
         return conditions;

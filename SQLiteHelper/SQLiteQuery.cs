@@ -85,7 +85,7 @@ public partial class SQLiteQuery : IDisposable
             .Append(QuoteName("type"))
             .Append(Keywords.Equal)
             .Append(QuoteValue("table"));
-        var reader = ExecuteReader(query.ToString());
+        using var reader = ExecuteReader(query.ToString());
         var names = new List<string>();
         while (reader.Read())
             names.Add((string)reader["name"]);
@@ -129,7 +129,7 @@ public partial class SQLiteQuery : IDisposable
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out var isUnique);
             if (!first)
                 query.Append(Keywords.Comma);
             else
@@ -142,6 +142,9 @@ public partial class SQLiteQuery : IDisposable
                     .Append(Keywords.PrimaryKeyNotNull);
                 hasPrimaryKey = true;
             }
+            else if (isUnique)
+                query.Append(Keywords.Blank)
+                    .Append(Keywords.Unique);
         }
         query.Append(Keywords.Close);
         if (hasPrimaryKey)
@@ -149,13 +152,16 @@ public partial class SQLiteQuery : IDisposable
         ExecuteNonQuery(query.ToString());
     }
 
-    public void InsertItem(string tableName, FieldValue[] fieldValues)
+    public void InsertItem(string tableName, FieldValue[] fieldValues, InsertTypes insertType)
     {
-        var query = new StringBuilder()
-             .Append(Keywords.InsertInto)
-             .Append(QuoteName(tableName))
-             .Append(Keywords.Values)
-             .Append(Keywords.Open)
+        var query = new StringBuilder();
+        if (insertType is InsertTypes.IgnoreIfExists)
+            query.Append(Keywords.InsertOrIgnoreInto);
+        else
+            query.Append(Keywords.InsertOrReplaceInto);
+        query.Append(QuoteName(tableName))
+            .Append(Keywords.Values)
+            .Append(Keywords.Open)
             .AppendJoin(Keywords.Comma.ToString(), fieldValues, (sb, value) =>
             {
                 var val = SerializeTool.Serialize(value.Value, new(), SignTable, false);
@@ -165,14 +171,17 @@ public partial class SQLiteQuery : IDisposable
         ExecuteNonQuery(query.ToString());
     }
 
-    public void InsertItem(string tableName, object obj)
+    public void InsertItem(string tableName, object obj, InsertTypes insertType)
     {
         var type = obj.GetType();
-        var query = new StringBuilder()
-             .Append(Keywords.InsertInto)
-             .Append(QuoteName(tableName))
-             .Append(Keywords.Values)
-             .Append(Keywords.Open);
+        var query = new StringBuilder();
+        if (insertType is InsertTypes.IgnoreIfExists)
+            query.Append(Keywords.InsertOrIgnoreInto);
+        else
+            query.Append(Keywords.InsertOrReplaceInto);
+        query.Append(QuoteName(tableName))
+            .Append(Keywords.Values)
+            .Append(Keywords.Open);
         var first = true;
         foreach (var property in type.GetProperties(Authority))
         {
@@ -189,7 +198,7 @@ public partial class SQLiteQuery : IDisposable
         ExecuteNonQuery(query.ToString());
     }
 
-    public void InsertItems<T>(string tableName, T[] objs)
+    public void InsertItems<T>(string tableName, T[] objs, InsertTypes insertType)
     {
         var type = typeof(T);
         var valueTable = new StringBuilder[objs.Length];
@@ -209,16 +218,19 @@ public partial class SQLiteQuery : IDisposable
             }
             first = false;
         }
-        var query = new StringBuilder()
-             .Append(Keywords.InsertInto)
-             .Append(QuoteName(tableName))
-             .Append(Keywords.Values)
-             .AppendJoin(Keywords.Comma.ToString(), valueTable, (sb, valueString) =>
-             {
-                 sb.Append(Keywords.Open)
-                 .Append(valueString)
-                 .Append(Keywords.Close);
-             });
+        var query = new StringBuilder();
+        if (insertType is InsertTypes.IgnoreIfExists)
+            query.Append(Keywords.InsertOrIgnoreInto);
+        else
+            query.Append(Keywords.InsertOrReplaceInto);
+        query.Append(QuoteName(tableName))
+            .Append(Keywords.Values)
+            .AppendJoin(Keywords.Comma.ToString(), valueTable, (sb, valueString) =>
+            {
+                sb.Append(Keywords.Open)
+                .Append(valueString)
+                .Append(Keywords.Close);
+            });
         ExecuteNonQuery(query.ToString());
     }
 
@@ -240,7 +252,7 @@ public partial class SQLiteQuery : IDisposable
         {
             if (NotField(property))
                 continue;
-            GetFieldNameInfo(property, out var name, out var isPrimaryKey);
+            GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
             var value = SerializeTool.Serialize(property.GetValue(obj), new(), SignTable, false);
             if (isPrimaryKey)
             {

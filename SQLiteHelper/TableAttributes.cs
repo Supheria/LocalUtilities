@@ -6,6 +6,8 @@ public class TableField : Attribute
     public string? Name { get; set; } = null;
 
     public bool IsPrimaryKey { get; set; } = false;
+
+    public bool IsUnique { get; set; } = false;
 }
 
 [AttributeUsage(AttributeTargets.Property)]

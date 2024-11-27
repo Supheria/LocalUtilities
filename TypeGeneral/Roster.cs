@@ -30,7 +30,7 @@ public class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature :
         return RosterMap.TryGetValue(signature, out value);
     }
 
-    public void AddArange(IList<TItem> arrange)
+    public void AddRange(IList<TItem> arrange)
     {
         foreach (var item in arrange)
             RosterMap.TryAdd(item.Signature, item);
