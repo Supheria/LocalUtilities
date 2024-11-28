@@ -35,6 +35,8 @@ internal class ParseTree
 
     public ParseTree? From { get; }
 
+    public bool IsDone { get; private set; } = false;
+
     public ParseTree(SignTable signTable)
     {
         SignTable = signTable;
@@ -64,6 +66,7 @@ internal class ParseTree
             From.Append(Builder);
             Builder = null;
         }
+        IsDone = true;
     }
 
     private void Append(Element? element)
@@ -77,13 +80,18 @@ internal class ParseTree
         switch (Step)
         {
             case Steps.None: // 0
-                if (ch == SignTable.Open ||
-                    ch == SignTable.Close)
+                if (ch == SignTable.Close)
                     throw SsParseException.UnexpectedDelimiter(token, Step.ToString());
                 if (ch == SignTable.Equal ||
                     ch == SignTable.Greater ||
                     ch == SignTable.Less)
                     throw SsParseException.UnexpectedOperator(token, Step.ToString());
+                if (ch == SignTable.Open)
+                {
+                    token.Submit();
+                    Step = Steps.ArrayOn;
+                    return this;
+                }
                 Step = Steps.Name;
                 Name = token.Submit();
                 Builder = new(new(), new(), Name, Level);

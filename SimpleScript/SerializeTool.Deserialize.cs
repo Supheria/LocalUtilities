@@ -21,7 +21,7 @@ partial class SerializeTool
     /// <param name="signTable"></param>
     /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
     /// <returns></returns>
-    public static object? Deserialize(Type type, DataName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
+    public static object? Deserialize(Type type, RootName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
     {
         encoding ??= Encoding.UTF8;
         if (DeserializeSimpleType(type, out var convert))
@@ -30,16 +30,28 @@ partial class SerializeTool
             return convert(str);
         }
         var tokenizer = new Tokenizer(buffer, offset, count, signTable, encoding);
+        if (name.Name is null)
+        {
+            //var root = new Element(new(), new(), new(), -1);
+            //root.Append();
+            return Deserialize(type, tokenizer.Element);
+        }
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
     }
 
-    public static object? Deserialize(Type type, DataName name, string str, SignTable signTable)
+    public static object? Deserialize(Type type, RootName name, string str, SignTable signTable)
     {
         if (DeserializeSimpleType(type, out var convert))
             return convert(str);
         var tokenizer = new Tokenizer(str, signTable);
+        if (name.Name is null)
+        {
+            //var root = new Element(new(), new(), new(), -1);
+            //root.Append(tokenizer.Element);
+            return Deserialize(type, tokenizer.Element);
+        }
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
@@ -179,12 +191,12 @@ partial class SerializeTool
     /// <param name="signTable"></param>
     /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
     /// <returns></returns>
-    public static T? Deserialize<T>(DataName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
+    public static T? Deserialize<T>(RootName name, byte[] buffer, int offset, int count, SignTable signTable, Encoding? encoding)
     {
         return (T?)Deserialize(typeof(T), name, buffer, offset, count, signTable, encoding);
     }
 
-    public static T? Deserialize<T>(DataName name, string str, SignTable signTable)
+    public static T? Deserialize<T>(RootName name, string str, SignTable signTable)
     {
         return (T?)Deserialize(typeof(T), name, str, signTable);
     }
@@ -197,7 +209,7 @@ partial class SerializeTool
     /// <param name="signTable"></param>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    public static T? DeserializeFile<T>(DataName name, SignTable signTable, string filePath)
+    public static T? DeserializeFile<T>(RootName name, SignTable signTable, string filePath)
     {
         var buffer = ReadFileBuffer(filePath);
         return (T?)Deserialize(typeof(T), name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);
@@ -211,7 +223,7 @@ partial class SerializeTool
     /// <param name="signTable"></param>
     /// <param name="filePath"></param>
     /// <returns></returns>
-    public static object? DeserializeFile(Type type, DataName name, SignTable signTable, string filePath)
+    public static object? DeserializeFile(Type type, RootName name, SignTable signTable, string filePath)
     {
         var buffer = ReadFileBuffer(filePath);
         return Deserialize(type, name, buffer, 0, buffer.Length, signTable, Encoding.UTF8);

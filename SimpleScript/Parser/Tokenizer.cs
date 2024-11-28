@@ -67,12 +67,14 @@ internal class Tokenizer
         }
         if (Tree.From is not null)
             throw new SsParseException($"interruption at line({Line}), column({Column})");
+        if (!Tree.IsDone)
+            Tree.Parse(new());
         AddToken();
         void AddToken()
         {
-            var token = Tree.Submit();
-            if (token is not null)
-                Element.Append(token);
+            var element = Tree.Submit();
+            if (element is not null)
+                Element.Append(element);
         }
     }
 

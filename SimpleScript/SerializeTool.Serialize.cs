@@ -18,38 +18,53 @@ partial class SerializeTool
     /// <param name="signTable"></param>
     /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
     /// <returns></returns>
-    public static byte[] Serialize(object? obj, DataName name, SignTable signTable, Encoding? encoding)
+    public static byte[] Serialize(object? obj, RootName name, SignTable signTable, Encoding? encoding)
     {
         using var memory = new MemoryStream();
         using var writer = new SsStreamWriter(memory, false, signTable, encoding ?? Encoding.UTF8);
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
+        else if (name.Name is null)
+            Serialize(obj, writer, false);
         else
-            Serialize(obj, writer, name.Name, true);
+        {
+            writer.AppendName(name.Name);
+            Serialize(obj, writer, true);
+        }
         var buffer = new byte[memory.Position];
         Array.Copy(memory.GetBuffer(), 0, buffer, 0, buffer.Length);
         return buffer;
     }
 
-    public static string Serialize(object? obj, DataName name, SignTable signTable, bool writeIntoMultiLines)
+    public static string Serialize(object? obj, RootName name, SignTable signTable, bool writeIntoMultiLines)
     {
         var writer = new SsStringWriter(writeIntoMultiLines, signTable);
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
+        else if (name.Name is null)
+            Serialize(obj, writer, false);
         else
-            Serialize(obj, writer, name.Name, true);
+        {
+            writer.AppendName(name.Name);
+            Serialize(obj, writer, true);
+        }
         return writer.ToString();
     }
 
-    public static void SerializeFile(object? obj, DataName name, SignTable signTable, bool writeIntoMultiLines, string filePath)
+    public static void SerializeFile(object? obj, RootName name, SignTable signTable, bool writeIntoMultiLines, string filePath)
     {
         using var file = File.Create(filePath);
         file.Write(Utf8_BOM);
         using var writer = new SsStreamWriter(file, writeIntoMultiLines, signTable, Encoding.UTF8);
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
+        else if (name.Name is null)
+            Serialize(obj, writer, false);
         else
-            Serialize(obj, writer, name.Name, true);
+        {
+            writer.AppendName(name.Name);
+            Serialize(obj, writer, true);
+        }
     }
 
     private static bool SerializeSimpleType([NotNullWhen(false)] object? obj, [NotNullWhen(true)] out Func<object?, string>? convert)
@@ -84,7 +99,7 @@ partial class SerializeTool
         return true;
     }
 
-    private static void Serialize(object? obj, SsWriter writer, string? name, bool root)
+    private static void Serialize(object? obj, SsWriter writer, bool appendBrace)
     {
         if (SerializeSimpleType(obj, out var convert))
         {
@@ -92,11 +107,10 @@ partial class SerializeTool
             return;
         }
         var type = obj.GetType();
-        if (root)
-            writer.AppendName(name ?? type.Name);
+        if (appendBrace)
+            writer.AppendStart();
         if (typeof(IDictionary).IsAssignableFrom(type))
         {
-            writer.AppendStart();
             var enumer = ((IDictionary)obj).GetEnumerator();
             for (var i = 0; i < ((IDictionary)obj).Count; i++)
             {
@@ -104,35 +118,30 @@ partial class SerializeTool
                 if (!SerializeSimpleType(enumer.Key, out convert))
                     continue;
                 writer.AppendName(convert(enumer.Key));
-                Serialize(enumer.Value, writer, null, false);
+                Serialize(enumer.Value, writer, true);
             }
-            writer.AppendEnd();
-            return;
         }
-        if (typeof(ICollection).IsAssignableFrom(type))
+        else if (typeof(ICollection).IsAssignableFrom(type))
         {
-            writer.AppendStart();
             var enumer = ((ICollection)obj).GetEnumerator();
             for (var i = 0; i < ((ICollection)obj).Count; i++)
             {
                 enumer.MoveNext();
-                Serialize(enumer.Current, writer, null, false);
+                Serialize(enumer.Current, writer, true);
             }
-            writer.AppendEnd();
-            return;
         }
         else
         {
-            writer.AppendStart();
             foreach (var property in type.GetProperties(Authority))
             {
                 if (NotSsItem(property))
                     continue;
                 var subObj = property.GetValue(obj, Authority, null, null, null);
                 writer.AppendName(GetSsItemName(property));
-                Serialize(subObj, writer, null, false);
+                Serialize(subObj, writer, true);
             }
-            writer.AppendEnd();
         }
+        if (appendBrace)
+            writer.AppendEnd();
     }
 }

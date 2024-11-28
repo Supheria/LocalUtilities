@@ -9,7 +9,7 @@ public abstract class ResizeableForm : Form, IInitializeable
 {
     public abstract string InitializeName { get; }
 
-    public string IniFileExtension { get; } = "form";
+    public string IniFileExtension { get; } = "ss";
 
     bool Resizing { get; set; } = false;
 
@@ -103,7 +103,7 @@ public abstract class ResizeableForm : Form, IInitializeable
         base.OnLoad(e);
         try
         {
-            var data = SerializeTool.DeserializeFile(FormDataType, new(InitializeName), SignTable, this.GetInitializeFilePath());
+            var data = SerializeTool.DeserializeFile(FormDataType, new(), SignTable, this.GetInitializeFilePath());
             OnLoad(data);
             if (data is not FormData formData)
                 return;
@@ -136,7 +136,7 @@ public abstract class ResizeableForm : Form, IInitializeable
             formData.Padding = Padding;
             formData.LabelFontData = LabelFontData;
             formData.ContentFontData = ContentFontData;
-            SerializeTool.SerializeFile(formData, new(InitializeName), SignTable, true, this.GetInitializeFilePath());
+            SerializeTool.SerializeFile(formData, new(), SignTable, true, this.GetInitializeFilePath());
         }
         catch { }
     }
