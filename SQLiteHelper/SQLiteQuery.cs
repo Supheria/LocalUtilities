@@ -4,7 +4,6 @@ using LocalUtilities.SQLiteHelper.Data;
 using LocalUtilities.TypeGeneral;
 using LocalUtilities.TypeToolKit.Text;
 using System.Data.SQLite;
-using System.Linq;
 using System.Text;
 
 namespace LocalUtilities.SQLiteHelper;

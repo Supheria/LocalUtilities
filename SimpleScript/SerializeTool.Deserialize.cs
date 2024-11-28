@@ -31,11 +31,7 @@ partial class SerializeTool
         }
         var tokenizer = new Tokenizer(buffer, offset, count, signTable, encoding);
         if (name.Name is null)
-        {
-            //var root = new Element(new(), new(), new(), -1);
-            //root.Append();
             return Deserialize(type, tokenizer.Element);
-        }
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
@@ -47,11 +43,7 @@ partial class SerializeTool
             return convert(str);
         var tokenizer = new Tokenizer(str, signTable);
         if (name.Name is null)
-        {
-            //var root = new Element(new(), new(), new(), -1);
-            //root.Append(tokenizer.Element);
             return Deserialize(type, tokenizer.Element);
-        }
         if (tokenizer.Element.Property.TryGetValue(name.Name, out var roots) || tokenizer.Element.Property.TryGetValue("", out roots))
             return Deserialize(type, roots.LastOrDefault());
         return null;
