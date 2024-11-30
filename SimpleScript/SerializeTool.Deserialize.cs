@@ -72,14 +72,6 @@ partial class SerializeTool
             convert = str => str;
         else if (TypeTable.Enum.IsAssignableFrom(type))
             convert = str => str.ToEnum(type);
-        else if (type == TypeTable.Point)
-            convert = str => str.ToPoint();
-        else if (type == TypeTable.Rectangle)
-            convert = str => str.ToRectangle();
-        else if (type == TypeTable.Size)
-            convert = str => str.ToSize();
-        else if (type == TypeTable.Color)
-            convert = str => Color.FromName(str);
         else if (type == TypeTable.DateTime)
             convert = str => DateTime.FromBinary(str.ToLong());
         else

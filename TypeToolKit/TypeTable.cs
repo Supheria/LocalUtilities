@@ -12,9 +12,5 @@ public sealed class TypeTable
     public static Type Double { get; } = typeof(double);
     public static Type Enum { get; } = typeof(Enum);
     public static Type String { get; } = typeof(string);
-    public static Type Point { get; } = typeof(Point);
-    public static Type Rectangle { get; } = typeof(Rectangle);
-    public static Type Size { get; } = typeof(Size);
-    public static Type Color { get; } = typeof(Color);
     public static Type DateTime { get; } = typeof(DateTime);
 }

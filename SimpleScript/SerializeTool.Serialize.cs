@@ -84,14 +84,6 @@ partial class SerializeTool
             type == TypeTable.String ||
             TypeTable.Enum.IsAssignableFrom(type))
             convert = o => o!.ToString() ?? "";
-        else if (type == TypeTable.Point)
-            convert = o => ((Point)o!).ToArrayString();
-        else if (type == TypeTable.Rectangle)
-            convert = o => ((Rectangle)o!).ToArrayString();
-        else if (type == TypeTable.Size)
-            convert = o => ((Size)o!).ToArrayString();
-        else if (type == TypeTable.Color)
-            convert = o => ((Color)o!).Name;
         else if (type == TypeTable.DateTime)
             convert = o => ((DateTime)o!).ToBinary().ToString();
         else

@@ -1,6 +1,6 @@
 ﻿using LocalUtilities.TypeToolKit.Mathematic;
 
-namespace LocalUtilities.TypeGeneral;
+namespace LocalUtilities;
 
 public class Coordinate(int x, int y)
 {
@@ -55,19 +55,5 @@ public class Coordinate(int x, int y)
     public override bool Equals(object? obj)
     {
         return this == obj;
-    }
-
-    public static implicit operator PointF(Coordinate? coordinate)
-    {
-        if (coordinate is null)
-            return new();
-        return new(coordinate.X, coordinate.Y);
-    }
-
-    public static implicit operator Point(Coordinate? coordinate)
-    {
-        if (coordinate is null)
-            return new();
-        return new(coordinate.X, coordinate.Y);
     }
 }

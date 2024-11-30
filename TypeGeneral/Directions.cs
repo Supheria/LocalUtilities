@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeGeneral;
+﻿namespace LocalUtilities;
 
 [Flags]
 public enum Directions

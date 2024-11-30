@@ -141,4 +141,44 @@ public static class GeometryTool
                 ];
         return [new(left, top, right - left, bottom - top)];
     }
+
+    public static bool PointInPolygon(List<CoordinateD> vertexes, double x, double y)
+    {
+        // helper method to determine if a point is inside the cell
+        // based on meowNET's answer from: https://stackoverflow.com/questions/4243042/c-sharp-point-in-polygon
+        bool result = false;
+        int j = vertexes.Count - 1;
+        for (int i = 0; i < vertexes.Count; i++)
+        {
+            if (vertexes[i].Y < y && vertexes[j].Y >= y ||
+                vertexes[j].Y < y && vertexes[i].Y >= y)
+            {
+                if (vertexes[i].X + (y - vertexes[i].Y) /
+                    (vertexes[j].Y - vertexes[i].Y) *
+                    (vertexes[j].X - vertexes[i].X) < x)
+                    result = !result;
+            }
+            j = i;
+        }
+        return result;
+    }
+
+    public static bool PointInPolygon(List<Coordinate> vertexes, int x, int y)
+    {
+        bool result = false;
+        int j = vertexes.Count - 1;
+        for (int i = 0; i < vertexes.Count; i++)
+        {
+            if (vertexes[i].Y < y && vertexes[j].Y >= y ||
+                vertexes[j].Y < y && vertexes[i].Y >= y)
+            {
+                if (vertexes[i].X + (y - vertexes[i].Y) /
+                    (vertexes[j].Y - vertexes[i].Y) *
+                    (vertexes[j].X - vertexes[i].X) < x)
+                    result = !result;
+            }
+            j = i;
+        }
+        return result;
+    }
 }
