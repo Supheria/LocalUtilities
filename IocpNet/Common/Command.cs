@@ -1,6 +1,4 @@
-﻿using LocalUtilities.SimpleScript;
-
-namespace LocalUtilities.IocpNet;
+﻿namespace LocalUtilities.IocpNet;
 
 public abstract class Command : INetLogger
 {
