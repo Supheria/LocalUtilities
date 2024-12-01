@@ -1,6 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Common;
-
-namespace LocalUtilities.SimpleScript.Serializer;
+﻿namespace LocalUtilities.SimpleScript;
 
 internal abstract class SsWriter(bool writeIntoMultiLines, SignTable signTable)
 {

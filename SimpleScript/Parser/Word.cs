@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Parser;
+﻿namespace LocalUtilities.SimpleScript;
 
 public class Word(string text, int line, int column)
 {

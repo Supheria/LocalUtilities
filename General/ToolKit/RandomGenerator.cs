@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeToolKit.Mathematic;
+﻿namespace LocalUtilities.General;
 
 public class RandomGenerator
 {

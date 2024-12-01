@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Serializer;
+﻿namespace LocalUtilities.SimpleScript;
 
 internal class SsFormatException(string message) : Exception(message)
 {

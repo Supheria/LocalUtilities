@@ -1,6 +1,4 @@
-﻿using LocalUtilities.TypeGeneral;
-
-namespace LocalUtilities.TypeToolKit.Mathematic;
+﻿namespace LocalUtilities.General;
 
 public static class EdgeTool
 {
@@ -71,7 +69,7 @@ public static class EdgeTool
     /// <returns></returns>
     private static List<Coordinate> AppendWidthPoints(double x, double y, double slope, double widthHalf)
     {
-        var c = widthHalf * slope / Math.Sqrt((slope * slope) + 1);
+        var c = widthHalf * slope / Math.Sqrt(slope * slope + 1);
         var x1 = x - c;
         var x2 = x + c;
         var y1 = y - (x1 - x) / slope;

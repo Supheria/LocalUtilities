@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities;
+﻿namespace LocalUtilities.General;
 
 public enum Operators
 {

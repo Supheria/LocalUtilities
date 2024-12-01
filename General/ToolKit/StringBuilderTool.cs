@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace LocalUtilities.TypeToolKit.Text;
+namespace LocalUtilities.General;
 
 public static class StringBuilderTool
 {

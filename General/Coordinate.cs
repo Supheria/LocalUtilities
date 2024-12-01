@@ -1,6 +1,4 @@
-﻿using LocalUtilities.TypeToolKit.Mathematic;
-
-namespace LocalUtilities;
+﻿namespace LocalUtilities.General;
 
 public class Coordinate(int x, int y)
 {

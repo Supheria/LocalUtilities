@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeToolKit.Convert;
+﻿namespace LocalUtilities.General;
 
 public static class SimpleTypes
 {

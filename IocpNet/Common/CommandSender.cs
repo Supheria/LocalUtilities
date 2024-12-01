@@ -1,6 +1,6 @@
 ﻿using LocalUtilities.SimpleScript;
 
-namespace LocalUtilities.IocpNet.Common;
+namespace LocalUtilities.IocpNet;
 
 public class CommandSender : Command
 {

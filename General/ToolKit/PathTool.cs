@@ -1,7 +1,6 @@
-﻿using LocalUtilities.TypeGeneral;
-using System.Text;
+﻿using System.Text;
 
-namespace LocalUtilities.TypeToolKit.Text;
+namespace LocalUtilities.General;
 
 public static class PathTool
 {

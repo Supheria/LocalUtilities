@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace LocalUtilities.TypeToolKit.Text;
+namespace LocalUtilities.General;
 
 public static class HashTool
 {

@@ -1,6 +1,6 @@
-﻿using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.General;
 
-namespace LocalUtilities.SQLiteHelper.Data;
+namespace LocalUtilities.SQLiteHelper;
 
 /// <summary>
 /// <para>roster of <see cref="Condition"/> using key of property name</para>

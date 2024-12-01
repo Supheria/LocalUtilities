@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities;
+﻿namespace LocalUtilities.General;
 
 public class Edge(Coordinate starter, Coordinate ender)
 {

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 
-namespace LocalUtilities.IocpNet.Common;
+namespace LocalUtilities.IocpNet;
 
 public class SocketInfo
 {

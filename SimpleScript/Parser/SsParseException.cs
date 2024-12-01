@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Parser;
+﻿namespace LocalUtilities.SimpleScript;
 
 internal class SsParseException(string message) : Exception(message)
 {

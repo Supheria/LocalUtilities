@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.IocpNet.Common;
+﻿namespace LocalUtilities.IocpNet;
 
 public delegate void NetEventHandler();
 

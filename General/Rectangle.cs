@@ -1,11 +1,4 @@
-﻿using LocalUtilities.TypeToolKit.Mathematic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LocalUtilities;
+﻿namespace LocalUtilities.General;
 
 public class Rectangle
 {
@@ -27,7 +20,7 @@ public class Rectangle
     {
         Left = left;
         Top = top;
-        Width = width; 
+        Width = width;
         Height = height;
     }
 

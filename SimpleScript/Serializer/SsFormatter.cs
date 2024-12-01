@@ -1,7 +1,6 @@
-﻿using LocalUtilities.SimpleScript.Common;
-using System.Text;
+﻿using System.Text;
 
-namespace LocalUtilities.SimpleScript.Serializer;
+namespace LocalUtilities.SimpleScript;
 
 public static class SsFormatter
 {

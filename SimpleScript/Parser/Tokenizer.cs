@@ -1,7 +1,6 @@
-﻿using LocalUtilities.SimpleScript.Common;
-using System.Text;
+﻿using System.Text;
 
-namespace LocalUtilities.SimpleScript.Parser;
+namespace LocalUtilities.SimpleScript;
 
 internal class Tokenizer
 {
@@ -54,7 +53,7 @@ internal class Tokenizer
     {
         while (BufferPosition < Buffer.Length)
         {
-            if (!Compose((char)Buffer[BufferPosition]))
+            if (!Compose(Buffer[BufferPosition]))
                 continue;
             var tree = Tree.Parse(Composed);
             if (tree is null)

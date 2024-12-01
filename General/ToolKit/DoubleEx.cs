@@ -1,6 +1,4 @@
-﻿using LocalUtilities.TypeGeneral;
-
-namespace LocalUtilities.TypeToolKit.Mathematic;
+﻿namespace LocalUtilities.General;
 
 public static class DoubleEx
 {

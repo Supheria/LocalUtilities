@@ -1,8 +1,5 @@
-﻿using LocalUtilities.SimpleScript;
-using LocalUtilities.SimpleScript.Common;
-using LocalUtilities.SQLiteHelper.Data;
-using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Text;
+﻿using LocalUtilities.General;
+using LocalUtilities.SimpleScript;
 using System.Data.SQLite;
 using System.Text;
 

@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeToolKit;
+﻿namespace LocalUtilities.General;
 
 public sealed class TypeTable
 {

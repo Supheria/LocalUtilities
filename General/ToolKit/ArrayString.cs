@@ -1,8 +1,8 @@
-﻿using LocalUtilities.TypeToolKit.Convert;
+﻿using LocalUtilities.General;
 using System.Collections;
 using System.Text;
 
-namespace LocalUtilities.TypeToolKit.Convert;
+namespace LocalUtilities.General;
 
 public static class ArrayString
 {

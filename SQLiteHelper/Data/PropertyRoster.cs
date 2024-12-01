@@ -1,6 +1,6 @@
-﻿using LocalUtilities.TypeGeneral;
+﻿using LocalUtilities.General;
 
-namespace LocalUtilities.SQLiteHelper.Data;
+namespace LocalUtilities.SQLiteHelper;
 
 public class PropertyRoster : Roster<string, Property>
 {

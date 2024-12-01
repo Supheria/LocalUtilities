@@ -1,8 +1,7 @@
-﻿using LocalUtilities.TypeGeneral;
-using LocalUtilities.TypeToolKit.Convert;
+﻿using LocalUtilities.General;
 using System.Text;
 
-namespace LocalUtilities.IocpNet.Common;
+namespace LocalUtilities.IocpNet;
 
 public static class NetLoggerHelper
 {

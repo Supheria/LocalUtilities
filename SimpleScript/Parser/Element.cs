@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Parser;
+﻿namespace LocalUtilities.SimpleScript;
 
 public class Element(/*Element? from, */Word name, Word @operator, Word value, int level)
 {

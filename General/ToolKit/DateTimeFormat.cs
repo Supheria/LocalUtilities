@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace LocalUtilities.TypeToolKit.Text;
+namespace LocalUtilities.General;
 
 public static class DateTimeFormat
 {

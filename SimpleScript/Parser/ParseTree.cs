@@ -1,6 +1,4 @@
-﻿using LocalUtilities.SimpleScript.Common;
-
-namespace LocalUtilities.SimpleScript.Parser;
+﻿namespace LocalUtilities.SimpleScript;
 
 internal class ParseTree
 {

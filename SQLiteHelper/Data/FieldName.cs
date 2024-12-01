@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace LocalUtilities.SQLiteHelper.Data;
+namespace LocalUtilities.SQLiteHelper;
 
 public class FieldName(string name, string properyName, Type type, bool isPrimaryKey, bool isUnique)
 {

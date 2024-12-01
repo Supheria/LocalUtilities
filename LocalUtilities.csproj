@@ -32,4 +32,12 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="General\Convert\" />
+    <Folder Include="General\Graph\" />
+    <Folder Include="General\Mathematic\" />
+    <Folder Include="General\Text\" />
+    <Folder Include="TypeToolKit\" />
+  </ItemGroup>
+
 </Project>

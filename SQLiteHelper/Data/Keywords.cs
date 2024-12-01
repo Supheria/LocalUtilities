@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SQLiteHelper.Data;
+﻿namespace LocalUtilities.SQLiteHelper;
 
 public class Keywords
 {

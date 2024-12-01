@@ -1,6 +1,6 @@
-﻿using LocalUtilities.TypeToolKit.Convert;
+﻿using LocalUtilities.General;
 
-namespace LocalUtilities.IocpNet.Common;
+namespace LocalUtilities.IocpNet;
 
 public class NetException(Enum errorCode, string? message) : Exception(message)
 {

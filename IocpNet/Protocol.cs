@@ -1,4 +1,4 @@
-﻿using LocalUtilities.IocpNet.Common;
+﻿using LocalUtilities.IocpNet;
 using System.Net.Sockets;
 
 namespace LocalUtilities.IocpNet;

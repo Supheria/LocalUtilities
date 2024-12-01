@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.TypeToolKit.Graph;
+﻿namespace LocalUtilities.General;
 
 public static class BitmapSaver
 {

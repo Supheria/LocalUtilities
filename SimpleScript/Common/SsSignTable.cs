@@ -1,4 +1,4 @@
-﻿namespace LocalUtilities.SimpleScript.Common;
+﻿namespace LocalUtilities.SimpleScript;
 
 public sealed class SsSignTable : SignTable
 {

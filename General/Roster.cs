@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
-namespace LocalUtilities;
+namespace LocalUtilities.General;
 
 public class Roster<TSignature, TItem>() : ICollection<TItem> where TSignature : notnull where TItem : IRosterItem<TSignature>
 {
