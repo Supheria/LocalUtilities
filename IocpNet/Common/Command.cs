@@ -24,8 +24,6 @@ public abstract class Command : INetLogger
 
     public byte[] Data { get; protected init; } = [];
 
-    protected static SsSignTable SignTable { get; } = new();
-
     public string GetLog(string message)
     {
         return message;

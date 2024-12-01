@@ -7,8 +7,6 @@ namespace LocalUtilities.SQLiteHelper;
 
 public partial class SQLiteQuery : IDisposable
 {
-    static SsSignTable SignTable { get; } = new();
-
     SQLiteConnection Connection { get; }
 
     SQLiteCommand Command { get; }
@@ -160,7 +158,7 @@ public partial class SQLiteQuery : IDisposable
             .Append(Keywords.Open)
             .AppendJoin(Keywords.Comma.ToString(), fieldValues, (sb, value) =>
             {
-                var val = SerializeTool.Serialize(value.Value, new(), SignTable, false);
+                var val = SerializeTool.Serialize(value.Value, false);
                 sb.Append(QuoteValue(val));
             })
             .Append(Keywords.Close);
@@ -187,7 +185,7 @@ public partial class SQLiteQuery : IDisposable
                 query.Append(Keywords.Comma);
             else
                 first = false;
-            var value = SerializeTool.Serialize(property.GetValue(obj), new(), SignTable, false);
+            var value = SerializeTool.Serialize(property.GetValue(obj), false);
             query.Append(QuoteValue(value));
         }
         query.Append(Keywords.Close);
@@ -209,7 +207,7 @@ public partial class SQLiteQuery : IDisposable
                     valueTable[i].Append(Keywords.Comma);
                 else
                     valueTable[i] = new();
-                var value = SerializeTool.Serialize(property.GetValue(objs[i]), new(), SignTable, false);
+                var value = SerializeTool.Serialize(property.GetValue(objs[i]), false);
                 valueTable[i].Append(QuoteValue(value));
             }
             first = false;
@@ -249,7 +247,7 @@ public partial class SQLiteQuery : IDisposable
             if (NotField(property))
                 continue;
             GetFieldNameInfo(property, out var name, out var isPrimaryKey, out _);
-            var value = SerializeTool.Serialize(property.GetValue(obj), new(), SignTable, false);
+            var value = SerializeTool.Serialize(property.GetValue(obj), false);
             if (isPrimaryKey)
             {
                 condition = new(name, value, Operators.Equal);
@@ -297,7 +295,7 @@ public partial class SQLiteQuery : IDisposable
         {
             if (field.IsPrimaryKey)
                 continue;
-            var value = SerializeTool.Serialize(field.Value, new(), SignTable, false);
+            var value = SerializeTool.Serialize(field.Value, false);
             if (!first)
                 query.Append(Keywords.Comma);
             else
@@ -361,7 +359,7 @@ public partial class SQLiteQuery : IDisposable
             {
                 var convert = ConvertType(reader, fieldName.Type);
                 var str = convert(reader.GetOrdinal(fieldName.Name));
-                var value = SerializeTool.Deserialize(fieldName.Type, new(), str, SignTable);
+                var value = SerializeTool.Deserialize(fieldName.Type, str);
                 properties.TryAdd(new(fieldName.PropertyName, value));
             }
             objs.Add(properties);
@@ -413,7 +411,7 @@ public partial class SQLiteQuery : IDisposable
             {
                 var convert = ConvertType(reader, fieldName.Type);
                 var str = convert(reader.GetOrdinal(fieldName.Name));
-                var subObj = SerializeTool.Deserialize(fieldName.Type, new(), str, SignTable);
+                var subObj = SerializeTool.Deserialize(fieldName.Type, str);
                 var property = fieldName.Property ?? type.GetProperty(fieldName.PropertyName);
                 property?.SetValue(obj, subObj);
             }

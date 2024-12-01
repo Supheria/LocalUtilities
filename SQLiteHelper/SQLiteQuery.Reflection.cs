@@ -51,7 +51,7 @@ partial class SQLiteQuery
             }
             else
                 sb.Append(comboWord);
-            var value = SerializeTool.Serialize(condition.Value, new(), SignTable, false);
+            var value = SerializeTool.Serialize(condition.Value, false);
             sb.Append(QuoteName(condition.FieldName))
                 .Append(condition.Operate)
                 .Append(QuoteValue(value));

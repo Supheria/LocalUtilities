@@ -14,7 +14,7 @@ public sealed class CommandReceiver : Command
         OperateCode = packet[offset++];
         TimeStamp = DateTime.FromBinary(BitConverter.ToInt64(packet, offset));
         offset += sizeof(long);
-        Args = SerializeTool.Deserialize<Dictionary<string, string>>(new(), packet, offset, argsLength, SignTable, null) ?? [];
+        Args = SerializeTool.Deserialize<Dictionary<string, string>>(packet, offset, argsLength) ?? [];
         offset += argsLength;
         Data = new byte[packetLength - offset];
         Array.Copy(packet, offset, Data, 0, Data.Length);
@@ -32,7 +32,7 @@ public sealed class CommandReceiver : Command
     {
         if (!Args.TryGetValue(key, out var str))
             throw new NetException(ProtocolCode.MissingCommandArgs, key);
-        return SerializeTool.Deserialize<T>(new(), str, SignTable) ??
+        return SerializeTool.Deserialize<T>(str) ??
                  throw new NetException(ProtocolCode.MissingCommandArgs, key);
     }
 }

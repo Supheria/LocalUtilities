@@ -15,13 +15,13 @@ partial class SerializeTool
     /// <param name="signTable"></param>
     /// <param name="encoding">set null to use default value of <see cref="Encoding.UTF8"/></param>
     /// <returns></returns>
-    public static byte[] Serialize(object? obj, RootName name, SignTable signTable, Encoding? encoding)
+    public static byte[] Serialize(object? obj, RootName? name = null, SignTable? signTable = null, Encoding? encoding = null)
     {
         using var memory = new MemoryStream();
-        using var writer = new SsStreamWriter(memory, false, signTable, encoding ?? Encoding.UTF8);
+        using var writer = new SsStreamWriter(memory, false, signTable ?? new SsSignTable(), encoding ?? Encoding.UTF8);
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
-        else if (name.Name is null)
+        else if (name?.Name is null)
             Serialize(obj, writer, false);
         else
         {
@@ -33,12 +33,12 @@ partial class SerializeTool
         return buffer;
     }
 
-    public static string Serialize(object? obj, RootName name, SignTable signTable, bool writeIntoMultiLines)
+    public static string Serialize(object? obj, bool writeIntoMultiLines, RootName? name = null, SignTable? signTable = null)
     {
-        var writer = new SsStringWriter(writeIntoMultiLines, signTable);
+        var writer = new SsStringWriter(writeIntoMultiLines, signTable ?? new SsSignTable());
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
-        else if (name.Name is null)
+        else if (name?.Name is null)
             Serialize(obj, writer, false);
         else
         {
@@ -48,14 +48,14 @@ partial class SerializeTool
         return writer.ToString();
     }
 
-    public static void SerializeFile(object? obj, RootName name, SignTable signTable, bool writeIntoMultiLines, string filePath)
+    public static void SerializeFile(object? obj, bool writeIntoMultiLines, string filePath, RootName? name = null, SignTable? signTable = null)
     {
         using var file = File.Create(filePath);
         file.Write(Utf8_BOM);
-        using var writer = new SsStreamWriter(file, writeIntoMultiLines, signTable, Encoding.UTF8);
+        using var writer = new SsStreamWriter(file, writeIntoMultiLines, signTable ?? new SsSignTable(), Encoding.UTF8);
         if (SerializeSimpleType(obj, out var convert))
             writer.AppendUnquotedValue(convert(obj));
-        else if (name.Name is null)
+        else if (name?.Name is null)
             Serialize(obj, writer, false);
         else
         {
