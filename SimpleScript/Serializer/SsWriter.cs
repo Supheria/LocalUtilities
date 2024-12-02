@@ -50,7 +50,6 @@ internal abstract class SsWriter(bool writeIntoMultiLines, SignTable signTable)
 
     public void AppendUnquotedValue(string value)
     {
-        var str = SsFormatter.GetUnquotedValue(value, WriteIntoMultiLines);
-        WriteString(str);
+        WriteString(value);
     }
 }

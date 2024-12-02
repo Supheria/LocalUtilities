@@ -120,10 +120,4 @@ public static class SsFormatter
             .AppendNewLine(writeIntoMultiLines, signTable)
             .ToString();
     }
-
-    public static string GetUnquotedValue(string value, bool writeIntoMultiLines)
-    {
-        return new StringBuilder(value)
-            .ToString();
-    }
 }
