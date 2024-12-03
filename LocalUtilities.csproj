@@ -27,17 +27,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="System.Data.SQLite">
-      <HintPath>..\sqlite-netFx46-binary-bundle-x64-2015-1.0.118.0\System.Data.SQLite.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="General\Convert\" />
     <Folder Include="General\Graph\" />
     <Folder Include="General\Mathematic\" />
     <Folder Include="General\Text\" />
     <Folder Include="TypeToolKit\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
   </ItemGroup>
 
 </Project>
